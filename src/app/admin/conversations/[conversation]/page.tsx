@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Cookies from "js-cookie";
 import dayjs from "dayjs";
 import { Button, Empty, Image, message, Spin } from "antd";
@@ -112,7 +112,7 @@ const AdminConversation = () => {
       params.set("page", String(type === "next" ? query.page : 1));
       params.set("limit", String(query.limit));
       const response = await fetch(
-        `${apiUrl}messages/${conversationId}?${params.toString()}`,
+        `${apiUrl}/messages/${conversationId}?${params.toString()}`,
         { method: "GET", headers },
       );
       if (!response.ok) throw new Error("Failed to fetch messages");
@@ -127,7 +127,8 @@ const AdminConversation = () => {
         ...c,
         page: currentPage < total ? currentPage + 1 : null,
       }));
-      const pageResults = (res?.data?.results || []).reverse();
+      const fetchedResults = res?.data?.results || res?.data || [];
+      const pageResults = (Array.isArray(fetchedResults) ? [...fetchedResults] : []).reverse();
       if (type === "next") {
         setMessages((c) => [...pageResults, ...c]);
       } else {
@@ -368,7 +369,13 @@ const AdminConversation = () => {
   );
 };
 
-export default AdminConversation;
+export default function Page() {
+  return (
+    <React.Suspense fallback={<div className="flex w-full h-full items-center justify-center"><Spin /></div>}>
+      <AdminConversation />
+    </React.Suspense>
+  );
+}
 
 const groupMessagesByDate = (messages: TUniObject[]) => {
   return messages.reduce(

@@ -74,13 +74,13 @@ const ConversationList = ({
         ...c,
         page: data?.pagination?.nextPage ?? null,
       }));
+      const fetchedResults = data?.data?.result || data?.data?.results || data?.data || [];
+      const dataArray = Array.isArray(fetchedResults) ? fetchedResults : [];
+      
       if (type === "next") {
-        setData((c) => [
-          ...c,
-          ...(data?.data?.result || data?.data?.results || data?.data || []),
-        ]);
+        setData((c) => [...c, ...dataArray]);
       } else {
-        setData(data?.data?.result || data?.data?.results || data?.data || []);
+        setData(dataArray);
       }
     } catch (error) {
       console.error(error);
@@ -198,6 +198,8 @@ const ConversationList = ({
                     <Image
                       src={avatar}
                       alt={title}
+                      width={50}
+                      height={50}
                       onError={handleImageError}
                       className="w-full h-full object-cover"
                     />

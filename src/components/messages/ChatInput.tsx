@@ -3,7 +3,9 @@
 import React, { useRef, useState } from "react";
 import { Button, Popover } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import dynamic from "next/dynamic";
+import { EmojiClickData } from "emoji-picker-react";
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 import { FaceSmileIcon } from "@heroicons/react/24/outline";
 import { PaperAirplaneIcon } from "@heroicons/react/16/solid";
 import { cn } from "@/utils/cn";

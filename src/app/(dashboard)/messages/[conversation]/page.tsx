@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import Cookies from "js-cookie";
 import dayjs from "dayjs";
@@ -101,7 +101,7 @@ const Conversation = () => {
         headers["Authorization"] = `Bearer ${token}`;
       }
       const response = await fetch(
-        apiUrl + `messages/${conversationId}` + params,
+        apiUrl + `/messages/${conversationId}` + params,
         {
           method: "GET",
           headers: headers,
@@ -118,7 +118,8 @@ const Conversation = () => {
         ...c,
         page: currentPage < total ? currentPage + 1 : null,
       }));
-      const pageResults = (data?.data?.results || []).reverse();
+      const fetchedResults = data?.data?.results || data?.data || [];
+      const pageResults = (Array.isArray(fetchedResults) ? [...fetchedResults] : []).reverse();
       if (type === "next") {
         setMessages((c) => [...pageResults, ...c]);
       } else {
@@ -226,7 +227,7 @@ const Conversation = () => {
         data={{ receiver: searchParams.get("receiver") }}
         className="sticky top-0 z-20"
       />
-      
+
       <div className="flex-1 relative overflow-hidden flex flex-col">
         <div
           ref={chatRef}
@@ -367,7 +368,13 @@ const Conversation = () => {
     </div>
   );
 };
-export default Conversation;
+export default function Page() {
+  return (
+    <React.Suspense fallback={<div className="flex w-full h-full items-center justify-center"><Skeleton active /></div>}>
+      <Conversation />
+    </React.Suspense>
+  );
+}
 
 const groupMessagesByDate = (messages: TUniObject[]) => {
   return messages.reduce((grouped: Record<string, TUniObject[]>, message) => {
