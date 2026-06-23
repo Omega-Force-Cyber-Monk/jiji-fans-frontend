@@ -19,7 +19,7 @@ interface ChannelItemProps {
     description?: string;
     totalSubscribers?: number;
     slug?: string;
-  };  
+  };
   rank: number;
 }
 
@@ -111,7 +111,7 @@ const FansFavoritesSkeleton = () => (
 
 const Fansfavorites = ({ className }: { className?: string }) => {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const itemsRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useGetPopularChannelsQuery({ limit: 6 });
@@ -136,9 +136,9 @@ const Fansfavorites = ({ className }: { className?: string }) => {
     };
   }, []);
 
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  // useEffect(() => {
+  //   setOpen(false);
+  // }, [pathname]);
 
   return (
     <div
@@ -180,19 +180,7 @@ const Fansfavorites = ({ className }: { className?: string }) => {
       </div>
 
       {/* Mobile Controls */}
-      <button
-        onClick={() => setOpen((c) => !c)}
-        className="absolute md:hidden top-1/2 -translate-y-1/2 -left-10 bg-brand-primary text-white border border-brand-primary rounded-l-xl p-2.5 shadow-2xl transition-transform hover:scale-110 active:scale-95"
-      >
-        <ArrowUturnLeftIcon className={cn("w-5 h-5 transition-transform duration-500", open ? "rotate-180" : "")} />
-      </button>
 
-      <button
-        onClick={() => setOpen((c) => !c)}
-        className="md:hidden absolute top-5 right-5 p-2 text-secondary-text hover:text-brand-primary transition-colors"
-      >
-        <XMarkIcon className="w-6 h-6" />
-      </button>
 
       {/* Footer Info (Subtle) */}
       <div className="mt-6 pt-6 border-t border-brand-primary/5 text-center">

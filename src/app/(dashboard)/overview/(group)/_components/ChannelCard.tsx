@@ -10,7 +10,7 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
   return (
     <Link
       href={`/overview/channels/${channel._id}`}
-      className="relative block aspect-[4/5] w-full h-[300px] overflow-hidden rounded-lg group border border-border-primary/20 bg-secondary-bg transition-all duration-300 hover:border-brand-primary/50 hover:shadow-lg hover:shadow-brand-primary/5 hover:-translate-y-1.5"
+      className="relative block aspect-[4/5] w-full overflow-hidden rounded-lg group border border-border-primary/20 bg-secondary-bg transition-all duration-300 hover:border-brand-primary/50 hover:shadow-lg hover:shadow-brand-primary/5 hover:-translate-y-1.5"
     >
       {/* 1. Full-Bleed Grayscale-to-Color Background Image */}
       <div className="absolute inset-0 z-0">
@@ -33,17 +33,17 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
       </div>
 
       {/* 3. Bottom: Premium Overlay Typography */}
-      <div className="absolute inset-x-0 bottom-0 z-20 p-4 flex flex-col justify-end transform translate-y-12 group-hover:translate-y-0 transition-transform duration-300 ease-out">
+      <div className="absolute inset-x-0 bottom-0 z-20 p-3 sm:p-4 flex flex-col justify-end transform translate-y-8 sm:translate-y-12 group-hover:translate-y-0 transition-transform duration-300 ease-out">
         {/* Tiny Rotating Active Diamond Accent */}
         <div className="w-4 h-1.5 rounded-sm bg-brand-primary/80 group-hover:bg-brand-primary transition-colors mb-2" />
 
-        <div className="space-y-1.5">
-          <h4 className="text-xl font-semibold text-white tracking-wide line-clamp-1 group-hover:text-brand-primary transition-colors">
+        <div className="space-y-1 sm:space-y-1.5">
+          <h4 className="text-base sm:text-xl font-semibold text-white tracking-wide line-clamp-1 group-hover:text-brand-primary transition-colors">
             {channel.name}
           </h4>
 
           {/* Sub-text that smoothly slides up and reveals details only on hover */}
-          <p className="text-sm text-muted-text line-clamp-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+          <p className="text-xs sm:text-sm text-muted-text line-clamp-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
             {channel.description || "View exclusive studio broadcasts and creator content."}
           </p>
         </div>
