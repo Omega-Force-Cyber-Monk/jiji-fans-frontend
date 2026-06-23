@@ -1,0 +1,666 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Design Tokens (Light) */
+  --primary-bg: #FFFFFF;
+  --secondary-bg: #FAFAFA;
+  --primary-text: #1A1A1A;
+  --secondary-text: #4B5563;
+  --muted-text: #9CA3AF;
+  --brand-primary: #00B05A;
+  --brand-secondary: #008C48;
+  --bg-brand-primary: #00B05A;
+  --bg-brand-secondary: #008C48;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --skeleton-bg: #E5E7EB;
+  --border-primary: #E5E7EB;
+  --disabled-bg: #f5f5f5;
+}
+
+:root.dark,
+.dark {
+  --background: #0D0D0D;
+  --foreground: #F9FAFB;
+
+  /* Design Tokens (Dark) */
+  --primary-bg: #121212;
+  --secondary-bg: #1A1A1A;
+  --primary-text: #F9FAFB;
+  --secondary-text: #9CA3AF;
+  --muted-text: #8C95A3;
+  --brand-primary: #00B05A;
+  --brand-secondary: #008C48;
+  --bg-brand-primary: #00B05A;
+  --bg-brand-secondary: #008C48;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --skeleton-bg: #1F2937;
+  --border-primary: #2D2D2D;
+  --disabled-bg: #2A2A2A;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --breakpoint-3xl: 1800px;
+
+  /* Design Tokens */
+  --color-primary-bg: var(--primary-bg);
+  --color-secondary-bg: var(--secondary-bg);
+  --color-primary-text: var(--primary-text);
+  --color-secondary-text: var(--secondary-text);
+  --color-muted-text: var(--muted-text);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-bg-brand-primary: var(--bg-brand-primary);
+  --color-bg-brand-secondary: var(--bg-brand-secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-skeleton-bg: var(--skeleton-bg);
+  --color-border-primary: var(--border-primary);
+  --color-disabled-bg: var(--disabled-bg);
+
+  /* Custom animations */
+  --animate-pulse-slow: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shake: shake 7s ease-in-out infinite;
+
+  @keyframes pulse-slow {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes shake {
+
+    0%,
+    100% {
+      transform: translateX(0);
+      transform: translateY(1);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+      transform: translateX(-3px);
+      /* transform: translateY(-4px); */
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+      transform: translateX(3px);
+      transform: translateY(4px);
+    }
+  }
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Plus Jakarta Sans', Arial, Helvetica, sans-serif;
+}
+
+input,
+textarea,
+[contenteditable] {
+  caret-color: var(--brand-primary);
+}
+
+/* Global Button Interactions */
+button,
+[role="button"],
+.btn-interactive {
+  cursor: pointer;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+button:hover:not(:disabled),
+[role="button"]:hover:not(:disabled),
+.btn-interactive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Plus Jakarta Sans', Arial, Helvetica, sans-serif;
+}
+
+p {
+  font-family: 'Inter', Arial, Helvetica, sans-serif !important;
+}
+
+/* for home nav */
+#navitem .ant-select-selection-item {
+  color: white !important;
+}
+
+/* video player and iframe style */
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  /* This maintains the 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide Google Translate toolbar */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-icon {
+  display: none !important;
+}
+
+body {
+  top: 0px !important;
+}
+
+.goog-tooltip {
+  display: none !important;
+}
+
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#google_translate_element {
+  display: none !important;
+}
+
+.goog-te-gadget {
+  color: transparent !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+  display: none !important;
+}
+
+nextjs-portal {
+  display: none !important;
+}
+
+/* Ant Design Popover Dark Mode Overrides */
+.dark .notification-popover .ant-popover-inner {
+  background-color: var(--primary-bg) !important;
+  /* border: 1px solid var(--border-primary) !important; */
+  padding: 2 !important;
+}
+
+.dark .notification-popover .ant-popover-arrow::before {
+  background-color: var(--primary-bg) !important;
+}
+
+.notification-popover .ant-popover-inner {
+  padding: 2 !important;
+}
+
+.goog-te-banner-frame,
+.goog-te-ftab-frame,
+.skiptranslate {
+  display: none !important;
+}
+
+/* Ensure body stays in place */
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+/* Hide the language select tooltip */
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+/* Hide the Google branding */
+.goog-logo-link {
+  display: none !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+  margin: 0 !important;
+}
+
+/* Fix autofill background and text color to blend with theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--primary-bg) inset !important;
+  -webkit-text-fill-color: var(--primary-text) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+input:-webkit-autofill:disabled {
+  -webkit-box-shadow: 0 0 0 1000px var(--disabled-bg) inset !important;
+}
+
+/* Ant Design Select Dropdown Dark Mode Overrides */
+.dark .ant-select-dropdown {
+  background-color: var(--secondary-bg) !important;
+}
+
+.dark .ant-select-item {
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: var(--brand-primary) !important;
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-select-item-option-active {
+  background-color: var(--primary-bg) !important;
+}
+
+.dark .ant-select-item-empty {
+  color: var(--muted-text) !important;
+}
+
+/* Reset styles for rich text inside .no-tailwind */
+.no-tailwind ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.no-tailwind ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.no-tailwind h1 {
+  font-size: 2em !important;
+  font-weight: bold !important;
+}
+
+.no-tailwind h2 {
+  font-size: 1.5em !important;
+  font-weight: bold !important;
+}
+
+.no-tailwind h3 {
+  font-size: 1.17em !important;
+  font-weight: bold !important;
+}
+
+.no-tailwind p {
+  margin-bottom: 0.5rem !important;
+}
+
+.no-tailwind a {
+  color: var(--brand-primary) !important;
+  text-decoration: underline !important;
+}
+
+/* Dark mode overrides for PrimeReact Editor */
+.dark .p-editor-container .p-editor-toolbar {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark .p-editor-container .p-editor-content {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--primary-text) !important;
+}
+
+.dark .p-editor-toolbar .ql-stroke {
+  stroke: var(--primary-text) !important;
+}
+
+.dark .p-editor-toolbar .ql-fill {
+  fill: var(--primary-text) !important;
+}
+
+.dark .p-editor-toolbar .ql-picker {
+  color: var(--primary-text) !important;
+}
+
+/* Ant Design Breadcrumb Dark Mode Overrides */
+.dark .ant-breadcrumb {
+  color: var(--muted-text) !important;
+}
+
+.dark .ant-breadcrumb a {
+  color: var(--secondary-text) !important;
+}
+
+.dark .ant-breadcrumb a:hover {
+  color: var(--brand-primary) !important;
+}
+
+.dark .ant-breadcrumb .ant-breadcrumb-separator {
+  color: var(--muted-text) !important;
+}
+
+.dark .ant-breadcrumb li:last-child .ant-breadcrumb-link {
+  color: var(--primary-text) !important;
+}
+
+/* Ant Design Table Global Styles (Green Header & Rounded-LG Top/Bottom) */
+.ant-table {
+  background: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-primary) !important;
+}
+
+.ant-table-container {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.ant-table-thead>tr>th {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-bottom: none !important;
+}
+
+.ant-table-tbody>tr>td {
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+/* Ant Design Table Dark Mode Overrides */
+.dark .ant-table {
+  background: var(--primary-bg) !important;
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-table-thead>tr>th {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+  border-bottom: none !important;
+}
+
+.dark .ant-table-tbody>tr>td {
+  background: var(--primary-bg) !important;
+  color: var(--secondary-text) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+.dark .ant-table-tbody>tr:hover>td {
+  background: var(--secondary-bg) !important;
+}
+
+.dark .ant-table-placeholder {
+  background: var(--primary-bg) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+.dark .ant-table-placeholder .ant-empty-description {
+  color: var(--muted-text) !important;
+}
+
+.dark .ant-table-empty {
+  background: var(--primary-bg) !important;
+}
+
+/* Ant Design Input and DatePicker Dark Mode Overrides */
+.dark .ant-input,
+.dark .ant-picker,
+.dark .ant-input-affix-wrapper {
+  background-color: var(--primary-bg) !important;
+  border: 1px solid #3f3f46 !important;
+  color: var(--primary-text) !important;
+}
+
+/* Fix double border issue inside affix wrappers globally */
+.ant-input-affix-wrapper .ant-input,
+.dark .ant-input-affix-wrapper .ant-input {
+  border: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dark .ant-input:hover,
+.dark .ant-picker:hover,
+.dark .ant-input-affix-wrapper:hover {
+  border-color: var(--brand-primary) !important;
+}
+
+.dark .ant-input:focus,
+.dark .ant-input-affix-wrapper-focused,
+.dark .ant-picker-focused {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 176, 90, 0.2) !important;
+}
+
+.dark .ant-input::placeholder,
+.dark .ant-picker-input>input::placeholder {
+  color: var(--muted-text) !important;
+}
+
+.dark .ant-picker-input>input {
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-picker-suffix,
+.dark .ant-picker-clear {
+  color: var(--muted-text) !important;
+}
+
+.dark .ant-input-suffix {
+  color: var(--secondary-text) !important;
+}
+
+
+/* Custom Global Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--brand-primary);
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--brand-secondary);
+}
+
+/* Specific class for thinner scrollbars in popovers/sidebars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--brand-primary);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--brand-secondary);
+}
+
+/* Ant Design InputNumber Dark Mode Overrides */
+.dark .ant-input-number {
+  background-color: var(--primary-bg) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-input-number-input {
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-input-number-handler-wrap {
+  background-color: var(--secondary-bg) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark .ant-input-number-handler {
+  border-color: var(--border-primary) !important;
+}
+
+.dark .ant-input-number-handler-up-inner,
+.dark .ant-input-number-handler-down-inner {
+  color: var(--secondary-text) !important;
+}
+
+/* Ant Design Select Dark Mode Overrides */
+.dark .ant-select-selector {
+  background-color: var(--primary-bg) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--primary-text) !important;
+}
+
+.dark .ant-select-arrow {
+  color: var(--secondary-text) !important;
+}
+
+.dark .ant-select-clear {
+  background-color: var(--primary-bg) !important;
+  color: var(--secondary-text) !important;
+}
+
+/* Leaflet Map overrides to guarantee height rendering */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 1 !important;
+}
+
+/* Leaflet dark mode popup overrides with high specificity */
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip,
+body.dark .leaflet-popup-content-wrapper,
+body.dark .leaflet-popup-tip {
+  background-color: #1A1A1A !important;
+  /* var(--secondary-bg) */
+  color: #F9FAFB !important;
+  /* var(--primary-text) */
+  border: 1px solid #2D2D2D !important;
+  /* var(--border-primary) */
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .leaflet-popup-tip,
+body.dark .leaflet-popup-tip {
+  background-color: #1A1A1A !important;
+}
+
+.dark .leaflet-popup-close-button,
+body.dark .leaflet-popup-close-button {
+  color: #9CA3AF !important;
+  /* var(--secondary-text) */
+}
+
+.dark .leaflet-popup-content h6,
+body.dark .leaflet-popup-content h6 {
+  color: #F9FAFB !important;
+}
+
+.dark .leaflet-popup-content p,
+body.dark .leaflet-popup-content p {
+  color: #9CA3AF !important;
+}
+
+.dark .leaflet-popup-content span,
+body.dark .leaflet-popup-content span {
+  color: #F9FAFB !important;
+}
+
+/* Custom premium popup overrides with absolute specificity */
+.premium-popup .leaflet-popup-content-wrapper,
+.premium-popup .leaflet-popup-tip {
+  background-color: var(--secondary-bg) !important;
+  color: var(--primary-text) !important;
+  border: 1px solid var(--border-primary) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.premium-popup .leaflet-popup-tip {
+  background-color: var(--secondary-bg) !important;
+}
+
+.premium-popup .leaflet-popup-close-button {
+  color: var(--secondary-text) !important;
+}
+
+.premium-popup .leaflet-popup-content h6 {
+  color: var(--primary-text) !important;
+}
+
+.premium-popup .leaflet-popup-content p {
+  color: var(--secondary-text) !important;
+}
+
+.premium-popup .leaflet-popup-content span {
+  color: var(--primary-text) !important;
+}
+
+/* Ant Design Button Disabled Dark Mode Overrides */
+.dark .ant-btn:disabled,
+.dark .ant-btn[disabled],
+.dark .ant-btn-primary:disabled,
+.dark .ant-btn-primary[disabled],
+.dark .ant-btn-default:disabled,
+.dark .ant-btn-default[disabled] {
+  background-color: var(--disabled-bg) !important;
+  color: var(--muted-text) !important;
+  border-color: var(--border-primary) !important;
+  opacity: 0.5 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}

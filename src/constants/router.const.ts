@@ -1,0 +1,186 @@
+import { ROLE } from "@/types";
+import { DashboardItem } from "@/types/sidebar.type";
+import { ArrowTrendingUpIcon } from "@heroicons/react/16/solid";
+import {
+  ArrowDownOnSquareStackIcon,
+  BanknotesIcon,
+  BellIcon,
+  BugAntIcon,
+  ChatBubbleLeftRightIcon,
+  CheckBadgeIcon,
+  ClipboardDocumentListIcon,
+  Cog6ToothIcon,
+  ComputerDesktopIcon,
+  HomeIcon,
+  NewspaperIcon,
+  ReceiptRefundIcon,
+  RectangleGroupIcon,
+  Squares2X2Icon,
+  SwatchIcon,
+  UserCircleIcon,
+  UserGroupIcon,
+  UsersIcon,
+  VideoCameraIcon,
+  WalletIcon,
+} from "@heroicons/react/24/outline";
+
+export const dashboardItems: DashboardItem[] = [
+  {
+    name: "Home",
+    path: "overview",
+    icon: HomeIcon,
+    role: [ROLE.USER, ROLE.CREATOR],
+  },
+  {
+    name: "Channel",
+    path: "mychannel",
+    icon: VideoCameraIcon,
+    role: [ROLE.CREATOR, ROLE.USER],
+  },
+  {
+    name: "Dashboard",
+    path: "dashboard",
+    icon: Squares2X2Icon,
+    role: [ROLE.CREATOR],
+  },
+  {
+    name: "Subscribers",
+    path: "subscriber",
+    icon: UsersIcon,
+    role: [ROLE.CREATOR],
+  },
+  {
+    name: "Wallet",
+    path: "wallet",
+    icon: WalletIcon,
+    role: [ROLE.CREATOR],
+  },
+  {
+    name: "Verification",
+    path: "verification",
+    icon: CheckBadgeIcon,
+    role: [ROLE.CREATOR],
+  },
+  {
+    name: "Verification List",
+    path: "verification/requests",
+    icon: ReceiptRefundIcon,
+    role: [ROLE.CREATOR],
+  },
+
+  {
+    name: "Memberships",
+    path: "membership",
+    icon: UserGroupIcon,
+    role: [ROLE.USER, ROLE.CREATOR],
+  },
+  {
+    name: "Messages",
+    path: "messages",
+    icon: ChatBubbleLeftRightIcon,
+    role: [ROLE.CREATOR, ROLE.USER],
+  },
+  {
+    name: "Notifications",
+    path: "notifications",
+    icon: BellIcon,
+    role: [ROLE.CREATOR, ROLE.USER],
+  },
+  {
+    name: "Profile",
+    path: "profile",
+    icon: UserCircleIcon,
+    role: [ROLE.CREATOR, ROLE.USER],
+  },
+  // admin routes
+  {
+    name: "Dashboard",
+    path: "/admin/home",
+    icon: ComputerDesktopIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Waitlist",
+    path: "/admin/waitlist",
+    icon: UserGroupIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Analytics",
+    path: "/admin/analytics",
+    icon: ArrowTrendingUpIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Contents",
+    path: "/admin/content",
+    icon: NewspaperIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Creators",
+    path: "/admin/creators",
+    icon: CheckBadgeIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "KYC application",
+    path: "/admin/kyc-applications",
+    icon: ReceiptRefundIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Users",
+    path: "/admin/users",
+    icon: UsersIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Conversations",
+    path: "/admin/conversations",
+    icon: ChatBubbleLeftRightIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Earnings",
+    path: "/admin/earnings",
+    icon: BanknotesIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Withdrawals",
+    path: "/admin/withdrawals",
+    icon: ArrowDownOnSquareStackIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Payout Schedule",
+    path: "/admin/payout-schedule",
+    icon: SwatchIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Categories",
+    path: "/admin/category",
+    icon: RectangleGroupIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Subscriptions",
+    path: "/admin/subscription",
+    icon: ClipboardDocumentListIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Reports",
+    path: "/admin/report",
+    icon: BugAntIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
+    name: "Settings",
+    path: "/admin/settings",
+    icon: Cog6ToothIcon,
+    role: [ROLE.ADMIN],
+  },
+];

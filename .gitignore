@@ -1,0 +1,16 @@
+node_modules/
+.env*
+.next/
+.vscode/
+.idea/
+ACCOUNT_SUSPENSION_GUIDE.md
+BUG_FIXES_SUMMARY.md
+CATEGORY_INTEGRATION.md
+CHANNEL_STATUS_FILTERING_GUIDE.md
+CHANNEL_SUSPENSION_GUIDE.md
+QUICK_FIX_WHITE_SCREEN.md
+TROUBLESHOOTING_WHITE_SCREEN.md
+.vercel
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat

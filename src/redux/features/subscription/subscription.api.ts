@@ -1,0 +1,147 @@
+import { baseApi } from "../../api/baseApi";
+
+export type TSubscriptionStatus =
+  | "ACTIVE"
+  | "CANCELLED"
+  | "EXPIRED"
+  | "PAST_DUE";
+
+export type TPaymentProvider = "STRIPE" | "PAWAPAY" | "PAYNOW";
+
+export interface ISubscription {
+  _id: string;
+  channelId: string;
+  subscriberId: string;
+  subscriptionPlanId: string;
+  startDate: string;
+  endDate: string;
+  status: TSubscriptionStatus;
+  paymentProvider: TPaymentProvider;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  pawapayDepositId?: string;
+  isPaid?: boolean;
+  isRevenueDistributed?: boolean;
+  cancelAtPeriodEnd?: boolean;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ISubscriptionPlanWithUnlockFlag {
+  _id: string;
+  name: string;
+  price: number;
+  commission: number;
+  facilities: string[];
+  billing_cycle: string;
+  stripePriceId?: string;
+  stripeProductId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  hasUnlockableContent?: boolean;
+}
+
+const subscriptionApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    // Membership/Subscription endpoints
+    createSubscription: builder.mutation({
+      query: (body) => {
+        return {
+          url: `subscriptions`,
+          method: "POST",
+          body,
+        };
+      },
+      invalidatesTags: ["subscription"],
+    }),
+    getMySubscriptions: builder.query({
+      query: () => {
+        return {
+          url: `subscriptions/mine`,
+          method: "GET",
+        };
+      },
+      providesTags: ["subscription"],
+    }),
+    cancelSubscription: builder.mutation({
+      query: (subscriptionId) => {
+        return {
+          url: `subscriptions/${subscriptionId}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["subscription"],
+    }),
+    getCurrentChannelSubscription: builder.query({
+      query: (channelId) => {
+        return {
+          url: `subscriptions/${channelId}/mine`,
+          method: "GET",
+        };
+      },
+      providesTags: ["subscription"],
+    }),
+    // Subscription Plans
+    createSubscriptionPlan: builder.mutation({
+      query: (body) => {
+        return {
+          url: `subscriptionPlans`,
+          method: "POST",
+          body,
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    updateSubscriptionPlan: builder.mutation({
+      query: ({ planId, body }) => {
+        return {
+          url: `subscriptionPlans/${planId}`,
+          method: "PATCH",
+          body,
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    deleteSubscriptionPlan: builder.mutation({
+      query: (subscriptionId) => {
+        return {
+          url: `subscriptionPlans/${subscriptionId}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    getAllSubscriptionPlans: builder.query({
+      query: (params?: { channelId?: string }) => {
+        return {
+          url: `subscriptionPlans`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["subscriptionPlan"],
+    }),
+    createCheckoutSession: builder.mutation({
+      query: (body) => {
+        return {
+          url: `subscriptions/checkout/session`,
+          method: "POST",
+          body,
+        };
+      },
+    }),
+  }),
+});
+
+export const {
+  useCreateSubscriptionMutation,
+  useGetMySubscriptionsQuery,
+  useCancelSubscriptionMutation,
+  useGetCurrentChannelSubscriptionQuery,
+  useCreateSubscriptionPlanMutation,
+  useUpdateSubscriptionPlanMutation,
+  useDeleteSubscriptionPlanMutation,
+  useGetAllSubscriptionPlansQuery,
+  useCreateCheckoutSessionMutation,
+} = subscriptionApi;
