@@ -2,13 +2,14 @@ import { baseApi } from "../../api/baseApi";
 
 const paymentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    verifyTransaction: builder.query({
-      query: (providerReferenceId: string) => ({
+    verifyTransaction: builder.mutation({
+      query: ({ providerReferenceId, idempotencyKey }: { providerReferenceId: string; idempotencyKey?: string }) => ({
         url: `transactions/verify/${providerReferenceId}`,
-        method: "GET",
+        method: "POST",
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
       }),
     }),
   }),
 });
 
-export const { useVerifyTransactionQuery, useLazyVerifyTransactionQuery } = paymentApi;
+export const { useVerifyTransactionMutation } = paymentApi;

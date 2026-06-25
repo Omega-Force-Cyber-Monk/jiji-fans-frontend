@@ -4,14 +4,14 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Spin, Button } from "antd";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { useLazyVerifyTransactionQuery } from "@/redux/features/payment/payment.api";
+import { useVerifyTransactionMutation } from "@/redux/features/payment/payment.api";
 
 const PaymentVerificationPage = () => {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const referenceId = searchParams?.get("providerReferenceId") || searchParams?.get("session_id") || searchParams?.get("reference");
 	
-	const [verifyTransaction] = useLazyVerifyTransactionQuery();
+	const [verifyTransaction] = useVerifyTransactionMutation();
 	const [status, setStatus] = useState<"LOADING" | "SUCCESS" | "FAILED">("LOADING");
 
 	useEffect(() => {
@@ -22,7 +22,7 @@ const PaymentVerificationPage = () => {
 
 		const verify = async () => {
 			try {
-				const res = await verifyTransaction(referenceId).unwrap();
+				const res = await verifyTransaction({ providerReferenceId: referenceId }).unwrap();
 				if (res?.data?.status === "COMPLETED" || res?.data?.status === "ACTIVE") {
 					setStatus("SUCCESS");
 				} else {

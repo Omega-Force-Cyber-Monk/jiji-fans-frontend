@@ -3,7 +3,12 @@
 import GlobalModal from "@/components/GlobalModal";
 import AppBreadcrumb from "@/components/ui/AppBreadcrumb";
 import { errorAlert } from "@/lib/alerts";
-import { useRequestProcessingMutation } from "@/redux/features/wallet/wallet.api";
+import {
+  useRequestProcessingMutation,
+  useRetryFailedPayoutMutation,
+  useOverrideFailedPayoutMutation,
+} from "@/redux/features/wallet/wallet.api";
+import { useIdempotency } from "@/hooks/useIdempotency";
 import { TUniObject } from "@/types";
 import { Button, ConfigProvider, Input, message } from "antd";
 import React, { useState } from "react";
@@ -17,6 +22,58 @@ const Page = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
   const [mutation, { isLoading: muLoading }] = useRequestProcessingMutation();
+  const [retryMutation, { isLoading: isRetrying }] = useRetryFailedPayoutMutation();
+  const [overrideMutation, { isLoading: isOverriding }] = useOverrideFailedPayoutMutation();
+  const { idempotencyKey, regenerateKey } = useIdempotency();
+
+  const handleFailedPayout = async (action: "RETRY" | "OVERRIDE") => {
+    try {
+      if (!modalData?._id) return;
+
+      const executeAction = async (currentKey: string) => {
+        let attempts = 0;
+        while (attempts < 5) {
+          try {
+            if (action === "RETRY") {
+              await retryMutation({ id: modalData._id, idempotencyKey: currentKey }).unwrap();
+            } else {
+              await overrideMutation({ id: modalData._id, idempotencyKey: currentKey }).unwrap();
+            }
+            return;
+          } catch (error: any) {
+            if (error?.status === 202) {
+              attempts++;
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              continue;
+            }
+            if (error?.status === 409) {
+              messageApi.warning("Conflict detected. A new key is being generated.");
+              regenerateKey();
+              throw error;
+            }
+            if (error?.status === 400) {
+              regenerateKey();
+              throw error;
+            }
+            throw error;
+          }
+        }
+        throw new Error("Payout action is still processing on the server.");
+      };
+
+      await executeAction(idempotencyKey);
+
+      messageApi.success(
+        action === "RETRY"
+          ? "Failed payout retry initiated successfully!"
+          : "Offline payout override completed successfully!"
+      );
+      setOpenModal(false);
+      regenerateKey();
+    } catch (error) {
+      errorAlert({ error, messageApi });
+    }
+  };
 
   const handlePayment = async (status: "COMPLETED" | "REJECTED") => {
     try {
@@ -196,6 +253,26 @@ const Page = () => {
                     loading={muLoading}
                   >
                     Reject
+                  </Button>
+                </>
+              )}
+              {(modalData?.status?.toUpperCase() === "FAILED" || modalData?.status?.toUpperCase() === "FAIL") && (
+                <>
+                  <Button
+                    onClick={() => handleFailedPayout("RETRY")}
+                    type="primary"
+                    className="px-6 h-10 bg-brand-primary hover:!bg-brand-secondary border-none rounded-md"
+                    loading={isRetrying}
+                  >
+                    Retry Payout
+                  </Button>
+                  <Button
+                    onClick={() => handleFailedPayout("OVERRIDE")}
+                    danger
+                    className="px-6 h-10 rounded-md"
+                    loading={isOverriding}
+                  >
+                    Manual Override
                   </Button>
                 </>
               )}

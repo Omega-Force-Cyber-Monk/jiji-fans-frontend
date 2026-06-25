@@ -9,6 +9,7 @@ import {
   Form,
   FormProps,
   InputNumber,
+  Input,
   Skeleton,
   Table,
   TableColumnsType,
@@ -25,7 +26,9 @@ import {
   TWithdrawalRequest,
   useMyWithdrawalRequestsQuery,
   useRequestWithdrawMutation,
+  useUpdatePayoutSettingsMutation,
 } from "@/redux/features/wallet/wallet.api";
+import { useIdempotency } from "@/hooks/useIdempotency";
 import { queryFormat } from "@/lib/helpers/queryFormat";
 import GlobalModal from "@/components/GlobalModal";
 import TextArea from "antd/es/input/TextArea";
@@ -66,7 +69,9 @@ const Page = () => {
   const [openModal, setOpenModal] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { idempotencyKey, regenerateKey } = useIdempotency();
   const [submitRequest, { isLoading: requLoading }] = useRequestWithdrawMutation();
+  const [updatePayoutSettings, { isLoading: isSavingPayoutSettings }] = useUpdatePayoutSettingsMutation();
   const limit = 10;
 
   const { data: walletStats, isLoading: isLoadingStats } = useGetWalletStatsQuery();
@@ -135,7 +140,36 @@ const Page = () => {
   const onFinish: FormProps<TUniObject>["onFinish"] = async (values) => {
     try {
       setWithdrawalSubmitError("");
-      await submitRequest(values).unwrap();
+
+      const executeWithdrawal = async (currentKey: string) => {
+        let attempts = 0;
+        while (attempts < 5) {
+          try {
+            const res = await submitRequest({ body: values, idempotencyKey: currentKey }).unwrap();
+            return res;
+          } catch (error: any) {
+            if (error?.status === 202) {
+              attempts++;
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              continue;
+            }
+            if (error?.status === 409) {
+              messageApi.warning("You have modified the request parameters. A new transaction key is being created.");
+              regenerateKey();
+              throw error;
+            }
+            if (error?.status === 400) {
+              regenerateKey();
+              throw error;
+            }
+            throw error;
+          }
+        }
+        throw new Error("Withdrawal request is still processing. Please check your withdrawal status records.");
+      };
+
+      await executeWithdrawal(idempotencyKey);
+
       messageApi.open({
         key: "request",
         type: "success",
@@ -144,6 +178,7 @@ const Page = () => {
       });
       form.resetFields();
       setOpenModal(false);
+      regenerateKey();
     } catch (error) {
       const err = error as TResError & {
         data?: {
@@ -298,6 +333,21 @@ const Page = () => {
           {/* <h2 className="text-2xl lg:text-3xl font-bold text-primary-text">Wallet Overview</h2> */}
         </div>
       </div>
+
+      {!isKycCompleted && (
+        <Alert
+          message="Identity Verification Required"
+          description="Please complete your KYC verification to request manual or automatic withdrawals."
+          type="warning"
+          showIcon
+          className="rounded-lg border-amber-500/20 bg-amber-500/5 text-amber-400"
+          action={
+            <Button size="small" type="primary" className="bg-brand-primary text-black border-none font-semibold" onClick={() => router.push("/verification")}>
+              Verify Now
+            </Button>
+          }
+        />
+      )}
 
       {/* 2. Unified Grid Workspaces (Full Width Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -545,6 +595,85 @@ const Page = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              )
+            },
+            {
+              key: '3',
+              label: <span className="text-base px-4 pb-2 block text-primary-text font-medium">Payout Settings</span>,
+              children: (
+                <div className="py-6 px-4 lg:px-6 max-w-xl">
+                  <h4 className="text-lg font-semibold text-primary-text mb-2">Configure Payout Method</h4>
+                  <p className="text-sm text-secondary-text mb-6">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
+                  
+                  <Form
+                    layout="vertical"
+                    initialValues={{
+                      payoutMethod: profileData?.data?.payoutSettings?.payoutMethod || "MOBILE_MONEY",
+                      mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || "ecocash",
+                      mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
+                      mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
+                    }}
+                    onFinish={async (values) => {
+                      try {
+                        await updatePayoutSettings(values).unwrap();
+                        messageApi.success("Payout settings updated successfully!");
+                      } catch (error) {
+                        errorAlert({ error: error as TResError, messageApi });
+                      }
+                    }}
+                  >
+                    <Form.Item
+                      label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
+                      name="payoutMethod"
+                    >
+                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3">
+                        <option value="MOBILE_MONEY">Mobile Money</option>
+                      </select>
+                    </Form.Item>
+
+                    <Form.Item
+                      label={<span className="text-sm font-semibold text-secondary-text">Mobile Money Provider</span>}
+                      name="mobileProvider"
+                    >
+                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3">
+                        <option value="ecocash">EcoCash</option>
+                        <option value="onemoney">OneMoney</option>
+                        <option value="telecash">Telecash</option>
+                      </select>
+                    </Form.Item>
+
+                    <Form.Item
+                      label={<span className="text-sm font-semibold text-secondary-text">Mobile Phone Number</span>}
+                      name="mobilePhoneNumber"
+                      rules={[{ required: true, message: "Please input mobile phone number." }]}
+                    >
+                      <Input
+                        className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                        placeholder="+263771234567"
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label={<span className="text-sm font-semibold text-secondary-text">Account Holder Name</span>}
+                      name="mobileAccountHolderName"
+                      rules={[{ required: true, message: "Please input mobile account holder name." }]}
+                    >
+                      <Input
+                        className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                        placeholder="Creator Name"
+                      />
+                    </Form.Item>
+
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={isSavingPayoutSettings}
+                      className="bg-brand-primary text-black font-semibold h-11 px-6 rounded-md hover:bg-brand-primary/90 border-none mt-2"
+                    >
+                      Save Payout Settings
+                    </Button>
+                  </Form>
                 </div>
               )
             }

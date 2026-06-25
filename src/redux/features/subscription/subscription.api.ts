@@ -123,11 +123,12 @@ const subscriptionApi = baseApi.injectEndpoints({
       providesTags: ["subscriptionPlan"],
     }),
     createCheckoutSession: builder.mutation({
-      query: (body) => {
+      query: ({ body, idempotencyKey }: { body: any; idempotencyKey?: string }) => {
         return {
           url: `subscriptions/checkout/session`,
           method: "POST",
           body,
+          headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
         };
       },
     }),

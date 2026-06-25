@@ -25,24 +25,27 @@ export interface ITipCheckoutPaynow {
 const tipsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createStripeTipSession: builder.mutation({
-      query: (body: ITipCheckoutStripe) => ({
+      query: ({ body, idempotencyKey }: { body: ITipCheckoutStripe; idempotencyKey?: string }) => ({
         url: `tips/checkout/session/stripe`,
         method: "POST",
         body,
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
       }),
     }),
     createPawaPayTipSession: builder.mutation({
-      query: (body: ITipCheckoutPawaPay) => ({
+      query: ({ body, idempotencyKey }: { body: ITipCheckoutPawaPay; idempotencyKey?: string }) => ({
         url: `tips/checkout/session/pawapay`,
         method: "POST",
         body,
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
       }),
     }),
     createPaynowTipSession: builder.mutation({
-      query: (body: ITipCheckoutPaynow) => ({
+      query: ({ body, idempotencyKey }: { body: ITipCheckoutPaynow; idempotencyKey?: string }) => ({
         url: `tips/checkout/session/paynow`,
         method: "POST",
         body,
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
       }),
     }),
   }),

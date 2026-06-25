@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { countries } from "countries-list";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,8 @@ import {
 	ISubscription,
 	ISubscriptionPlanWithUnlockFlag,
 } from "@/redux/features/subscription/subscription.api";
+import { useVerifyTransactionMutation } from "@/redux/features/payment/payment.api";
+import { useIdempotency, generateUUID } from "@/hooks/useIdempotency";
 import { useAppSelector } from "@/redux/hook";
 import { errorAlert } from "@/lib/alerts";
 
@@ -36,6 +38,12 @@ const Membership = ({ channelId }: MembershipProps) => {
 		);
 	const [createCheckoutSession, { isLoading: isCreatingSession }] =
 		useCreateCheckoutSessionMutation();
+	const [verifyTransaction] = useVerifyTransactionMutation();
+
+	const { idempotencyKey, regenerateKey } = useIdempotency();
+	const [isProcessingMobile, setIsProcessingMobile] = useState(false);
+	const [mobileStatusMsg, setMobileStatusMsg] = useState("");
+	const [countdown, setCountdown] = useState(60);
 
 	const currentSubscription = currentSubscriptionData?.data as
 		| ISubscription
@@ -132,20 +140,110 @@ const Membership = ({ channelId }: MembershipProps) => {
 				fullCountryName = (countries as any)[fullCountryName.toUpperCase()].name;
 			}
 
-			const res = await createCheckoutSession({
-				channelId,
-				subscriptionPlanId: plan._id,
-				paymentProvider,
-				phoneNumber: user?.phoneNumber || "",
-				country: fullCountryName,
-				currency: "USD",
-				language: "en",
-			}).unwrap();
+			// Define request trigger inside a helper that handles 202/409/400
+			const executeSessionRequest = async (currentKey: string) => {
+				let attempts = 0;
+				while (attempts < 5) {
+					try {
+						const response: any = await createCheckoutSession({
+							body: {
+								channelId,
+								subscriptionPlanId: plan._id,
+								paymentProvider,
+								phoneNumber: user?.phoneNumber || "",
+								country: fullCountryName,
+								currency: "USD",
+								language: "en",
+							},
+							idempotencyKey: currentKey,
+						}).unwrap();
+						return response;
+					} catch (error: any) {
+						if (error?.status === 202) {
+							// Wait 2 seconds and retry
+							attempts++;
+							await new Promise((resolve) => setTimeout(resolve, 2000));
+							continue;
+						}
+						if (error?.status === 409) {
+							messageApi.warning("You have modified the request parameters. A new transaction key is being created.");
+							regenerateKey();
+							throw error;
+						}
+						if (error?.status === 400) {
+							regenerateKey();
+							throw error;
+						}
+						throw error;
+					}
+				}
+				throw new Error("Transaction is still processing. Please check your transaction history.");
+			};
+
+			const res = await executeSessionRequest(idempotencyKey);
 			const url = res?.data?.url;
-			if (url) {
-				window.location.href = url;
-				return;
+			const providerReferenceId = res?.data?.providerReferenceId;
+
+			// Handle different flows based on paymentProvider
+			if (paymentProvider === "STRIPE" || (paymentProvider === "PAYNOW" && !user?.phoneNumber)) {
+				if (url) {
+					window.location.href = url;
+					return;
+				}
+			} else {
+				// Paynow Mobile Money / PawaPay Mobile Money Flow
+				if (providerReferenceId) {
+					setIsProcessingMobile(true);
+					setCountdown(60);
+					setMobileStatusMsg("Initiating payment prompt on your phone... Please enter your PIN on your mobile device.");
+
+					const intervalId = setInterval(() => {
+						setCountdown((prev) => {
+							if (prev <= 1) {
+								clearInterval(intervalId);
+								return 0;
+							}
+							return prev - 1;
+						});
+					}, 1000);
+
+					// poll every 3 seconds up to 20 times (60 seconds total)
+					for (let i = 0; i < 20; i++) {
+						await new Promise((resolve) => setTimeout(resolve, 3000));
+						try {
+							const verifyKey = generateUUID();
+							const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
+							if (verifyRes?.data?.status === "COMPLETED") {
+								setMobileStatusMsg("Payment completed and settled successfully!");
+								messageApi.success("Subscription completed successfully!");
+								clearInterval(intervalId);
+								setTimeout(() => {
+									setIsProcessingMobile(false);
+									window.location.reload();
+								}, 2000);
+								return;
+							} else if (verifyRes?.data?.status === "FAILED") {
+								setMobileStatusMsg("Transaction failed on mobile device.");
+								messageApi.error("Payment transaction failed.");
+								clearInterval(intervalId);
+								setTimeout(() => setIsProcessingMobile(false), 3000);
+								return;
+							}
+						} catch (e) {
+							console.error("Polling verify error:", e);
+						}
+					}
+
+					setMobileStatusMsg("Transaction confirmation took too long. Please check your transaction history.");
+					clearInterval(intervalId);
+					setTimeout(() => setIsProcessingMobile(false), 4000);
+					return;
+				} else if (url) {
+					window.location.href = url;
+					return;
+				}
 			}
+
 			messageApi.open({
 				key: "checkout",
 				type: "error",
@@ -266,46 +364,52 @@ const Membership = ({ channelId }: MembershipProps) => {
 						</button>
 
 						{/* PawaPay Option */}
-						{isPawaPayEligible && (
-							<button
-								onClick={() => {
-									if (!selectedPlan) return;
-									setIsProviderModalOpen(false);
-									startCheckout(selectedPlan, "PAWAPAY");
-								}}
-								disabled={isCreatingSession}
-								className="flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer"
-							>
-								<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
-									<WalletIcon className="w-6 h-6" />
-								</div>
-								<div>
-									<p className="font-semibold text-primary-text">Pay with PawaPay</p>
-									<p className="text-sm text-muted-text">Support local Mobile Money payments in your country</p>
-								</div>
-							</button>
-						)}
+						<button
+							onClick={() => {
+								if (!selectedPlan) return;
+								setIsProviderModalOpen(false);
+								startCheckout(selectedPlan, "PAWAPAY");
+							}}
+							disabled={isCreatingSession || !isPawaPayEligible}
+							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${
+								!isPawaPayEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
+							}`}
+						>
+							<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
+								<WalletIcon className="w-6 h-6" />
+							</div>
+							<div>
+								<p className="font-semibold text-primary-text">Pay with PawaPay</p>
+								<p className="text-sm text-muted-text">Support local Mobile Money payments in your country</p>
+								{!isPawaPayEligible && (
+									<p className="text-xs text-red-400 mt-1 font-semibold">Not available in your country ({user?.country || "Unknown"})</p>
+								)}
+							</div>
+						</button>
 
 						{/* Paynow Option */}
-						{isPaynowEligible && (
-							<button
-								onClick={() => {
-									if (!selectedPlan) return;
-									setIsProviderModalOpen(false);
-									startCheckout(selectedPlan, "PAYNOW");
-								}}
-								disabled={isCreatingSession}
-								className="flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer"
-							>
-								<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
-									<WalletIcon className="w-6 h-6" />
-								</div>
-								<div>
-									<p className="font-semibold text-primary-text">Pay with PayNow</p>
-									<p className="text-sm text-muted-text">Support EcoCash, OneMoney, and Telecash in Zimbabwe</p>
-								</div>
-							</button>
-						)}
+						<button
+							onClick={() => {
+								if (!selectedPlan) return;
+								setIsProviderModalOpen(false);
+								startCheckout(selectedPlan, "PAYNOW");
+							}}
+							disabled={isCreatingSession || !isPaynowEligible}
+							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${
+								!isPaynowEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
+							}`}
+						>
+							<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
+								<WalletIcon className="w-6 h-6" />
+							</div>
+							<div>
+								<p className="font-semibold text-primary-text">Pay with PayNow</p>
+								<p className="text-sm text-muted-text">Support EcoCash, OneMoney, and Telecash in Zimbabwe</p>
+								{!isPaynowEligible && (
+									<p className="text-xs text-red-400 mt-1 font-semibold">Only available in Zimbabwe</p>
+								)}
+							</div>
+						</button>
 					</div>
 
 					<div className="flex justify-end gap-3 pt-2">
@@ -316,6 +420,22 @@ const Membership = ({ channelId }: MembershipProps) => {
 							Cancel
 						</Button>
 					</div>
+				</div>
+			</GlobalModal>
+
+			<GlobalModal
+				isModalOpen={isProcessingMobile}
+				setIsModalOpen={setIsProcessingMobile}
+				maxWidth="480px"
+			>
+				<div className="p-6 text-center space-y-6 bg-secondary-bg rounded-lg">
+					<div className="flex justify-center">
+						<div className="w-16 h-16 border-4 border-brand-primary border-t-transparent rounded-full animate-spin flex items-center justify-center">
+							<span className="text-xs font-bold text-brand-primary">{countdown}s</span>
+						</div>
+					</div>
+					<h3 className="text-xl font-semibold text-primary-text">Mobile Money Prompt</h3>
+					<p className="text-sm text-secondary-text">{mobileStatusMsg}</p>
 				</div>
 			</GlobalModal>
 		</div>

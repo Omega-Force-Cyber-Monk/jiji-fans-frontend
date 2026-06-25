@@ -221,11 +221,12 @@ const walletApi = baseApi.injectEndpoints({
     }),
     // Withdraw Management
     requestWithdraw: builder.mutation({
-      query: (body) => {
+      query: ({ body, idempotencyKey }: { body: any; idempotencyKey?: string }) => {
         return {
           url: `withdrawal-requests`,
           method: "POST",
           body,
+          headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
         };
       },
       invalidatesTags: ["wallet", "withdraw"],
@@ -245,6 +246,30 @@ const walletApi = baseApi.injectEndpoints({
       transformResponse: (response: { data: TWithdrawalRequestsResponse }) =>
         response.data,
       providesTags: ["wallet", "withdraw"],
+    }),
+    updatePayoutSettings: builder.mutation({
+      query: (body) => ({
+        url: `payout-settings`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["wallet"],
+    }),
+    retryFailedPayout: builder.mutation({
+      query: ({ id, idempotencyKey }: { id: string; idempotencyKey?: string }) => ({
+        url: `withdrawal-requests/${id}/retry`,
+        method: "POST",
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+      }),
+      invalidatesTags: ["wallet", "withdraw"],
+    }),
+    overrideFailedPayout: builder.mutation({
+      query: ({ id, idempotencyKey }: { id: string; idempotencyKey?: string }) => ({
+        url: `withdrawal-requests/${id}/override`,
+        method: "POST",
+        headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+      }),
+      invalidatesTags: ["wallet", "withdraw"],
     }),
     // admin api
     getAdminTotalTransitions: builder.query({
@@ -292,4 +317,7 @@ export const {
   useGetAdminTotalTransitionsQuery,
   useAdminWithdrawalsQuery,
   useRequestProcessingMutation,
+  useUpdatePayoutSettingsMutation,
+  useRetryFailedPayoutMutation,
+  useOverrideFailedPayoutMutation,
 } = walletApi;
