@@ -10,7 +10,7 @@ const Layout = ({ children }: TLayoutProps) => {
   const isConversationActive = !!params.conversation;
 
   return (
-    <div className="flex w-full relative h-[calc(100dvh-64px)] lg:h-[calc(100dvh-16px)] overflow-hidden bg-primary-bg">
+    <div className="flex w-full relative h-[calc(100dvh-130px)] lg:h-[calc(100dvh-112px)] overflow-hidden bg-primary-bg">
       {/* Sidebar - Master List */}
       <ConversationList
         className={cn(

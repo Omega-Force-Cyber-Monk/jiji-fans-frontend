@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Button, Popover } from "antd";
-import TextArea from "antd/es/input/TextArea";
+import { Popover } from "antd";
 import dynamic from "next/dynamic";
 import { EmojiClickData } from "emoji-picker-react";
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -122,6 +121,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  React.useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [text]);
+
   return (
     <div className={cn("px-3 lg:px-4", className)}>
       {/* attachments preview */}
@@ -146,7 +152,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      <div className="flex gap-2 items-end bg-secondary-bg p-1.5 rounded-3xl border border-border-primary focus-within:border-emerald-500/30 focus-within:ring-1 focus-within:ring-emerald-500/10 transition-all">
+      <div className="flex gap-2 items-end bg-secondary-bg/85 p-2 rounded-2xl border border-border-primary/80 focus-within:border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500/5 transition-all duration-300 shadow-inner">
         <Popover
           content={
             <EmojiPicker
@@ -159,11 +165,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
           trigger="click"
           placement="topLeft"
         >
-          <button className="p-2 rounded-full hover:bg-primary-bg text-muted-text transition-colors shrink-0" aria-label="Add emoji">
-            <FaceSmileIcon className="size-6" />
+          <button className="p-2 rounded-xl hover:bg-primary-bg text-muted-text transition-all duration-200 hover:scale-105 active:scale-95 shrink-0" aria-label="Add emoji">
+            <FaceSmileIcon className="size-5" />
           </button>
         </Popover>
-        
+
         <input
           ref={fileRef}
           type="file"
@@ -175,7 +181,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="hidden"
         />
 
-        <TextArea
+        <textarea
           ref={inputRef}
           value={text}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
@@ -184,24 +190,27 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={onKeyDown}
           onPaste={handlePaste}
           placeholder="Type a message..."
-          autoSize={{ minRows: 1, maxRows: 5 }}
-          className="flex-1 bg-transparent border-none! shadow-none! focus:ring-0! py-2 px-1 text-sm lg:text-base text-primary-text outline-none resize-none"
+          rows={1}
+          className="flex-1 bg-transparent border-none shadow-none focus:ring-0 py-2 px-1 text-sm lg:text-base text-primary-text outline-none resize-none placeholder:text-muted-text/80 max-h-32 min-h-[36px]"
         />
 
-        <Button
-          loading={isSending}
+        <button
           onClick={send}
-          disabled={!text.trim() && files.length === 0}
+          disabled={isSending || (!text.trim() && files.length === 0)}
           aria-label="Send message"
           className={cn(
-            "size-10 rounded-full border-none! flex items-center justify-center p-0 transition-all shrink-0",
-            text.trim() || files.length > 0 
-              ? "bg-emerald-500 text-white hover:bg-emerald-600! shadow-sm" 
-              : "bg-primary-bg dark:bg-primary-bg/50 text-muted-text"
+            "size-10 rounded-full flex items-center justify-center p-0 transition-all duration-300 shrink-0 border-none outline-none",
+            text.trim() || files.length > 0
+              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:opacity-95 shadow-sm hover:scale-[1.05] active:scale-[0.95] cursor-pointer"
+              : "bg-primary-bg dark:bg-primary-bg/50 text-muted-text/40 cursor-not-allowed"
           )}
         >
-          <PaperAirplaneIcon className="size-5" />
-        </Button>
+          {isSending ? (
+            <span className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <PaperAirplaneIcon className="size-5" />
+          )}
+        </button>
       </div>
     </div>
   );

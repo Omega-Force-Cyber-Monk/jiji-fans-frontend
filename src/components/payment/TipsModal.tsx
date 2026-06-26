@@ -249,8 +249,8 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 											type="button"
 											onClick={() => setAmount(preset)}
 											className={`px-4 py-2.5 rounded-lg text-sm font-bold border transition-all duration-200 active:scale-[0.96] ${isSelected
-													? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/10"
-													: "bg-primary-bg/40 border-border-primary/80 text-secondary-text hover:border-brand-primary/40 hover:text-primary-text"
+												? "bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/10"
+												: "bg-primary-bg/40 border-border-primary/80 text-secondary-text hover:border-brand-primary/40 hover:text-primary-text"
 												}`}
 										>
 											${preset}

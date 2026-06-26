@@ -1,5 +1,5 @@
 "use client";
-import { GetProps, Input, message } from "antd";
+import { message } from "antd";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { TQuery, TUniObject } from "@/types";
@@ -12,30 +12,29 @@ import { compareByCTime } from "@/lib/helpers/compareByCTime";
 import { useAppSelector } from "@/redux/hook";
 import { errorAlert } from "@/lib/alerts";
 import Image from "@/components/ui/CImage";
-type SearchProps = GetProps<typeof Input.Search>;
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const ConversationList = ({
   className,
   basePath = "/messages",
-}: //   onReceiver,
-  {
-    className: string;
-    basePath?: string;
-    //   onReceiver: (id: string) => void;
-  }) => {
+}: {
+  className: string;
+  basePath?: string;
+}) => {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
   const { conversation: conversationId } = useParams();
   const { user } = useAppSelector((state) => state.auth);
   const [data, setData] = useState<TUniObject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [query, setQuery] = useState<TQuery>({
     page: 1,
     limit: 10,
   });
 
   const fetchData = async ({
-    searchTerm,
+    searchTerm: search,
     type,
   }: {
     searchTerm?: string;
@@ -43,10 +42,10 @@ const ConversationList = ({
   }) => {
     let params = `?page=1`;
     if (type === "search") {
-      params = `?search=${searchTerm}&page=1`;
+      params = `?search=${search}&page=1`;
     } else if (type === "next") {
-      params = !!searchTerm
-        ? `?search=${searchTerm}&page=${query.page}`
+      params = !!search
+        ? `?search=${search}&page=${query.page}`
         : `?page=${query.page}`;
     }
     try {
@@ -69,14 +68,14 @@ const ConversationList = ({
       });
       if (!response.ok) throw new Error("Failed to fetch data");
 
-      const data = await response.json();
+      const resData = await response.json();
       setQuery((c) => ({
         ...c,
-        page: data?.pagination?.nextPage ?? null,
+        page: resData?.pagination?.nextPage ?? null,
       }));
-      const fetchedResults = data?.data?.result || data?.data?.results || data?.data || [];
+      const fetchedResults = resData?.data?.result || resData?.data?.results || resData?.data || [];
       const dataArray = Array.isArray(fetchedResults) ? fetchedResults : [];
-      
+
       if (type === "next") {
         setData((c) => [...c, ...dataArray]);
       } else {
@@ -89,12 +88,14 @@ const ConversationList = ({
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     fetchData({});
   }, []);
 
-  const onSearch: SearchProps["onSearch"] = (value, _e, _info) => {
-    fetchData({ type: "search", searchTerm: value });
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    fetchData({ type: "search", searchTerm: val });
   };
 
   const resolveParticipants = (conversation: TUniObject) => {
@@ -114,24 +115,26 @@ const ConversationList = ({
   };
 
   return (
-    <div className={cn("w-full p-4 pr-1 bg-secondary-bg/30", className)}>
+    <div className={cn("w-full p-4 pr-1 bg-secondary-bg/40 flex flex-col h-full", className)}>
       {contextHolder}
-      <div className="mr-3">
-        <Input.Search
-          allowClear
-          placeholder="Search here..."
-          onSearch={onSearch}
-          enterButton
-          size="large"
-          className="mb-3"
+      <div className="mr-3 mb-4 relative shrink-0">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          placeholder="Search conversations..."
+          className="w-full bg-secondary-bg border border-border-primary/80 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-primary-text placeholder:text-muted-text focus:outline-none focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/5 transition-all duration-200"
         />
+        <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4.5 text-muted-text" />
       </div>
-      <div className="mb-2 pr-3">
-        <p className="font-semibold text-primary-text text-base">Conversations</p>
-        <p className="text-sm text-muted-text">
+
+      <div className="mb-3 pr-3 flex justify-between items-center shrink-0">
+        <span className="font-semibold text-primary-text text-base tracking-wide">Conversations</span>
+        <span className="text-xs font-medium text-muted-text bg-secondary-bg/60 px-2 py-0.5 rounded-full">
           {data?.length} chat{data?.length === 1 ? "" : "s"}
-        </p>
+        </span>
       </div>
+
       <LoaderWraperComp
         isError={false}
         isLoading={isLoading}
@@ -139,14 +142,14 @@ const ConversationList = ({
         dataEmpty={data?.length < 1}
       >
         <div
-          className="h-full overflow-y-scroll max-h-[calc(100vh-140px)] max-w-full overflow-x-hidden pr-2"
+          className="flex-1 overflow-y-auto max-h-[calc(100vh-180px)] max-w-full overflow-x-hidden pr-2 custom-scrollbar"
           onScroll={(e) => {
             const target = e.target as HTMLElement;
             if (
               target.scrollTop + target.offsetHeight ===
               target.scrollHeight
             ) {
-              fetchData({ type: "next" });
+              fetchData({ type: "next", searchTerm });
             }
           }}
         >
@@ -172,11 +175,11 @@ const ConversationList = ({
               <div
                 key={conversation?._id || index}
                 className={cn(
-                  "text-primary-text px-3 py-3.5 mb-2 rounded-xl border cursor-pointer transition-all duration-200",
-                  "hover:bg-secondary-bg hover:border-emerald-500/30 hover:shadow-sm",
+                  "relative text-primary-text px-4 py-3.5 mb-2 rounded-xl border cursor-pointer transition-all duration-200 overflow-hidden",
+                  "hover:bg-secondary-bg hover:border-border-primary/60",
                   {
-                    "bg-primary-bg border-border-primary": !isSelected,
-                    "bg-emerald-500/10 border-emerald-500/30 shadow-sm": isSelected,
+                    "bg-primary-bg border-border-primary/50": !isSelected,
+                    "bg-secondary-bg border-emerald-500/30": isSelected,
                   },
                 )}
                 onClick={() =>
@@ -185,46 +188,50 @@ const ConversationList = ({
                   )
                 }
               >
-                <div className="flex items-center gap-4 w-full">
-                  <div
-                    className={cn(
-                      "rounded-full overflow-hidden w-[50px] h-[50px] shrink-0 p-[1px] bg-primary-bg border",
-                      {
-                        "border-border-primary": !isSelected,
-                        "border-emerald-500/30": isSelected,
-                      },
+                {/* Left side green accent indicator for active conversation */}
+                {isSelected && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-r-md" />
+                )}
+
+                <div className="flex items-center gap-3.5 w-full">
+                  <div className="relative shrink-0">
+                    <div
+                      className={cn(
+                        "rounded-full overflow-hidden w-[46px] h-[46px] p-[1px] bg-primary-bg border transition-all duration-300",
+                        {
+                          "border-border-primary": !isSelected,
+                          "border-emerald-500/40": isSelected,
+                        },
+                      )}
+                    >
+                      <Image
+                        src={avatar}
+                        alt={title}
+                        width={46}
+                        height={46}
+                        onError={handleImageError}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                    {conversation.isActive && (
+                      <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-primary-bg animate-pulse-slow" />
                     )}
-                  >
-                    <Image
-                      src={avatar}
-                      alt={title}
-                      width={50}
-                      height={50}
-                      onError={handleImageError}
-                      className="w-full h-full object-cover"
-                    />
                   </div>
-                  <div className="flex justify-between items-center w-full gap-3">
-                    <div className="min-w-0">
-                      <h1 className="font-semibold text-[19px] text-primary-text truncate max-w-full line-clamp-1">
+                  <div className="flex justify-between items-center w-full min-w-0 gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h1 className="font-semibold text-base text-primary-text truncate line-clamp-1">
                         {title}
                       </h1>
-                      <p className="text-sm text-muted-text line-clamp-1">
+                      <p className="text-xs text-muted-text truncate mt-0.5">
                         {previewText}
                       </p>
                     </div>
-                    <div className="text-sm text-right shrink-0">
-                      {conversation.isActive ? (
-                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-sm font-medium bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-muted-text">
-                          {compareByCTime({
-                            preTime: conversation.updatedAt,
-                          })}
-                        </span>
-                      )}
+                    <div className="text-xs text-right shrink-0">
+                      <span className="text-muted-text font-medium">
+                        {compareByCTime({
+                          preTime: conversation.updatedAt,
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>

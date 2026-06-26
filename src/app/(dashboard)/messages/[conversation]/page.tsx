@@ -294,9 +294,12 @@ const Conversation = () => {
             </div>
           ) : (
             Object.keys(groupedMessages).map((date, index) => (
-              <div key={index} className="space-y-4">
-                <div className="flex justify-center my-4 sticky top-0 z-10">
-                  <span className="bg-secondary-bg/85 backdrop-blur-sm text-muted-text text-sm px-3 py-1 rounded-full shadow-xs">
+              <div key={index} className="space-y-5">
+                <div className="flex items-center my-6 justify-center w-full relative">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-border-primary/30"></div>
+                  </div>
+                  <span className="relative z-10 bg-primary-bg px-4 text-[11px] font-semibold text-muted-text tracking-wider uppercase select-none">
                     {new Date(date).toDateString() !== new Date().toDateString()
                       ? dayjs(date).format("MMMM D, YYYY")
                       : "Today"}
@@ -306,28 +309,28 @@ const Conversation = () => {
                   (message: TUniObject, msgIndex: number) => (
                     <div key={msgIndex} className="w-full flex flex-col">
                       {isOwnMessage(message) ? (
-                        <div className="max-w-[85%] ml-auto flex flex-col items-end">
-                          <div className="px-4 py-2.5 bg-emerald-500 text-white rounded-2xl rounded-tr-none shadow-sm text-sm">
+                        <div className="max-w-[80%] ml-auto flex flex-col items-end group">
+                          <div className="px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl rounded-tr-none shadow-sm shadow-emerald-500/5 text-sm font-normal tracking-wide leading-relaxed">
                             {message.text}
                           </div>
-                          <div className="mt-1 flex items-center gap-1.5 px-1">
-                            <span className="text-sm text-muted-text">
+                          <div className="mt-1 flex items-center gap-1 px-1">
+                            <span className="text-[10px] text-muted-text">
                               {dayjs(message.createdAt).format("HH:mm")}
                             </span>
                             {message?.status === "sent" && (
-                              <span className="text-emerald-500 text-sm font-semibold">✓</span>
+                              <span className="text-emerald-500 text-[10px] font-bold select-none">✓✓</span>
                             )}
                             {message?.status === "sending" && (
-                              <span className="text-muted-text animate-pulse">...</span>
+                              <span className="text-muted-text/80 animate-pulse text-[10px]">sending...</span>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <div className="max-w-[85%] mr-auto flex flex-col items-start">
-                          <div className="px-4 py-2.5 bg-secondary-bg border border-border-primary text-primary-text rounded-2xl rounded-tl-none shadow-xs text-sm">
+                        <div className="max-w-[80%] mr-auto flex flex-col items-start group">
+                          <div className="px-4 py-2.5 bg-secondary-bg/80 border border-border-primary/40 text-primary-text rounded-2xl rounded-tl-none shadow-xs text-sm font-normal tracking-wide leading-relaxed">
                             {message.text}
                           </div>
-                          <span className="mt-1 px-1 text-sm text-muted-text">
+                          <span className="mt-1 px-1 text-[10px] text-muted-text">
                             {dayjs(message.createdAt).format("HH:mm")}
                           </span>
                         </div>
