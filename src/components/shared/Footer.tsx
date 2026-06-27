@@ -32,7 +32,7 @@ const Footer = async () => {
     {
       title: "Need Help?",
       links: [
-        // { label: "Browse FAQs", href: "/faq" },
+        { label: "Browse FAQs", href: "/faq" },
         {
           label: "support@plus2fans.com",
           href: "mailto:support@plus2fans.com",
