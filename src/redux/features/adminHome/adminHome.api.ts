@@ -14,6 +14,60 @@ const adminDashboardApi = baseApi.injectEndpoints({
       },
       providesTags: ["content", "wallet", "user"],
     }),
+    adminDashboardStats: builder.query({
+      query: (paramsObj?: { period?: string; dateFrom?: string; dateTo?: string }) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `dashboard/admin/stats`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["content", "wallet", "user"],
+    }),
+    countryMarketShare: builder.query({
+      query: (paramsObj?: { period?: string; dateFrom?: string; dateTo?: string; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `analytics/country-market-share`,
+          method: "GET",
+          params,
+        };
+      },
+      transformResponse: (response: any) => response.data,
+    }),
+    paymentMethodShare: builder.query({
+      query: (paramsObj?: { period?: string; dateFrom?: string; dateTo?: string }) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `analytics/payment-method-share`,
+          method: "GET",
+          params,
+        };
+      },
+      transformResponse: (response: any) => response.data,
+    }),
     recentUser: builder.query({
       query: () => {
         return {
@@ -75,6 +129,9 @@ const adminDashboardApi = baseApi.injectEndpoints({
 
 export const {
   useAdminStatsQuery,
+  useAdminDashboardStatsQuery,
+  useCountryMarketShareQuery,
+  usePaymentMethodShareQuery,
   useRecentUserQuery,
   useAnalyticsStatusQuery,
   useRecentViewersQuery,

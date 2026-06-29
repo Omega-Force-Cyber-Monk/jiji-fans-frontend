@@ -11,22 +11,58 @@ import {
 } from "@heroicons/react/24/outline";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
+import { useAdminDashboardStatsQuery } from "@/redux/features/adminHome/adminHome.api";
+
 const AnalyticsMetricsGrid = () => {
+  const { data: statsData, isLoading } = useAdminDashboardStatsQuery(undefined);
+  const stats = statsData?.data;
+
+
+  const totalUsers = stats?.totalUsers || 0;
+  const totalChannels = stats?.totalChannels || 0;
+  const totalRevenue = stats?.totalRevenue || 0;
+  const userGrowthPercent = stats?.userGrowth?.changePercentage || 0;
+  const revenueGrowthPercent = stats?.revenueGrowth?.changePercentage || 0;
+
+  const ratioA = totalUsers > 0
+    ? Number((((totalUsers - totalChannels) / totalUsers) * 100).toFixed(1))
+    : 96.1;
+
   // Custom active user stats for the horizontal bar chart
-  const activeUsersData = [
-    { label: "Daily Active Users (DAU)", value: 242500, formatted: "242,500", percentage: 20 },
-    { label: "Weekly Active Users (WAU)", value: 785000, formatted: "785,000", percentage: 63 },
-    { label: "Monthly Active Users (MAU)", value: 1248500, formatted: "1,248,500", percentage: 100 },
-  ];
+  const activeUsersData = React.useMemo(() => {
+    const userCounts = stats?.userCounts;
+    const dailyCount = userCounts?.daily?.count || 0;
+    const dailyPercent = userCounts?.daily?.percentage || 0;
+    const weeklyCount = userCounts?.weekly?.count || 0;
+    const weeklyPercent = userCounts?.weekly?.percentage || 0;
+    const monthlyCount = userCounts?.monthly?.count || 0;
+    const monthlyPercent = userCounts?.monthly?.percentage || 0;
+
+    return [
+      { label: "Daily Active Users (DAU)", value: dailyCount, formatted: dailyCount.toLocaleString(), percentage: dailyPercent },
+      { label: "Weekly Active Users (WAU)", value: weeklyCount, formatted: weeklyCount.toLocaleString(), percentage: weeklyPercent },
+      { label: "Monthly Active Users (MAU)", value: monthlyCount, formatted: monthlyCount.toLocaleString(), percentage: monthlyPercent },
+    ];
+  }, [stats]);
 
   // Multidimensional grouped categories performance data matching reference chart
-  const topCategories = [
-    { name: "Music", views: 30, subscribers: 31, revenue: 12 },
-    { name: "Comedy", views: 3, subscribers: 10, revenue: 22 },
-    { name: "Education", views: 32, subscribers: 30, revenue: 29 },
-    { name: "Gaming", views: 20, subscribers: 17, revenue: 0 },
-    { name: "Others", views: 20, subscribers: 31, revenue: 11 },
-  ];
+  const topCategories = React.useMemo(() => {
+    if (!stats?.topCategories || stats.topCategories.length === 0) {
+      return [
+        { name: "Music", views: 30, subscribers: 31, revenue: 12 },
+        { name: "Comedy", views: 3, subscribers: 10, revenue: 22 },
+        { name: "Education", views: 32, subscribers: 30, revenue: 29 },
+        { name: "Gaming", views: 20, subscribers: 17, revenue: 0 },
+        { name: "Others", views: 20, subscribers: 31, revenue: 11 },
+      ];
+    }
+    return stats.topCategories.map((cat: any) => ({
+      name: cat.name,
+      views: (cat.channelCount || 0) * 2.5,
+      subscribers: (cat.subscriptionCount || 0) * 0.5,
+      revenue: (cat.subscriptionCount || 0) * 0.25,
+    }));
+  }, [stats]);
 
   return (
     <div className="space-y-6">
@@ -34,60 +70,36 @@ const AnalyticsMetricsGrid = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <AnalyticsMetricCard
           title="Total Registered Users"
-          value="1,248,500"
-          type="split"
+          value={stats ? totalUsers.toLocaleString() : "..."}
+          type="simple"
           icon={<UsersIcon />}
-          trend={{ value: "+16.2%", isPositive: true }}
-          splitData={{
-            labelA: "Active Fans",
-            valueA: "1,200,300",
-            labelB: "Creators",
-            valueB: "48,200",
-            ratioA: 96.1,
-          }}
+          trend={stats ? { value: `${userGrowthPercent >= 0 ? "+" : ""}${userGrowthPercent.toFixed(1)}%`, isPositive: userGrowthPercent >= 0 } : undefined}
+          subValue={stats ? `Active Channels: ${totalChannels.toLocaleString()}` : undefined}
         />
 
         <AnalyticsMetricCard
-          title="Revenue Split Breakdown"
-          value="$1,450,200"
-          type="split"
-          icon={<CurrencyDollarIcon />}
-          splitData={{
-            labelA: "Subscriptions",
-            valueA: "$1,160,160 (80%)",
-            labelB: "Donations/Tips",
-            valueB: "$290,040 (20%)",
-            ratioA: 80,
-          }}
+          title="Total Channels"
+          value={stats ? totalChannels.toLocaleString() : "..."}
+          type="simple"
+          icon={<UsersIcon />}
+          subValue="Active creator publications"
         />
 
         <AnalyticsMetricCard
-          title="Gross vs Net Revenue"
-          value="$2,480,000"
-          type="split"
-          icon={<CurrencyDollarIcon />}
-          trend={{ value: "+21.4%", isPositive: true }}
-          splitData={{
-            labelA: "Creators Share (80%)",
-            valueA: "$1,984,000",
-            labelB: "Platform Commission (20%)",
-            valueB: "$496,000",
-            ratioA: 80,
-          }}
-        />
-
-        <AnalyticsMetricCard
-          title="Payout Lifecycle Status"
-          value="$1,984,000"
-          type="split"
+          title="Total Subscriptions"
+          value={stats ? (stats.totalSubscriptions || 0).toLocaleString() : "..."}
+          type="simple"
           icon={<CreditCardIcon />}
-          splitData={{
-            labelA: "Completed Payouts",
-            valueA: "$1,824,000",
-            labelB: "Pending Payouts",
-            valueB: "$160,000",
-            ratioA: 92,
-          }}
+          subValue="Active fan memberships"
+        />
+
+        <AnalyticsMetricCard
+          title="Total Revenue"
+          value={stats ? `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "..."}
+          type="simple"
+          icon={<CurrencyDollarIcon />}
+          trend={stats ? { value: `${revenueGrowthPercent >= 0 ? "+" : ""}${revenueGrowthPercent.toFixed(1)}%`, isPositive: revenueGrowthPercent >= 0 } : undefined}
+          subValue={stats ? `Current Period Earnings` : undefined}
         />
       </div>
 
@@ -130,12 +142,12 @@ const AnalyticsMetricsGrid = () => {
 
           {/* Horizontal scale indicators */}
           <div className="border-t border-border-primary/50 pt-4 flex justify-between text-sm font-medium text-muted-text">
-            <span>0</span>
-            <span>250k</span>
-            <span>500k</span>
-            <span>750k</span>
-            <span>1.0M</span>
-            <span>1.25M Max</span>
+            <span>0%</span>
+            <span>20%</span>
+            <span>40%</span>
+            <span>60%</span>
+            <span>80%</span>
+            <span>100% Max</span>
           </div>
         </div>
 

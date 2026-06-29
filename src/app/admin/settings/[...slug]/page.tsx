@@ -128,6 +128,16 @@ const Page = () => {
   };
 
   useEffect(() => {
+    if (internalType === "terms") {
+      router.replace("/terms");
+    } else if (internalType === "privacy") {
+      router.replace("/privacy");
+    } else if (internalType === "about") {
+      router.replace("/terms");
+    }
+  }, [internalType, router]);
+
+  useEffect(() => {
     if (!data) return;
     setContent(data.description || "");
     setTitle(data.title || "");

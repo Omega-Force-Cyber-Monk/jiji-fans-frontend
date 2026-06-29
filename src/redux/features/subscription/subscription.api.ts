@@ -118,7 +118,7 @@ const subscriptionApi = baseApi.injectEndpoints({
     getAllSubscriptionPlans: builder.query({
       query: (params?: { channelId?: string }) => {
         return {
-          url: `subscriptionPlans`,
+          url: `subscription-plans`,
           method: "GET",
           params,
         };

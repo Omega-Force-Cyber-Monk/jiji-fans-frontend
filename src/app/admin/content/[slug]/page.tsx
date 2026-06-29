@@ -160,11 +160,10 @@ const Page = () => {
 
           {(status === "REJECTED" || status === "SUSPENDED") && (
             <div
-              className={`mb-5 p-3 rounded-md border text-sm ${
-                status === "REJECTED"
+              className={`mb-5 p-3 rounded-md border text-sm ${status === "REJECTED"
                   ? "bg-error/10 text-error border-error/20"
                   : "bg-muted-text/10 text-secondary-text border-muted-text/20"
-              }`}
+                }`}
             >
               {status === "REJECTED" ? (
                 <p>
@@ -217,9 +216,10 @@ const Page = () => {
             <p className="text-sm font-semibold text-primary-text mb-2">
               Description
             </p>
-            <p className="text-sm lg:text-base text-secondary-text whitespace-pre-line break-words">
-              {content?.description || "No description provided."}
-            </p>
+            <div
+              className="no-tailwind text-sm lg:text-base text-secondary-text break-words"
+              dangerouslySetInnerHTML={{ __html: content?.description || "No description provided." }}
+            />
           </div>
         </div>
       </div>

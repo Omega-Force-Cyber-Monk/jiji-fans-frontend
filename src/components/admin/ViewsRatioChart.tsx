@@ -78,10 +78,13 @@ const ViewsRatioChart = ({ className }: { className?: string }) => {
             <BarChart
               // data={data?.data || []}
               data={
-                data?.map((item: TUniObject, index: number) => ({
-                  month: chart[index].month,
-                  value: item.count / 1000,
-                })) || []
+                (() => {
+                  const items = data?.chartData || (Array.isArray(data) ? data : []);
+                  return items.map((item: any, index: number) => ({
+                    month: item.label || chart[index]?.month || `Point ${index}`,
+                    value: (item.views !== undefined ? item.views : (item.count || 0)) / 1000,
+                  }));
+                })()
               }
               margin={{
                 top: 5,

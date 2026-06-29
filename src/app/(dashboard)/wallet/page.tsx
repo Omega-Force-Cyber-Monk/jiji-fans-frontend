@@ -335,18 +335,23 @@ const Page = () => {
       </div>
 
       {!isKycCompleted && (
-        <Alert
-          message="Identity Verification Required"
-          description="Please complete your KYC verification to request manual or automatic withdrawals."
-          type="warning"
-          showIcon
-          className="rounded-lg border-amber-500/20 bg-amber-500/5 text-amber-400"
-          action={
-            <Button size="small" type="primary" className="bg-brand-primary text-black border-none font-semibold" onClick={() => router.push("/verification")}>
-              Verify Now
-            </Button>
-          }
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 rounded-lg border border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5 text-amber-800 dark:text-amber-200">
+          <div className="flex items-start gap-3">
+            <FiAlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h5 className="font-semibold text-sm text-amber-900 dark:text-amber-100">Identity Verification Required</h5>
+              <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
+                Please complete your KYC verification to request manual or automatic withdrawals.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push("/verification")}
+            className="px-3.5 py-2 text-xs font-bold rounded-md bg-brand-primary text-black hover:bg-brand-primary/90 transition-all shadow-sm self-start sm:self-center whitespace-nowrap"
+          >
+            Verify Now
+          </button>
+        </div>
       )}
 
       {/* 2. Unified Grid Workspaces (Full Width Layout) */}
@@ -430,7 +435,7 @@ const Page = () => {
                   </div>
                   <span className="text-base font-medium text-secondary-text truncate">Identity Verification KYC</span>
                 </div>
-                <span className={cn("px-4 py-1.5 rounded-md text-sm capitalize tracking-wide shrink-0", isKycCompleted ? "bg-success/10 text-success" : "bg-amber-500/10 text-amber-500")}>
+                <span className={cn("px-4 py-1.5 rounded-md text-sm capitalize font-medium tracking-wide shrink-0", isKycCompleted ? "bg-success/10 text-success" : "bg-amber-500/10 text-amber-600 dark:text-amber-400")}>
                   {currentKycStatus?.toLowerCase() || "Not Submitted"}
                 </span>
               </div>
@@ -443,7 +448,7 @@ const Page = () => {
                   </div>
                   <span className="text-base font-medium text-secondary-text truncate">Platform Payout Gate</span>
                 </div>
-                <span className={cn("px-4 py-1.5 rounded-md font-medium tracking-wide shrink-0", canWithdrawByPayout ? "bg-success/10 text-success" : "bg-indigo-500/10 text-indigo-400")}>
+                <span className={cn("px-4 py-1.5 rounded-md font-medium tracking-wide shrink-0", canWithdrawByPayout ? "bg-success/10 text-success" : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400")}>
                   {canWithdrawByPayout ? "Active Open" : "Closed"}
                 </span>
               </div>
@@ -605,7 +610,7 @@ const Page = () => {
                 <div className="py-6 px-4 lg:px-6 max-w-xl">
                   <h4 className="text-lg font-semibold text-primary-text mb-2">Configure Payout Method</h4>
                   <p className="text-sm text-secondary-text mb-6">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
-                  
+
                   <Form
                     layout="vertical"
                     initialValues={{

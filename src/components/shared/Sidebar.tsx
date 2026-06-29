@@ -258,8 +258,9 @@ const Sidebar = ({
                 <Image
                   src={visibleUser?.avatar}
                   alt={visibleUser?.username || "Profile"}
-                  height={44}
-                  width={44}
+                  width={120}
+                  height={120}
+                  quality={95}
                   className="w-full h-full object-cover transition-transform group-hover:scale-110"
                 />
               </div>

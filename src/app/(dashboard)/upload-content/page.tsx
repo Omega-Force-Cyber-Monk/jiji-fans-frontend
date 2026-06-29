@@ -13,6 +13,7 @@ import { useGetAllSubscriptionPlansQuery } from "@/redux/features/subscription/s
 import SectionContainer from "@/components/ui/SectionContainer";
 import { Breadcrumb } from "antd";
 import dynamic from "next/dynamic";
+import VideoPlayer from "@/components/ui/VideoPlayer";
 
 const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Editor), {
 	ssr: false,
@@ -21,12 +22,17 @@ const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Edito
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 
-const getYouTubeEmbedUrl = (url: string) => {
-	if (!url) return "";
+const getYouTubeVideoId = (url: string) => {
+	if (!url) return null;
 	const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
 	const match = url.match(regExp);
-	const videoId = (match && match[2].length === 11) ? match[2] : null;
-	return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+	return (match && match[2].length === 11) ? match[2] : null;
+};
+
+const getYouTubeEmbedUrl = (url: string) => {
+	if (!url) return "";
+	const videoId = getYouTubeVideoId(url);
+	return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : "";
 };
 
 const Page = () => {
@@ -38,6 +44,12 @@ const Page = () => {
 	const subscriptionTier = Form.useWatch("subscriptionTier", form);
 	const description = Form.useWatch("description", form);
 	const [isFetchingMetadata, setIsFetchingMetadata] = React.useState(false);
+	const [isPlaying, setIsPlaying] = React.useState(false);
+
+	// Reset playing state when URL changes
+	useEffect(() => {
+		setIsPlaying(false);
+	}, [videoUrl]);
 
 	const [mutation, { isLoading }] = useUploadContentMutation();
 	const {
@@ -177,7 +189,7 @@ const Page = () => {
 														return Promise.resolve();
 													}
 													const youtubePattern =
-														/^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=[\w-]+|v\/[\w-]+)|youtu\.be\/[\w-]+)$/;
+														/^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=[\w-]+|embed\/[\w-]+|v\/[\w-]+|shorts\/[\w-]+|live\/[\w-]+)|youtu\.be\/[\w-]+)(\S+)?$/;
 													if (!youtubePattern.test(value)) {
 														return Promise.reject(
 															new Error(
@@ -310,15 +322,7 @@ const Page = () => {
 										<div className="space-y-6">
 											<div>
 												<h4 className="text-xl font-medium text-primary-text mb-4">Video Preview</h4>
-												<div className="video-wrapper rounded-lg overflow-hidden border border-border-primary">
-													<iframe
-														src={getYouTubeEmbedUrl(videoUrl)}
-														title="YouTube video player"
-														frameBorder="0"
-														allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-														allowFullScreen
-													/>
-												</div>
+												<VideoPlayer content={{ url: videoUrl, title: title || "Video Preview" }} />
 											</div>
 
 											{/* Video Metadata Preview */}

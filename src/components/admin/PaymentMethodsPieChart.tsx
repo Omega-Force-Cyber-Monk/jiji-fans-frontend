@@ -3,15 +3,10 @@
 import React from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { CreditCardIcon } from "@heroicons/react/24/outline";
-
-const listData = [
-  { label: "Paynow", value: "55% share", percentage: 55 },
-  { label: "Stripe", value: "30% share", percentage: 30 },
-  { label: "PawaPay", value: "15% share", percentage: 15 },
-];
+import { usePaymentMethodShareQuery } from "@/redux/features/adminHome/adminHome.api";
 
 // Hex colors matching the image visualization (Blue, Green, Orange)
-const COLORS = ["#3B82F6", "#00E3A5", "#F97316"];
+const COLORS = ["#3B82F6", "#00E3A5", "#F97316", "#A855F7", "#EF4444"];
 
 const RADIAN = Math.PI / 180;
 
@@ -45,7 +40,7 @@ const renderCustomizedLabel = ({
   const ey = my;
 
   // Retrieve the label name dynamically
-  const labelName = listData[index]?.label || name;
+  const labelName = name;
 
   return (
     <g>
@@ -75,6 +70,23 @@ const renderCustomizedLabel = ({
 };
 
 const PaymentMethodsPieChart = ({ className }: { className?: string }) => {
+  const { data: shareData, isLoading } = usePaymentMethodShareQuery({ period: "month" });
+
+  const listData = React.useMemo(() => {
+    if (!shareData?.methods || shareData.methods.length === 0) {
+      return [
+        { label: "Paynow", value: "55% share", percentage: 55 },
+        { label: "Stripe", value: "30% share", percentage: 30 },
+        { label: "PawaPay", value: "15% share", percentage: 15 },
+      ];
+    }
+    return shareData.methods.map((item: any) => ({
+      label: item.method.charAt(0).toUpperCase() + item.method.slice(1).toLowerCase(),
+      value: `${item.amountPercentage.toFixed(0)}% share`,
+      percentage: item.amountPercentage,
+    }));
+  }, [shareData]);
+
   return (
     <div className={`rounded-xl border border-border-primary bg-secondary-bg shadow-sm p-6 flex flex-col justify-between ${className}`}>
       <div className="space-y-6 flex-grow flex flex-col justify-between">

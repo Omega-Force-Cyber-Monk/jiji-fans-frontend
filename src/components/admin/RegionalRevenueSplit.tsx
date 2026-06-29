@@ -2,15 +2,31 @@
 
 import React from "react";
 import { GlobeAltIcon } from "@heroicons/react/24/outline";
+import { useCountryMarketShareQuery } from "@/redux/features/adminHome/adminHome.api";
 
-const listData = [
-  { label: "Kenya (KES)", value: "$1,339,200", share: "54% share", percentage: 54, color: "bg-[#00E3A5]" },
-  { label: "Nigeria (NGN)", value: "$644,800", share: "26% share", percentage: 26, color: "bg-[#3B82F6]" },
-  { label: "Uganda (UGX)", value: "$297,600", share: "12% share", percentage: 12, color: "bg-[#A855F7]" },
-  { label: "Others (USD/EUR)", value: "$198,400", share: "8% share", percentage: 8, color: "bg-muted-text/30" },
-];
+const COLORS = ["bg-[#00E3A5]", "bg-[#3B82F6]", "bg-[#A855F7]", "bg-muted-text/30"];
 
 const RegionalRevenueSplit = ({ className }: { className?: string }) => {
+  const { data: marketData, isLoading } = useCountryMarketShareQuery({ period: "month" });
+
+  const listData = React.useMemo(() => {
+    if (!marketData?.countries || marketData.countries.length === 0) {
+      return [
+        { label: "Kenya (KES)", value: "$1,339,200", share: "54% share", percentage: 54, color: "bg-[#00E3A5]" },
+        { label: "Nigeria (NGN)", value: "$644,800", share: "26% share", percentage: 26, color: "bg-[#3B82F6]" },
+        { label: "Uganda (UGX)", value: "$297,600", share: "12% share", percentage: 12, color: "bg-[#A855F7]" },
+        { label: "Others (USD/EUR)", value: "$198,400", share: "8% share", percentage: 8, color: "bg-muted-text/30" },
+      ];
+    }
+    return marketData.countries.map((item: any, idx: number) => ({
+      label: `${item.country} (${item.countryCode})`,
+      value: `$${item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      share: `${item.percentage.toFixed(0)}% share`,
+      percentage: item.percentage,
+      color: COLORS[idx % COLORS.length],
+    }));
+  }, [marketData]);
+
   return (
     <div className={`rounded-xl border border-border-primary bg-secondary-bg shadow-sm p-6 flex flex-col justify-between ${className}`}>
       <div className="space-y-6 flex-grow flex flex-col justify-between">
@@ -25,7 +41,7 @@ const RegionalRevenueSplit = ({ className }: { className?: string }) => {
         </div>
 
         {/* Premium list representation with dynamic mini horizontal progress gauges */}
-        <div className="space-y-5 flex-grow mt-4 justify-center flex flex-col">
+        <div className="space-y-5 flex-grow mt-4 justify-start flex flex-col">
           {listData.map((item, idx) => (
             <div key={idx} className="space-y-2">
               <div className="flex justify-between items-center text-sm">

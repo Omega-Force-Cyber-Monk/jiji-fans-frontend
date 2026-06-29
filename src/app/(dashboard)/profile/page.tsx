@@ -314,8 +314,9 @@ const Settings = () => {
                   <Image
                     src={imageUrl || "/static/demo-image.jpg"}
                     alt="Profile"
-                    width={128}
-                    height={128}
+                    width={384}
+                    height={384}
+                    quality={95}
                     className="w-full h-full object-cover"
                   />
                 </div>

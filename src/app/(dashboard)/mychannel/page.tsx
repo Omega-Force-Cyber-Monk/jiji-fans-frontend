@@ -8,7 +8,7 @@ import Videos from "@/components/channels/Videos";
 import Membership from "@/components/channels/Membership";
 import ChannelAbout from "@/components/channels/ChannelAbout";
 import { useAppSelector } from "@/redux/hook";
-import { useGetMyChannelQuery, useGetContentsByOwnerQuery, TContent, TChannelStatus } from "@/redux/features/channel/channel.api";
+import { useGetMyChannelQuery, useGetContentsByOwnerQuery, TChannelStatus } from "@/redux/features/channel/channel.api";
 import ChannelStatusGuard from "@/components/guards/ChannelStatusGuard";
 import SectionContainer from "@/components/ui/SectionContainer";
 import StatusBanner from "./_components/StatusBanner";

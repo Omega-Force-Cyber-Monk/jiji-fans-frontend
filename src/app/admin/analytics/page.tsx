@@ -1,3 +1,5 @@
+"use client";
+
 import RecentViewers from "@/components/admin/RecentViewers";
 import UsedDevices from "@/components/admin/UsedDevices";
 import ViewsRatioChart from "@/components/admin/ViewsRatioChart";
@@ -10,7 +12,7 @@ import { Breadcrumb } from "antd";
 import React from "react";
 import "leaflet/dist/leaflet.css";
 
-const page = () => {
+const Page = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -42,4 +44,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

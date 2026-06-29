@@ -95,6 +95,35 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
   isDashboard = false,
 }) => {
   const [selectedLog, setSelectedLog] = useState<TTransaction | null>(null);
+
+  const handleExportCSV = () => {
+    if (!transactions || transactions.length === 0) return;
+    const headers = ["Log ID", "User / Creator", "Action Type", "Amount", "Date", "Status"];
+    const rows = transactions.map(t => [
+      t.id,
+      t.creator,
+      t.type,
+      t.amount,
+      t.date,
+      t.label
+    ]);
+    
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `system_logs_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const columns: TableColumnsType<TTransaction> = [
     {
       title: "Log ID",
@@ -229,7 +258,10 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
               />
             </>
           )}
-          <button className="px-3.5 py-1.5 bg-brand-primary rounded-md text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-all border-none cursor-pointer">
+          <button 
+            onClick={handleExportCSV}
+            className="px-3.5 py-1.5 bg-brand-primary rounded-md text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-all border-none cursor-pointer"
+          >
             Export CSV
           </button>
         </div>
