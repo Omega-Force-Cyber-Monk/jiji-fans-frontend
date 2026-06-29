@@ -68,18 +68,32 @@ const Videos = ({
     };
   }, [pagination?.hasNextPage, isLoading, isLoadingMore, onLoadMore]);
 
+  const displayedContents = React.useMemo(() => {
+    if (!contents) return [];
+    const isSpecialView =
+      viewType === "creator" ||
+      viewType === "admin" ||
+      pathname.includes("/mychannel") ||
+      pathname.includes("/admin");
+
+    if (isSpecialView) {
+      return contents;
+    }
+    return contents.filter((v) => v.status?.toUpperCase() !== "SUSPENDED");
+  }, [contents, viewType, pathname]);
+
   if (isLoading) {
     return <VideosSkeleton />;
   }
 
-  if (!contents || contents.length === 0) {
+  if (displayedContents.length === 0) {
     return <Empty description="No videos available" />;
   }
   
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4 gap-x-2 gap-y-5 sm:gap-x-5 2xl:gap-x-6 2xl:gap-y-7 items-stretch">
-        {contents.map((video) => (
+        {displayedContents.map((video) => (
           <VideoCard
             key={video._id}
             video={video}

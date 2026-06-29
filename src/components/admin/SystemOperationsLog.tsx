@@ -1,11 +1,13 @@
-import React from "react";
-import { Table, TableColumnsType } from "antd";
+import React, { useState } from "react";
+import { Table, TableColumnsType, Modal } from "antd";
 import { cn } from "@/utils/cn";
 import {
   CheckCircleIcon,
   ClockIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import CPagination from "@/components/ui/CPagination";
 
 export interface TTransaction {
   key: string;
@@ -64,12 +66,35 @@ const MOCK_TRANSACTIONS: TTransaction[] = [
 interface SystemOperationsLogProps {
   transactions?: TTransaction[];
   loading?: boolean;
+  searchVal?: string;
+  onSearchChange?: (val: string) => void;
+  statusVal?: string;
+  onStatusChange?: (val: string) => void;
+  actorIdVal?: string;
+  onActorIdChange?: (val: string) => void;
+  page?: number;
+  pageSize?: number;
+  total?: number;
+  onPageChange?: (page: number, pageSize: number) => void;
+  isDashboard?: boolean;
 }
 
 const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
-  transactions = MOCK_TRANSACTIONS,
+  transactions = [],
   loading = false,
+  searchVal = "",
+  onSearchChange,
+  statusVal = "",
+  onStatusChange,
+  actorIdVal = "",
+  onActorIdChange,
+  page = 1,
+  pageSize = 10,
+  total = 0,
+  onPageChange,
+  isDashboard = false,
 }) => {
+  const [selectedLog, setSelectedLog] = useState<TTransaction | null>(null);
   const columns: TableColumnsType<TTransaction> = [
     {
       title: "Log ID",
@@ -125,7 +150,6 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
       title: "Status",
       dataIndex: "status",
       className: "whitespace-nowrap",
-      align: "center",
       render: (status: string, record) => (
         <span
           className={cn(
@@ -151,11 +175,23 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
         </span>
       ),
     },
+    {
+      title: "Action",
+      className: "whitespace-nowrap",
+      render: (_, record) => (
+        <button
+          onClick={() => setSelectedLog(record)}
+          className="bg-brand-primary hover:opacity-90 transition-all text-white px-3.5 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer"
+        >
+          View details
+        </button>
+      ),
+    },
   ];
 
   return (
     <div className="bg-secondary-bg border border-border-primary rounded-lg p-5 shadow-sm overflow-hidden hover:border-brand-primary">
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-primary-text">
             System Operations Log
@@ -164,11 +200,36 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
             Detailed transaction, payout, and KYC verification records
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm font-semibold text-primary-text hover:bg-secondary-bg transition-all cursor-pointer">
-            Filter Log
-          </button>
-          <button className="px-3.5 py-1.5 bg-brand-primary rounded-md text-sm font-semibold text-white dark:text-balck hover:opacity-90 transition-all border-none cursor-pointer">
+        <div className="flex flex-wrap items-center gap-3">
+          {!isDashboard && (
+            <>
+              <select
+                value={statusVal}
+                onChange={(e) => onStatusChange?.(e.target.value)}
+                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text focus:outline-none focus:border-brand-primary transition-all cursor-pointer"
+              >
+                <option value="">All Status</option>
+                <option value="SUCCESS">Success</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Creator ID"
+                value={actorIdVal}
+                onChange={(e) => onActorIdChange?.(e.target.value)}
+                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text placeholder:text-muted-text focus:outline-none focus:border-brand-primary transition-all"
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchVal}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text placeholder:text-muted-text focus:outline-none focus:border-brand-primary transition-all"
+              />
+            </>
+          )}
+          <button className="px-3.5 py-1.5 bg-brand-primary rounded-md text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-all border-none cursor-pointer">
             Export CSV
           </button>
         </div>
@@ -186,6 +247,77 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
           size="middle"
         />
       </div>
+
+      {!isDashboard && total > 0 && onPageChange && (
+        <CPagination
+          totalData={total}
+          query={{ page, limit: pageSize }}
+          setQuery={(updateFn: any) => {
+            const nextVal = typeof updateFn === "function" ? updateFn({ page, limit: pageSize }) : updateFn;
+            onPageChange(nextVal.page, nextVal.limit);
+          }}
+          minCount={0}
+          customNavigation={false}
+        />
+      )}
+
+      {isDashboard && (
+        <div className="mt-5 flex justify-center border-t border-border-primary/50 pt-4">
+          <Link href="/admin/system-logs" className="px-5 py-2 rounded bg-primary-bg border border-border-primary text-sm font-semibold text-primary-text hover:bg-secondary-bg hover:border-brand-primary transition-all">
+            View All Logs
+          </Link>
+        </div>
+      )}
+
+      {/* Premium Log Details Modal */}
+      <Modal
+        title="Operational Log Details"
+        open={!!selectedLog}
+        onCancel={() => setSelectedLog(null)}
+        footer={null}
+        centered
+        className="dark:bg-secondary-bg"
+      >
+        {selectedLog && (
+          <div className="space-y-4 pt-3 text-primary-text">
+            <div>
+              <span className="text-xs text-muted-text uppercase block font-semibold">Log ID</span>
+              <span className="font-mono text-sm font-semibold">{selectedLog.key}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-xs text-muted-text uppercase block font-semibold">Actor</span>
+                <span className="text-sm font-semibold">{selectedLog.creator}</span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-text uppercase block font-semibold">Action Type</span>
+                <span className="text-sm font-semibold">{selectedLog.type}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-xs text-muted-text uppercase block font-semibold">Amount</span>
+                <span className="text-sm font-semibold text-brand-primary">{selectedLog.amount}</span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-text uppercase block font-semibold">Date</span>
+                <span className="text-sm font-semibold">{selectedLog.date}</span>
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-muted-text uppercase block font-semibold">Status</span>
+              <span className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mt-1",
+                selectedLog.status === "success" && "bg-success/10 text-success border border-success/20",
+                selectedLog.status === "warning" && "bg-warning/10 text-warning border border-warning/20",
+                selectedLog.status === "error" && "bg-error/10 text-error border border-error/20"
+              )}>
+                {selectedLog.label}
+              </span>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

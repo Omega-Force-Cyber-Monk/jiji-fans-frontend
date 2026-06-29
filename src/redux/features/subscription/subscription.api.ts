@@ -65,10 +65,13 @@ const subscriptionApi = baseApi.injectEndpoints({
       providesTags: ["subscription"],
     }),
     cancelSubscription: builder.mutation({
-      query: (subscriptionId) => {
+      query: (args: string | { subscriptionId: string; idempotencyKey?: string }) => {
+        const subscriptionId = typeof args === "string" ? args : args.subscriptionId;
+        const idempotencyKey = typeof args === "string" ? undefined : args.idempotencyKey;
         return {
-          url: `subscriptions/${subscriptionId}`,
-          method: "DELETE",
+          url: `subscriptions/${subscriptionId}/cancel`,
+          method: "PATCH",
+          headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
         };
       },
       invalidatesTags: ["subscription"],
@@ -122,6 +125,55 @@ const subscriptionApi = baseApi.injectEndpoints({
       },
       providesTags: ["subscriptionPlan"],
     }),
+    // New subscription-plans endpoints
+    createSubscriptionPlanNew: builder.mutation({
+      query: (body) => {
+        return {
+          url: `subscription-plans`,
+          method: "POST",
+          body,
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    updateSubscriptionPlanNew: builder.mutation({
+      query: ({ planId, body }: { planId: string; body: any }) => {
+        return {
+          url: `subscription-plans/${planId}`,
+          method: "PATCH",
+          body,
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    deleteSubscriptionPlanNew: builder.mutation({
+      query: (subscriptionId: string) => {
+        return {
+          url: `subscription-plans/${subscriptionId}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["subscriptionPlan"],
+    }),
+    getAllSubscriptionPlansNew: builder.query({
+      query: (params?: { channelId?: string }) => {
+        return {
+          url: `subscription-plans`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["subscriptionPlan"],
+    }),
+    getSubscriptionPlanByIdNew: builder.query({
+      query: (planId: string) => {
+        return {
+          url: `subscription-plans/${planId}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["subscriptionPlan"],
+    }),
     createCheckoutSession: builder.mutation({
       query: ({ body, idempotencyKey }: { body: any; idempotencyKey?: string }) => {
         return {
@@ -144,5 +196,10 @@ export const {
   useUpdateSubscriptionPlanMutation,
   useDeleteSubscriptionPlanMutation,
   useGetAllSubscriptionPlansQuery,
+  useCreateSubscriptionPlanNewMutation,
+  useUpdateSubscriptionPlanNewMutation,
+  useDeleteSubscriptionPlanNewMutation,
+  useGetAllSubscriptionPlansNewQuery,
+  useGetSubscriptionPlanByIdNewQuery,
   useCreateCheckoutSessionMutation,
 } = subscriptionApi;

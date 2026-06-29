@@ -17,6 +17,7 @@ import {
 import { useAddRecentlyViewedMutation } from "@/redux/features/users/users.api";
 import { useAppContext } from "@/lib/providers/ContextProvider";
 import { errorAlert } from "@/lib/alerts";
+import { useAppSelector } from "@/redux/hook";
 
 const Page = () => {
   const params = useParams();
@@ -37,6 +38,16 @@ const Page = () => {
 
   const [addRecentlyViewed] = useAddRecentlyViewedMutation();
   const channelData = data?.data;
+
+  const { user } = useAppSelector((state) => state.auth);
+  const isOwnChannel = user?._id === channelData?.owner || user?._id === (channelData?.owner as any)?._id;
+
+  // Redirect away from membership tab if it is the owner's channel
+  useEffect(() => {
+    if (isOwnChannel && activeKey === "membership") {
+      setActiveKey("videos");
+    }
+  }, [isOwnChannel, activeKey]);
 
   // Reset state when channelId changes
   useEffect(() => {
@@ -135,7 +146,7 @@ const Page = () => {
         onSelectTab={handleTabChange}
       />
 
-      <ChannelNavTabs activeKey={activeKey} onChange={handleTabChange} />
+      <ChannelNavTabs activeKey={activeKey} onChange={handleTabChange} hideMembership={isOwnChannel} />
 
       <div>
         {activeKey === "membership" ? (

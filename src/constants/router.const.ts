@@ -178,6 +178,12 @@ export const dashboardItems: DashboardItem[] = [
     role: [ROLE.ADMIN],
   },
   {
+    name: "System Logs",
+    path: "/admin/system-logs",
+    icon: ClipboardDocumentListIcon,
+    role: [ROLE.ADMIN],
+  },
+  {
     name: "Settings",
     path: "/admin/settings",
     icon: Cog6ToothIcon,

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SliderNavigation from "@/components/ui/SliderNavigation";
-// TODO: replace with useGetRecentlyViewedQuery when the API is ready
+import { useGetRecentlyViewedQuery } from "@/redux/features/users/users.api";
 
 // ---------------------------------------------------------------------------
 // Card dimensions — keep in sync with the style prop on each card below
@@ -22,25 +22,9 @@ interface TRecentChannel {
   avatar: string;
 }
 
-// ---------------------------------------------------------------------------
-// TODO: Replace MOCK_CHANNELS with the real API call once the endpoint is ready:
-//   const { data, isLoading } = useGetRecentlyViewedQuery(undefined);
-//   const channels = data?.data ?? [];
-// ---------------------------------------------------------------------------
-const MOCK_CHANNELS: TRecentChannel[] = [
-  { _id: "rc-1", name: "Miko Peled", avatar: "https://i.pravatar.cc/64?img=11" },
-  { _id: "rc-2", name: "CJ Werleman", avatar: "https://i.pravatar.cc/64?img=12" },
-  { _id: "rc-3", name: "Alan Watts", avatar: "https://i.pravatar.cc/64?img=13" },
-  { _id: "rc-4", name: "Noam Chomsky", avatar: "https://i.pravatar.cc/64?img=14" },
-  { _id: "rc-5", name: "Amy Goodman", avatar: "https://i.pravatar.cc/64?img=15" },
-  { _id: "rc-6", name: "Glenn Greenwald", avatar: "https://i.pravatar.cc/64?img=16" },
-  { _id: "rc-7", name: "Cornel West", avatar: "https://i.pravatar.cc/64?img=17" },
-  { _id: "rc-8", name: "Naomi Klein", avatar: "https://i.pravatar.cc/64?img=18" },
-];
-
 const RecentlyVisitedSlider = () => {
-  const isLoading = false;
-  const channels = MOCK_CHANNELS;
+  const { data, isLoading } = useGetRecentlyViewedQuery(undefined);
+  const channels: TRecentChannel[] = data?.data?.recentlyViewed ?? [];
 
   // ── Refs ────────────────────────────────────────────────────────────────────
   const trackRef = useRef<HTMLDivElement>(null);

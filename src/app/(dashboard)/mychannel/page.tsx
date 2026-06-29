@@ -37,7 +37,6 @@ const Page = () => {
     { skip: !user?._id || !isCreator }
   );
 
-  console.log(channelData, "ChannelData")
   const channelStatus = channelData?.data?.status;
 
   const handleStatusChange = (value: string) => {
@@ -62,7 +61,7 @@ const Page = () => {
       handleHashChange();
       window.addEventListener("hashchange", handleHashChange);
     }
-    
+
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("hashchange", handleHashChange);

@@ -83,7 +83,15 @@ export interface PopularChannelsResponse {
   statusCode: number;
   success: boolean;
   message: string;
-  data: TChannel[];
+  data:
+    | TChannel[]
+    | {
+        results: TChannel[];
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+        totalResults?: number;
+      };
 }
 
 export interface TChannelPagination {

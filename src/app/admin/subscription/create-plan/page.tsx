@@ -3,9 +3,9 @@
 import GlobalModal from "@/components/GlobalModal";
 import { applyApiErrorToForm, errorAlert, TResError } from "@/lib/alerts";
 import {
-  useCreateSubscriptionPlanMutation,
-  useGetAllSubscriptionPlansQuery,
-  useUpdateSubscriptionPlanMutation,
+  useCreateSubscriptionPlanNewMutation,
+  useGetAllSubscriptionPlansNewQuery,
+  useUpdateSubscriptionPlanNewMutation,
 } from "@/redux/features/subscription/subscription.api";
 import { TUniObject } from "@/types";
 import { cn } from "@/utils/cn";
@@ -38,9 +38,9 @@ const CreatePlanPage = () => {
   const [previewCycle, setPreviewCycle] = useState<string>("month");
   const [previewFacilities, setPreviewFacilities] = useState<string[]>([""]);
 
-  const { data: allPlans } = useGetAllSubscriptionPlansQuery(undefined, { skip: !isEditMode });
-  const [cMutation, { isLoading: cLoading }] = useCreateSubscriptionPlanMutation();
-  const [uMutation, { isLoading: uLoading }] = useUpdateSubscriptionPlanMutation();
+  const { data: allPlans } = useGetAllSubscriptionPlansNewQuery(undefined, { skip: !isEditMode });
+  const [cMutation, { isLoading: cLoading }] = useCreateSubscriptionPlanNewMutation();
+  const [uMutation, { isLoading: uLoading }] = useUpdateSubscriptionPlanNewMutation();
 
   const isLoading = cLoading || uLoading;
 

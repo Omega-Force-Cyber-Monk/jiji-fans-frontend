@@ -42,10 +42,12 @@ const VideoSuggetions = ({
 
   const allVideos = contents?.data?.contents ?? [];
 
-  // Filter out the currently playing video
-  const suggestions = currentVideoId
-    ? allVideos.filter((v: any) => v._id !== currentVideoId)
-    : allVideos;
+  // Filter out the currently playing video and any suspended videos
+  const suggestions = allVideos.filter((v: any) => {
+    const isCurrent = currentVideoId && v._id === currentVideoId;
+    const isSuspended = v.status?.toUpperCase() === "SUSPENDED";
+    return !isCurrent && !isSuspended;
+  });
 
   return (
     <div

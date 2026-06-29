@@ -87,6 +87,43 @@ const contentApi = baseApi.injectEndpoints({
         };
       },
     }),
+    reactToContent: builder.mutation({
+      query: ({ contentId, reactionType }: { contentId: string; reactionType: "LIKE" | "DISLIKE" | "NONE" }) => ({
+        url: `contents/${contentId}/reaction`,
+        method: "PATCH",
+        body: { reactionType },
+      }),
+      invalidatesTags: ["react"],
+    }),
+    addComment: builder.mutation({
+      query: ({ contentId, body }: { contentId: string; body: string }) => ({
+        url: `contents/${contentId}/comments`,
+        method: "POST",
+        body: { body },
+      }),
+      invalidatesTags: ["comment"],
+    }),
+    getComments: builder.query({
+      query: ({ contentId, cursor, limit }: { contentId: string; cursor?: string; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (cursor) params.append("cursor", cursor);
+        if (limit) params.append("limit", String(limit));
+        return {
+          url: `contents/details/${contentId}/comments`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["comment"],
+    }),
+    addReply: builder.mutation({
+      query: ({ commentId, body }: { commentId: string; body: string }) => ({
+        url: `contents/comments/${commentId}/replies`,
+        method: "POST",
+        body: { body },
+      }),
+      invalidatesTags: ["comment"],
+    }),
   }),
 });
 
@@ -98,4 +135,8 @@ export const {
   useDashboardContentDetailsQuery,
   useContentManageMutation,
   useTrackAnalyticsMutation,
+  useReactToContentMutation,
+  useAddCommentMutation,
+  useGetCommentsQuery,
+  useAddReplyMutation,
 } = contentApi;

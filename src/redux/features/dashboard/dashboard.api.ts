@@ -149,6 +149,27 @@ const dashboardApi = baseApi.injectEndpoints({
       },
       providesTags: ["dashboard"],
     }),
+    getTopPerformingVideos: builder.query({
+      query: () => ({
+        url: `dashboard/channel/top-performing-videos`,
+        method: "GET",
+      }),
+      providesTags: ["dashboard"],
+    }),
+    getWatchTimeStats: builder.query({
+      query: () => ({
+        url: `watch-time/stats`,
+        method: "GET",
+      }),
+      providesTags: ["dashboard"],
+    }),
+    getChannelEarnings: builder.query({
+      query: () => ({
+        url: `dashboard/channel/earnings`,
+        method: "GET",
+      }),
+      providesTags: ["dashboard"],
+    }),
   }),
 });
 
@@ -161,4 +182,7 @@ export const {
   useGetEarningsQuery,
   useGetContentDetailsQuery,
   useGetUserStatsQuery,
+  useGetTopPerformingVideosQuery,
+  useGetWatchTimeStatsQuery,
+  useGetChannelEarningsQuery,
 } = dashboardApi;

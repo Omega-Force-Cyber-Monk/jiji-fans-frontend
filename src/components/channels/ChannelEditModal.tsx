@@ -37,6 +37,36 @@ const ChannelEditModal = ({
   const [activeImageUpload, setActiveImageUpload] = useState<
     "avatar" | "banner" | null
   >(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview(null);
+      return;
+    }
+    const file = extractFileFromUploadValue(avatarFile);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setAvatarPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [avatarFile]);
+
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreview(null);
+      return;
+    }
+    const file = extractFileFromUploadValue(bannerFile);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setBannerPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [bannerFile]);
+
+  const [isSaving, setIsSaving] = useState(false);
 
   const [editChannelDetails, { isLoading: isEditingDetails }] =
     useEditChannelDetailsMutation();
@@ -61,54 +91,64 @@ const ChannelEditModal = ({
     }
   }, [isOpen, channelData, editForm]);
 
-  const handleImageUpload = async (type: "avatar" | "banner") => {
-    if (!channelData?._id) {
-      messageApi.error("Channel not found");
-      return;
-    }
-    const file = type === "avatar" ? avatarFile : bannerFile;
-    const browserFile = extractFileFromUploadValue(file);
-    if (!browserFile) {
-      messageApi.error("Please select an image first");
-      return;
-    }
-    setActiveImageUpload(type);
-    try {
-      const uploadedResource = await uploadResource(browserFile, {
-        purpose:
-          type === "avatar"
-            ? RESOURCE_PURPOSE.CHANNEL_AVATAR
-            : RESOURCE_PURPOSE.CHANNEL_BANNER,
-        targetId: channelData._id,
-      });
-      await editChannelImage({
-        channelId: channelData._id,
-        body: { type, resourceId: uploadedResource.resourceId },
-      }).unwrap();
-      messageApi.success(
-        `${type === "avatar" ? "Avatar" : "Banner"} updated successfully!`,
-      );
-      if (type === "avatar") setAvatarFile(null);
-      else setBannerFile(null);
-    } catch (error) {
-      errorAlert({ error: error as TResError, messageApi });
-    } finally {
-      setActiveImageUpload(null);
-    }
-  };
-
   const onEditFinish: FormProps<TUniObject>["onFinish"] = async (values) => {
+    if (!channelData?._id) return;
+    setIsSaving(true);
+    const key = "saveChannel";
+    messageApi.open({
+      key,
+      type: "loading",
+      content: "Saving channel updates...",
+    });
+
     try {
-      await editChannelDetails({
-        channelId: channelData?._id,
-        body: {
-          name: values.name,
-          description: values.description,
-          about: values.about,
-        },
-      }).unwrap();
+      // 1. Save text details if changed
+      const hasDetailsChanged =
+        values.name !== channelData.name ||
+        values.description !== channelData.description ||
+        values.about !== channelData.about;
+
+      if (hasDetailsChanged) {
+        await editChannelDetails({
+          channelId: channelData._id,
+          body: {
+            name: values.name,
+            description: values.description,
+            about: values.about,
+          },
+        }).unwrap();
+      }
+
+      // 2. Upload avatar if selected (Multipart Form Data)
+      if (avatarFile) {
+        const fileObj = extractFileFromUploadValue(avatarFile);
+        if (fileObj) {
+          const formData = new FormData();
+          formData.append("image", fileObj);
+          formData.append("type", "avatar");
+          await editChannelImage({
+            channelId: channelData._id,
+            body: formData,
+          }).unwrap();
+        }
+      }
+
+      // 3. Upload banner if selected (Multipart Form Data)
+      if (bannerFile) {
+        const fileObj = extractFileFromUploadValue(bannerFile);
+        if (fileObj) {
+          const formData = new FormData();
+          formData.append("image", fileObj);
+          formData.append("type", "banner");
+          await editChannelImage({
+            channelId: channelData._id,
+            body: formData,
+          }).unwrap();
+        }
+      }
+
       messageApi.open({
-        key: "editChannel",
+        key,
         type: "success",
         content: "Channel updated successfully!",
         duration: 3,
@@ -117,6 +157,9 @@ const ChannelEditModal = ({
     } catch (error) {
       applyApiErrorToForm(error, editForm, ["name", "description", "about"]);
       errorAlert({ error: error as TResError, messageApi });
+      messageApi.destroy(key);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -125,17 +168,18 @@ const ChannelEditModal = ({
       isModalOpen={isOpen}
       setIsModalOpen={(open) => { if (!open) handleClose(); }}
       onClose={handleClose}
-      maxWidth="820px"
+      maxWidth="1100px"
     >
       {contextHolder}
-      <div className="w-full space-y-5">
+      <div className="w-full space-y-5 lg:h-[80vh] flex flex-col">
         <Form
           form={editForm}
           layout="vertical"
           onFinish={onEditFinish}
           requiredMark={false}
+          className="flex flex-col h-full overflow-hidden"
         >
-          <div className="grid gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start flex-1 overflow-y-auto pr-1 lg:pr-3 pb-4">
             {/* Basic Details */}
             <div className="rounded-lg border border-brand-primary/10 bg-primary-bg p-6 shadow-sm">
               <div className="mb-5 space-y-1.5">
@@ -155,7 +199,7 @@ const ChannelEditModal = ({
                     { required: true, message: "Channel name is required!" },
                     { min: 3, message: "Channel name should be at least 3 characters." },
                   ]}
-                  help="Use a clear, recognizable name that matches your brand."
+                  help={<span className="text-secondary-text text-xs block mt-1">Use a clear, recognizable name that matches your brand.</span>}
                 >
                   <Input
                     size="large"
@@ -168,7 +212,7 @@ const ChannelEditModal = ({
                 <Form.Item
                   label="Short Description"
                   name="description"
-                  help="A short summary that appears in cards and previews."
+                  help={<span className="text-secondary-text text-xs block mt-1">A short summary that appears in cards and previews.</span>}
                 >
                   <TextArea
                     showCount
@@ -181,7 +225,7 @@ const ChannelEditModal = ({
                 <Form.Item
                   label="About"
                   name="about"
-                  help="Tell viewers what to expect, your posting style, and value."
+                  help={<span className="text-secondary-text text-xs block mt-1">Tell viewers what to expect, your posting style, and value.</span>}
                 >
                   <TextArea
                     showCount
@@ -208,25 +252,34 @@ const ChannelEditModal = ({
               <div className="grid gap-5">
                 {/* Avatar Upload */}
                 <div className="rounded-md border border-brand-primary/10 bg-secondary-bg p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1 space-y-2 min-w-0">
-                      <div>
+                  <div className="flex flex-col gap-4">
+                    {/* Header: Preview + Info */}
+                    <div className="flex items-center gap-4">
+                      {(avatarPreview || channelData?.avatar) && (
+                        <div className="relative size-16 rounded-full overflow-hidden border border-border-primary shrink-0 bg-primary-bg">
+                          <img
+                            src={avatarPreview || channelData?.avatar}
+                            alt="Avatar Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold tracking-tight text-primary-text">
                           Channel Avatar
                         </p>
-                        <p className="text-sm leading-6 text-secondary-text">
+                        <p className="text-xs leading-relaxed text-secondary-text">
                           Square image works best. Choose a file first, then upload it.
                         </p>
-                      </div>
-                      <div className="min-h-5">
                         {avatarFile?.name && (
-                          <p className="text-xs text-muted-text">
+                          <p className="text-xs text-muted-text mt-1 truncate">
                             Selected: {avatarFile.name}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                    {/* Actions: Upload Buttons */}
+                    <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border-primary/10">
                       <Upload
                         maxCount={1}
                         accept="image/*"
@@ -237,69 +290,56 @@ const ChannelEditModal = ({
                         }
                         fileList={avatarFile ? [avatarFile] : []}
                       >
-                        <Button icon={<CameraIcon className="w-4 h-4" />} className="min-w-32">
+                        <Button icon={<CameraIcon className="w-4 h-4" />} className="min-w-[140px]">
                           Choose avatar
                         </Button>
                       </Upload>
-                      {avatarFile && (
-                        <Button
-                          type="primary"
-                          loading={activeImageUpload === "avatar"}
-                          className="min-w-32"
-                          onClick={() => handleImageUpload("avatar")}
-                        >
-                          Upload avatar
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Banner Upload */}
                 <div className="rounded-md border border-brand-primary/10 bg-secondary-bg p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex-1 space-y-2 min-w-0">
-                      <div>
+                  <div className="flex flex-col gap-4">
+                    {(bannerPreview || channelData?.banner) && (
+                      <div className="relative w-full h-24 rounded-md overflow-hidden border border-border-primary shrink-0 bg-primary-bg">
+                        <img
+                          src={bannerPreview || channelData?.banner}
+                          alt="Banner Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold tracking-tight text-primary-text">
                           Channel Banner
                         </p>
-                        <p className="text-sm leading-6 text-secondary-text">
+                        <p className="text-xs leading-relaxed text-secondary-text">
                           Use a wide image with clean composition for desktop and mobile.
                         </p>
-                      </div>
-                      <div className="min-h-5">
                         {bannerFile?.name && (
-                          <p className="text-xs text-muted-text">
+                          <p className="text-xs text-muted-text mt-1 truncate">
                             Selected: {bannerFile.name}
                           </p>
                         )}
                       </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                      <Upload
-                        maxCount={1}
-                        accept="image/*"
-                        beforeUpload={() => false}
-                        showUploadList={false}
-                        onChange={(info) =>
-                          setBannerFile(info.fileList[0] || null)
-                        }
-                        fileList={bannerFile ? [bannerFile] : []}
-                      >
-                        <Button icon={<CameraIcon className="w-4 h-4" />} className="min-w-32">
-                          Choose banner
-                        </Button>
-                      </Upload>
-                      {bannerFile && (
-                        <Button
-                          type="primary"
-                          loading={activeImageUpload === "banner"}
-                          className="min-w-32"
-                          onClick={() => handleImageUpload("banner")}
+                      <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-border-primary/10">
+                        <Upload
+                          maxCount={1}
+                          accept="image/*"
+                          beforeUpload={() => false}
+                          showUploadList={false}
+                          onChange={(info) =>
+                            setBannerFile(info.fileList[0] || null)
+                          }
+                          fileList={bannerFile ? [bannerFile] : []}
                         >
-                          Upload banner
-                        </Button>
-                      )}
+                          <Button icon={<CameraIcon className="w-4 h-4" />} className="min-w-[140px]">
+                            Choose banner
+                          </Button>
+                        </Upload>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -322,7 +362,7 @@ const ChannelEditModal = ({
               htmlType="submit"
               type="primary"
               className="sm:min-w-44 font-medium"
-              loading={isEditingDetails}
+              loading={isSaving || isEditingDetails}
             >
               Save Changes
             </Button>

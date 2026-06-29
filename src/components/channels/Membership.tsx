@@ -11,7 +11,7 @@ import MembershipSkeleton from "@/Common/Skeleton/Channels/MembershipSkeleton";
 import { CreditCardIcon, SparklesIcon, WalletIcon } from "@heroicons/react/24/outline";
 import {
 	useGetCurrentChannelSubscriptionQuery,
-	useGetAllSubscriptionPlansQuery,
+	useGetAllSubscriptionPlansNewQuery,
 	useCreateCheckoutSessionMutation,
 	ISubscription,
 	ISubscriptionPlanWithUnlockFlag,
@@ -33,7 +33,7 @@ const Membership = ({ channelId }: MembershipProps) => {
 			skip: !channelId,
 		});
 	const { data: plansData, isLoading: isLoadingPlans } =
-		useGetAllSubscriptionPlansQuery(
+		useGetAllSubscriptionPlansNewQuery(
 			channelId ? { channelId } : undefined
 		);
 	const [createCheckoutSession, { isLoading: isCreatingSession }] =
@@ -371,9 +371,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 								startCheckout(selectedPlan, "PAWAPAY");
 							}}
 							disabled={isCreatingSession || !isPawaPayEligible}
-							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${
-								!isPawaPayEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
-							}`}
+							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${!isPawaPayEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
+								}`}
 						>
 							<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
 								<WalletIcon className="w-6 h-6" />
@@ -395,9 +394,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 								startCheckout(selectedPlan, "PAYNOW");
 							}}
 							disabled={isCreatingSession || !isPaynowEligible}
-							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${
-								!isPaynowEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
-							}`}
+							className={`flex items-center gap-4 p-4 rounded-md border border-border-primary bg-secondary-bg hover:border-brand-primary hover:bg-brand-primary/5 transition-all text-left group cursor-pointer ${!isPaynowEligible ? "opacity-50 cursor-not-allowed hover:border-border-primary hover:bg-secondary-bg" : ""
+								}`}
 						>
 							<div className="p-3 bg-brand-primary/10 rounded-md text-brand-primary group-hover:bg-brand-primary/20 transition-all">
 								<WalletIcon className="w-6 h-6" />

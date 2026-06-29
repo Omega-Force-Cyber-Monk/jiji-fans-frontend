@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Skeleton } from "antd";
 import EarningBarChart from "@/components/dashboard/EarningBarChart";
 import RecentSubscriber from "@/components/dashboard/RecentSubscriber";
@@ -8,6 +8,7 @@ import {
   useAdminStatsQuery,
   useRecentUserQuery,
   useDiviceStatusQuery,
+  useGetSystemLogsQuery,
 } from "@/redux/features/adminHome/adminHome.api";
 import { cn } from "@/utils/cn";
 import AppBreadcrumb from "@/components/ui/AppBreadcrumb";
@@ -59,6 +60,26 @@ const Page = () => {
   const { data: recentUserData } = useRecentUserQuery(undefined);
   const { data: deviceData, isLoading: isDeviceLoading } = useDiviceStatusQuery(undefined);
 
+  const { data: logsData, isLoading: isLogsLoading } = useGetSystemLogsQuery({ limit: 10 });
+
+  const transactions = useMemo(() => {
+    const results = logsData?.data?.results || [];
+    return results.map((log: any) => ({
+      key: log._id,
+      id: log._id ? log._id.substring(log._id.length - 8).toUpperCase() : "LOG",
+      creator: log.actorId?.username || log.actorId?.name || "System",
+      type: log.actionType || "System Action",
+      amount: log.metadata?.amount ? `$${log.metadata.amount.toLocaleString()}` : "--",
+      date: log.createdAt ? new Date(log.createdAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric"
+      }) : "N/A",
+      status: log.status?.toLowerCase() === "success" ? "success" : log.status?.toLowerCase() === "pending" ? "warning" : "error",
+      label: log.status || "Unknown",
+    }));
+  }, [logsData]);
+
   // Re-map the stats metrics using strictly allowed color design tokens
   const statusMetrics = useMemo(() => {
     return [
@@ -86,28 +107,52 @@ const Page = () => {
         bg: "bg-success/10",
         border: "border-success/20",
       },
+      {
+        label: "Total Withdrawals",
+        value: `$${formatTwoDigits({ num: statsData?.data?.totalWithdrawalsAmount || 0 })}`,
+        icon: BanknotesIcon,
+        color: "text-success",
+        bg: "bg-success/10",
+        border: "border-success/20",
+      },
+      {
+        label: "Creator Earnings",
+        value: `$${formatTwoDigits({ num: statsData?.data?.creatorEarnings || 0 })}`,
+        icon: BanknotesIcon,
+        color: "text-brand-primary",
+        bg: "bg-brand-primary/10",
+        border: "border-brand-primary/20",
+      },
+      {
+        label: "System Earnings",
+        value: `$${formatTwoDigits({ num: statsData?.data?.systemEarnings || 0 })}`,
+        icon: BanknotesIcon,
+        color: "text-warning",
+        bg: "bg-warning/10",
+        border: "border-warning/20",
+      },
     ];
   }, [statsData]);
 
   // Compute total count from device metrics dynamically
   const deviceStatsComputed = useMemo(() => {
-    if (!deviceData || !Array.isArray(deviceData)) {
-      return [
-        { label: "Desktop", percentage: 45, count: 450, icon: ComputerDesktopIcon },
-        { label: "Mobile", percentage: 48, count: 480, icon: DevicePhoneMobileIcon },
-        { label: "Tablet", percentage: 7, count: 70, icon: DeviceTabletIcon },
-      ];
+    const statsList = deviceData?.deviceStats;
+    if (!statsList || !Array.isArray(statsList)) {
+      return [];
     }
 
-    const total = deviceData.reduce((sum: number, item: any) => sum + (item.count || 0), 0) || 1;
-    return deviceData.map((item: any) => {
+    const total = statsList.reduce((sum: number, item: any) => sum + (item.count || 0), 0) || 1;
+    return statsList.map((item: any) => {
       let icon = ComputerDesktopIcon;
-      if (item.device?.toLowerCase().includes("mobile")) icon = DevicePhoneMobileIcon;
-      if (item.device?.toLowerCase().includes("tablet")) icon = DeviceTabletIcon;
+      const deviceName = item.device || "Unknown";
+      if (deviceName.toLowerCase().includes("mobile")) icon = DevicePhoneMobileIcon;
+      if (deviceName.toLowerCase().includes("tablet")) icon = DeviceTabletIcon;
+
+      const label = deviceName.charAt(0).toUpperCase() + deviceName.slice(1).toLowerCase();
 
       return {
-        label: item.device || "Unknown",
-        percentage: Math.round(((item.count || 0) / total) * 100),
+        label,
+        percentage: item.percentage ?? Math.round(((item.count || 0) / total) * 100),
         count: item.count || 0,
         icon,
       };
@@ -135,7 +180,7 @@ const Page = () => {
       )}
 
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {statusMetrics.map((item, index) => {
           const Icon = item.icon;
           return (
@@ -238,7 +283,11 @@ const Page = () => {
       </div>
 
       {/* Detailed Operations & Site Statistic Table Component */}
-      <SystemOperationsLog />
+      <SystemOperationsLog
+        transactions={transactions}
+        loading={isLogsLoading}
+        isDashboard={true}
+      />
     </div>
   );
 };

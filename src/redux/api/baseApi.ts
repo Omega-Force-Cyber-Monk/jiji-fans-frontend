@@ -82,6 +82,8 @@ export const baseApi = createApi({
     "payout",
     "kyc",
     "creatorWaitlist",
+    "react",
+    'comment'
   ],
   endpoints: () => ({}),
 });

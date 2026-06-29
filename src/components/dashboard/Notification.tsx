@@ -10,45 +10,6 @@ import {
 } from "@/redux/features/notification/notification.api";
 import { Empty, Skeleton, Breadcrumb } from "antd";
 
-const mockNotifications = [
-	{
-		_id: "mock-1",
-		title: "New Subscriber! 🎉",
-		message: "naim008 has just subscribed to your Premium Tier. Say hello!",
-		createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
-	},
-	{
-		_id: "mock-2",
-		title: "Content Upload Successful 🎬",
-		message: "Your video 'Creative Coding Aesthetics' is processed and now live.",
-		createdAt: new Date(Date.now() - 1000 * 60 * 240).toISOString(), // 4 hours ago
-	},
-	{
-		_id: "mock-3",
-		title: "Direct Message Received 💬",
-		message: "Alice sent you a new message: 'Hey, I love your latest post!'",
-		createdAt: new Date(Date.now() - 1000 * 60 * 720).toISOString(), // 12 hours ago
-	},
-	{
-		_id: "mock-4",
-		title: "Pledge Tipped 💰",
-		message: "A supporter tipped you $15.00 on your recent exclusive post.",
-		createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-	},
-	{
-		_id: "mock-5",
-		title: "Account Milestone 🌟",
-		message: "Congratulations! You have reached 1,000 views on your profile this week.",
-		createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-	},
-	{
-		_id: "mock-6",
-		title: "Creator Verification Approved ✅",
-		message: "Welcome to Plus2Fans! Your KYC documents are approved. Start publishing content!",
-		createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
-	},
-] as unknown as TNotification[];
-
 const Notification = () => {
 	const [cursor, setCursor] = useState<string | undefined>(undefined);
 	const [allNotifications, setAllNotifications] = useState<TNotification[]>(
@@ -70,8 +31,6 @@ const Notification = () => {
 	const { data, isLoading, error } = useGetAllNotificationsQuery(queryArgs);
 
 	const pagination = data?.data?.pagination;
-	const isDev = process.env.NEXT_PUBLIC_APP_ENV === "dev";
-	const displayNotifications = (isDev && allNotifications.length === 0) ? mockNotifications : allNotifications;
 
 	// Append new notifications when data changes
 	useEffect(() => {
@@ -190,11 +149,20 @@ const Notification = () => {
 							</div>
 						))}
 					</div>
-				) : displayNotifications.length === 0 ? (
-					<Empty description="No notifications yet" />
+				) : allNotifications.length === 0 ? (
+					<div className="flex flex-col justify-center items-center py-20 text-center">
+						<div className="w-16 h-16 rounded-full bg-secondary-bg flex items-center justify-center mb-4">
+							<Empty
+								image={Empty.PRESENTED_IMAGE_SIMPLE}
+								description={false}
+							/>
+						</div>
+						<p className="text-secondary-text text-base font-medium">No notifications yet</p>
+						<p className="text-muted-text text-sm mt-1">We'll let you know when something new arrives.</p>
+					</div>
 				) : (
 					<>
-						{displayNotifications.map((item: TNotification) => (
+						{allNotifications.map((item: TNotification) => (
 							<div
 								key={item._id}
 								className="px-5 sm:px-[24px] py-4 hover:bg-secondary-bg/50 border-b border-border-primary/50 transition-all duration-200 cursor-pointer group relative"
@@ -211,11 +179,6 @@ const Notification = () => {
 											<p className="text-sm font-semibold text-primary-text group-hover:text-brand-primary transition-colors duration-200">
 												{item.title}
 											</p>
-
-											{/* Subtle unread dot */}
-											{item._id.startsWith("mock") && (
-												<span className="size-2 rounded-full bg-brand-primary shrink-0" />
-											)}
 										</div>
 										<p className="text-xs text-secondary-text mt-1 leading-relaxed">
 											{item.message}

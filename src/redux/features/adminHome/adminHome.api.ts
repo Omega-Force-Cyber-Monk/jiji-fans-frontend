@@ -53,6 +53,23 @@ const adminDashboardApi = baseApi.injectEndpoints({
       },
       transformResponse: (response) => response.data,
     }),
+    getSystemLogs: builder.query({
+      query: (paramsObj?: Record<string, any>) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `admin/system-logs`,
+          method: "GET",
+          params,
+        };
+      },
+    }),
   }),
 });
 
@@ -62,4 +79,5 @@ export const {
   useAnalyticsStatusQuery,
   useRecentViewersQuery,
   useDiviceStatusQuery,
+  useGetSystemLogsQuery,
 } = adminDashboardApi;

@@ -29,7 +29,7 @@ const ChannelItem = ({ channel, rank }: ChannelItemProps) => {
 
   return (
     <Link
-      href={slug ? `/${slug}` : "/"}
+      href={`/overview/channels/${channel._id}`}
       className="group relative flex items-center gap-x-3 w-full bg-secondary-bg/50 border border-border-primary rounded-xl p-3 transition-all duration-300 hover:bg-secondary-bg hover:border-border-primary/50 hover:shadow-lg hover:-translate-y-0.5 overflow-hidden"
     >
       {/* Rank Indicator */}
@@ -110,16 +110,17 @@ const FansFavoritesSkeleton = () => (
 );
 
 const Fansfavorites = ({ className }: { className?: string }) => {
-  const pathname = usePathname();
   const [open, setOpen] = useState(true);
   const itemsRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useGetPopularChannelsQuery({ limit: 6 });
-  const channels = Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data)
-      ? data
-      : [];
+  const rawData = data?.data;
+  const channels =
+    rawData && typeof rawData === "object" && "results" in rawData && Array.isArray(rawData.results)
+      ? rawData.results
+      : Array.isArray(rawData)
+        ? rawData
+        : [];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,10 +136,6 @@ const Fansfavorites = ({ className }: { className?: string }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // useEffect(() => {
-  //   setOpen(false);
-  // }, [pathname]);
 
   return (
     <div

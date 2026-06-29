@@ -82,7 +82,12 @@ const PopularChannels = () => {
       refetchOnMountOrArgChange: true,
     },
   );
-  const channels = data?.data || [];
+  const channelsArray = React.useMemo(() => {
+    if (!data?.data) return [];
+    if (Array.isArray(data.data)) return data.data;
+    if (data.data && Array.isArray((data.data as any).results)) return (data.data as any).results;
+    return [];
+  }, [data]);
 
   const demoChannels = [
     { _id: "demo-1", name: "Tech Insights", avatar: "/static/demo/channel_1.png" },
@@ -95,7 +100,7 @@ const PopularChannels = () => {
     { _id: "demo-8", name: "Music Hub", avatar: "/static/demo/video_1.png" },
   ];
 
-  const displayChannels = channels.length > 0 ? channels : demoChannels;
+  const displayChannels = channelsArray.length > 0 ? channelsArray : demoChannels;
 
   if (isLoading) {
     return (

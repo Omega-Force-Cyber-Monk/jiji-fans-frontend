@@ -12,12 +12,14 @@ import { TMySubscription } from "@/types/subscription.type";
 import MembershipSkeleton from "@/Common/Skeleton/app/(dashboard)/membership/MembershipSkeleton";
 import { sweetAlertConfirmation } from "@/lib/alerts/sweetAlertConfirmation";
 import { successAlert, errorAlert, TResError } from "@/lib/alerts";
+import { useIdempotency } from "@/hooks/useIdempotency";
 
 
 const Page = () => {
   const { data, isLoading } = useGetMySubscriptionsQuery({});
   const { data: statsData, isLoading: isStatsLoading } = useGetUserStatsQuery({});
   const [cancelSubscription, { isLoading: isCancelling }] = useCancelSubscriptionMutation();
+  const { idempotencyKey, regenerateKey } = useIdempotency();
 
   const subscriptions = (data?.data?.subscriptions || []).filter(
     (sub: TMySubscription) => sub && sub.channel
@@ -32,11 +34,12 @@ const Page = () => {
       func: async () => {
 
         try {
-          await cancelSubscription(subscriptionId).unwrap();
+          await cancelSubscription({ subscriptionId, idempotencyKey }).unwrap();
           successAlert({
             title: "Cancelled!",
             text: `Your membership to ${channelName} has been successfully cancelled.`,
           });
+          regenerateKey();
         } catch (err) {
           errorAlert({
             error: err as TResError,

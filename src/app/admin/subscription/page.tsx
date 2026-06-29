@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeleteSubscriptionPlanMutation, useGetAllSubscriptionPlansQuery } from "@/redux/features/subscription/subscription.api";
+import { useDeleteSubscriptionPlanNewMutation, useGetAllSubscriptionPlansNewQuery } from "@/redux/features/subscription/subscription.api";
 import { TUniObject } from "@/types";
 import { CheckCircleIcon, PencilSquareIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { message, Popconfirm } from "antd";
@@ -12,8 +12,8 @@ import React from "react";
 const Page = () => {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
-  const { data, isLoading, isError, error } = useGetAllSubscriptionPlansQuery(undefined);
-  const [dMutation, { isLoading: dLoading }] = useDeleteSubscriptionPlanMutation();
+  const { data, isLoading, isError, error } = useGetAllSubscriptionPlansNewQuery(undefined);
+  const [dMutation, { isLoading: dLoading }] = useDeleteSubscriptionPlanNewMutation();
 
   const plans: TUniObject[] = data?.data || [];
 

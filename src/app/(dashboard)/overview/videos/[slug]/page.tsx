@@ -6,9 +6,15 @@ import {
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
 } from "@heroicons/react/24/solid";
-import { useGetContentByIdQuery } from "@/redux/features/content/content.api";
+import {
+  useGetContentByIdQuery,
+  useReactToContentMutation,
+  useAddCommentMutation,
+  useGetCommentsQuery,
+  useAddReplyMutation,
+} from "@/redux/features/content/content.api";
 import { useGetChannelByIdQuery } from "@/redux/features/channel/channel.api";
-import { useGetContentDetailsQuery } from "@/redux/features/dashboard/dashboard.api";
+import { compareByCTime } from "@/lib/helpers/compareByCTime";
 import { useAppSelector } from "@/redux/hook";
 import {
   HandThumbUpIcon as HandThumbUpOutline,
@@ -103,16 +109,7 @@ const VideoComponent = () => {
 
   const isMyChannelPath = typeof window !== "undefined" && window.location.pathname.startsWith("/mychannel");
 
-  const { data: viewerContentData, isLoading: isViewerLoading } = useGetContentByIdQuery(slug, {
-    skip: isMyChannelPath,
-  });
-  console.log(viewerContentData, "Viewer Content Data")
-  const { data: creatorContentData, isLoading: isCreatorLoading } = useGetContentDetailsQuery(slug, {
-    skip: !isMyChannelPath,
-  });
-  console.log(creatorContentData, "Creator Content Data")
-  const contentData = isMyChannelPath ? creatorContentData : viewerContentData;
-  const isLoading = isMyChannelPath ? isCreatorLoading : isViewerLoading;
+  const { data: contentData, isLoading } = useGetContentByIdQuery(slug);
   const playerRef = useRef<YTPlayer | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -131,15 +128,30 @@ const VideoComponent = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   // Channel Query
+  const targetChannelId =
+    contentData?.data?.channelId?._id ||
+    contentData?.data?.channelId ||
+    contentData?.data?.channel;
+
   const { data: channelData, isLoading: isChannelLoading } = useGetChannelByIdQuery(
-    { channelId: contentData?.data?.channel! },
-    { skip: !contentData?.data?.channel }
+    { channelId: targetChannelId! },
+    { skip: !targetChannelId }
   );
   const channel = channelData?.data;
 
-  // Like state
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(124);
+  const { data: commentsData } = useGetCommentsQuery({ contentId: slug, limit: 50 });
+  const commentsList = commentsData?.data?.comments ?? [];
+
+  const [addComment] = useAddCommentMutation();
+  const [addReply] = useAddReplyMutation();
+  const [reactToContent] = useReactToContentMutation();
+
+  const isOwner =
+    user?._id === contentData?.data?.ownerId ||
+    user?._id === (contentData?.data?.ownerId as any)?._id ||
+    user?._id === channel?.owner;
+  const isLiked = contentData?.data?.userReaction === "LIKE";
+  const likeCount = contentData?.data?.likeCount ?? 0;
 
   // Description expand state
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -151,109 +163,39 @@ const VideoComponent = () => {
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  // Initial Interactive Comments State
-  const [commentsList, setCommentsList] = useState([
-    {
-      id: "1",
-      name: "Alex Rivera",
-      avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Alex",
-      content: "This React pattern is an absolute game-changer. The explanation of state sharing between parent and children is extremely clear!",
-      timestamp: "3 hours ago",
-      likes: 14,
-      likedByUser: false,
-      replies: [
-        {
-          id: "r1",
-          name: "Marcus Vance",
-          avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Marcus",
-          content: "Agree! Compound components provide unmatched flexibility.",
-          timestamp: "2 hours ago"
-        }
-      ]
-    },
-    {
-      id: "2",
-      name: "Sofia Chen",
-      avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia",
-      content: "I've been struggling with compound components for weeks, but this video made it click instantly. Thank you so much!",
-      timestamp: "5 hours ago",
-      likes: 8,
-      likedByUser: false,
-      replies: []
-    },
-  ]);
-
-  const handleLikeToggle = () => {
-    if (isLiked) {
-      setIsLiked(false);
-      setLikeCount((prev) => prev - 1);
-    } else {
-      setIsLiked(true);
-      setLikeCount((prev) => prev + 1);
+  const handleLikeToggle = async () => {
+    if (isOwner) return; // Creators can't like own video
+    try {
+      const nextReaction = isLiked ? "NONE" : "LIKE";
+      await reactToContent({ contentId: slug, reactionType: nextReaction }).unwrap();
+    } catch (err) {
+      errorAlert({ error: err as TResError, messageApi });
     }
   };
 
-  const handleCommentLikeToggle = (commentId: string) => {
-    setCommentsList((prev) =>
-      prev.map((c) => {
-        if (c.id === commentId) {
-          const liked = !c.likedByUser;
-          return {
-            ...c,
-            likedByUser: liked,
-            likes: liked ? c.likes + 1 : c.likes - 1,
-          };
-        }
-        return c;
-      })
-    );
-  };
-
-  const handleReplySubmit = (e: React.FormEvent, commentId: string) => {
+  const handleReplySubmit = async (e: React.FormEvent, commentId: string) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
-    const newReply = {
-      id: Date.now().toString(),
-      name: user?.username || "Anonymous User",
-      avatar: user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user?.username || 'user'}`,
-      content: replyText.trim(),
-      timestamp: "Just now",
-    };
-
-    setCommentsList((prev) =>
-      prev.map((c) => {
-        if (c.id === commentId) {
-          return {
-            ...c,
-            replies: [...(c.replies || []), newReply],
-          };
-        }
-        return c;
-      })
-    );
-
-    setReplyText("");
-    setActiveReplyId(null);
+    try {
+      await addReply({ commentId, body: replyText.trim() }).unwrap();
+      setReplyText("");
+      setActiveReplyId(null);
+    } catch (err) {
+      errorAlert({ error: err as TResError, messageApi });
+    }
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    const newComment = {
-      id: Date.now().toString(),
-      name: user?.username || "Anonymous User",
-      avatar: user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${user?.username || 'user'}`,
-      content: commentText.trim(),
-      timestamp: "Just now",
-      likes: 0,
-      likedByUser: false,
-      replies: []
-    };
-
-    setCommentsList([newComment, ...commentsList]);
-    setCommentText("");
+    try {
+      await addComment({ contentId: slug, body: commentText.trim() }).unwrap();
+      setCommentText("");
+    } catch (err) {
+      errorAlert({ error: err as TResError, messageApi });
+    }
   };
 
   const content = contentData?.data;
@@ -572,6 +514,27 @@ const VideoComponent = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-lg text-secondary-text">Video not found</p>
+      </div>
+    );
+  }
+
+  const isSpecialView =
+    user?.role?.toLowerCase() === "creator" ||
+    user?.role?.toLowerCase() === "admin" ||
+    isMyChannelPath;
+
+  if (content?.status?.toUpperCase() === "SUSPENDED" && !isSpecialView) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6 bg-secondary-bg/50 border border-border-primary rounded-xl">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4 text-red-500">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-primary-text mb-2">Video Suspended</h2>
+        <p className="text-secondary-text max-w-md">
+          This video has been suspended due to content violations and is no longer available.
+        </p>
       </div>
     );
   }
@@ -1092,12 +1055,17 @@ const VideoComponent = () => {
             {/* Like Option */}
             <button
               onClick={handleLikeToggle}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all border border-border-primary/50 cursor-pointer ${isLiked
-                ? "bg-brand-primary text-black border-transparent"
-                : "bg-secondary-bg/80 text-primary-text hover:bg-secondary-bg"
+              disabled={isOwner}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all border border-border-primary/50 ${isOwner
+                ? "opacity-50 cursor-not-allowed bg-secondary-bg/40 text-muted-text"
+                : "cursor-pointer"
+                } ${isLiked && !isOwner
+                  ? "bg-brand-primary text-black border-transparent"
+                  : "bg-secondary-bg/80 text-primary-text hover:bg-secondary-bg"
                 }`}
+              title={isOwner ? "You cannot like your own video" : ""}
             >
-              {isLiked ? (
+              {isLiked && !isOwner ? (
                 <HandThumbUpSolid className="w-5 h-5" />
               ) : (
                 <HandThumbUpOutline className="w-5 h-5" />
@@ -1108,7 +1076,12 @@ const VideoComponent = () => {
             {/* Tip Option */}
             <button
               onClick={() => setOpenTipsModal(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all border border-border-primary/50 cursor-pointer bg-brand-primary text-black border-transparent hover:scale-105`}
+              disabled={isOwner}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all border border-border-primary/50 ${isOwner
+                ? "opacity-50 cursor-not-allowed bg-secondary-bg/40 text-muted-text"
+                : "bg-brand-primary text-black border-transparent hover:scale-105 cursor-pointer"
+                }`}
+              title={isOwner ? "You cannot tip yourself" : ""}
             >
               <SparklesIcon className="w-5 h-5 text-black" />
               <span>Tip Creator</span>
@@ -1176,44 +1149,50 @@ const VideoComponent = () => {
           </div>
 
           {/* Add Comment Input */}
-          <form onSubmit={handleCommentSubmit} className="flex gap-4">
-            <div className="relative h-10 w-10 rounded-md overflow-hidden shrink-0 border border-border-primary/30 bg-primary-bg">
-              <Image
-                src={user?.avatar || "/static/avatar-placeholder.png"}
-                alt="Your avatar"
-                fill
-                className="object-cover"
-                sizes="40px"
-              />
-            </div>
-            <div className="flex-1 space-y-3">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Share your thoughts about this video..."
-                rows={3}
-                className="w-full bg-primary-bg border border-border-primary/60 rounded-md p-3 text-sm text-primary-text focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary placeholder:text-muted-text resize-none"
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!commentText.trim()}
-                  className="bg-brand-primary text-black font-semibold rounded-md px-5 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm cursor-pointer border-none"
-                >
-                  Comment
-                </button>
+          {!isOwner ? (
+            <form onSubmit={handleCommentSubmit} className="flex gap-4">
+              <div className="relative h-10 w-10 rounded-md overflow-hidden shrink-0 border border-border-primary/30 bg-primary-bg">
+                <Image
+                  src={user?.avatar || "/static/avatar-placeholder.png"}
+                  alt="Your avatar"
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
               </div>
-            </div>
-          </form>
+              <div className="flex-1 space-y-3">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Share your thoughts about this video..."
+                  rows={3}
+                  className="w-full bg-primary-bg border border-border-primary/60 rounded-md p-3 text-sm text-primary-text focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary placeholder:text-muted-text resize-none"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim()}
+                    className="bg-brand-primary text-black font-semibold rounded-md px-5 py-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm cursor-pointer border-none"
+                  >
+                    Comment
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : (
+            <p className="text-secondary-text text-sm italic bg-secondary-bg/30 p-3 rounded-md border border-border-primary/30">
+              As the video owner, you can only reply to existing comments.
+            </p>
+          )}
           {/* Comments List */}
           <div className="space-y-4 pt-2">
-            {commentsList.map((comment) => (
-              <div key={comment.id} className="flex gap-4 p-4 rounded-md bg-primary-bg/40 border border-border-primary/20 hover:border-border-primary/40 transition-all flex-col">
+            {commentsList.map((comment: any) => (
+              <div key={comment._id} className="flex gap-4 p-4 rounded-md bg-primary-bg/40 border border-border-primary/20 hover:border-border-primary/40 transition-all flex-col">
                 <div className="flex gap-4">
                   <div className="relative h-9 w-9 rounded-md overflow-hidden shrink-0 border border-border-primary/20 bg-primary-bg">
                     <Image
-                      src={comment.avatar}
-                      alt={comment.name}
+                      src={comment.userId?.avatar || "/static/avatar-placeholder.png"}
+                      alt={comment.userId?.username || "Anonymous"}
                       fill
                       className="object-cover animate-fade-in"
                       sizes="36px"
@@ -1221,30 +1200,18 @@ const VideoComponent = () => {
                   </div>
                   <div className="flex-1 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-primary-text text-sm">{comment.name}</span>
-                      <span className="text-sm text-muted-text">{comment.timestamp}</span>
+                      <span className="font-semibold text-primary-text text-sm">
+                        {comment.userId?.username || "Anonymous User"}
+                      </span>
+                      <span className="text-sm text-muted-text">
+                        {compareByCTime({ preTime: comment.createdAt })}
+                      </span>
                     </div>
-                    <p className="text-sm text-secondary-text leading-relaxed whitespace-pre-line">{comment.content}</p>
+                    <p className="text-sm text-secondary-text leading-relaxed whitespace-pre-line">{comment.body}</p>
 
-                    {/* Micro-engagement comment like & reply buttons */}
                     <div className="flex items-center gap-4 pt-1">
                       <button
-                        onClick={() => handleCommentLikeToggle(comment.id)}
-                        className={`flex items-center gap-1.5 text-sm transition-colors cursor-pointer border-none bg-transparent ${comment.likedByUser
-                          ? "text-brand-primary font-semibold animate-bounce-subtle"
-                          : "text-muted-text hover:text-primary-text"
-                          }`}
-                      >
-                        {comment.likedByUser ? (
-                          <HandThumbUpSolid className="w-4 h-4 text-brand-primary" />
-                        ) : (
-                          <HandThumbUpOutline className="w-4 h-4" />
-                        )}
-                        <span>{comment.likes}</span>
-                      </button>
-
-                      <button
-                        onClick={() => setActiveReplyId(activeReplyId === comment.id ? null : comment.id)}
+                        onClick={() => setActiveReplyId(activeReplyId === comment._id ? null : comment._id)}
                         className="text-sm text-muted-text hover:text-primary-text transition-colors font-semibold cursor-pointer border-none bg-transparent"
                       >
                         Reply
@@ -1254,9 +1221,9 @@ const VideoComponent = () => {
                 </div>
 
                 {/* Reply Form */}
-                {activeReplyId === comment.id && (
+                {activeReplyId === comment._id && (
                   <form
-                    onSubmit={(e) => handleReplySubmit(e, comment.id)}
+                    onSubmit={(e) => handleReplySubmit(e, comment._id)}
                     className="mt-2 flex gap-3 pl-12 w-full animate-fade-in"
                   >
                     <input
@@ -1279,12 +1246,12 @@ const VideoComponent = () => {
                 {/* Nested Replies Thread */}
                 {comment.replies && comment.replies.length > 0 && (
                   <div className="pl-12 border-l border-border-primary/30 space-y-3 mt-2 animate-fade-in">
-                    {comment.replies.map((reply) => (
-                      <div key={reply.id} className="flex gap-3 p-3 rounded-md bg-primary-bg/20 border border-border-primary/10">
+                    {comment.replies.map((reply: any) => (
+                      <div key={reply._id} className="flex gap-3 p-3 rounded-md bg-primary-bg/20 border border-border-primary/10">
                         <div className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 border border-border-primary/20 bg-primary-bg">
                           <Image
-                            src={reply.avatar}
-                            alt={reply.name}
+                            src={reply.userId?.avatar || "/static/avatar-placeholder.png"}
+                            alt={reply.userId?.username || "Anonymous"}
                             fill
                             className="object-cover animate-fade-in"
                             sizes="28px"
@@ -1292,10 +1259,14 @@ const VideoComponent = () => {
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-primary-text text-sm">{reply.name}</span>
-                            <span className="text-sm text-muted-text">{reply.timestamp}</span>
+                            <span className="font-semibold text-primary-text text-sm">
+                              {reply.userId?.username || "Anonymous User"}
+                            </span>
+                            <span className="text-sm text-muted-text">
+                              {compareByCTime({ preTime: reply.createdAt })}
+                            </span>
                           </div>
-                          <p className="text-sm text-secondary-text leading-relaxed whitespace-pre-line">{reply.content}</p>
+                          <p className="text-sm text-secondary-text leading-relaxed whitespace-pre-line">{reply.body}</p>
                         </div>
                       </div>
                     ))}
