@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 import { cn } from "../../utils/cn";
-import { 
-	HandThumbUpIcon, 
+import {
+	HandThumbUpIcon,
 	ChatBubbleLeftEllipsisIcon,
 	EyeIcon
 } from "@heroicons/react/24/outline";
@@ -58,7 +58,7 @@ const TopPerformingVideos = ({ className }: { className?: string }) => {
 	}
 
 	return (
-		<div className={cn("rounded-lg pt-4 sm:pt-6", className)}>
+		<div className={cn("rounded-lg", className)}>
 			<div className="flex flex-col mb-6">
 				<h4 className="text-lg font-medium text-primary-text mb-1">Top Performing Videos</h4>
 				<p className="text-sm text-muted-text">
@@ -118,7 +118,7 @@ const TopPerformingVideos = ({ className }: { className?: string }) => {
 											<span className="text-muted-text text-sm">avg</span>
 										</div>
 										<div className="w-full h-1 bg-primary-bg border border-border-primary rounded-full overflow-hidden">
-											<div 
+											<div
 												className={cn(
 													"h-full rounded-full",
 													video.retention >= 80 ? "bg-success" : video.retention >= 70 ? "bg-brand-primary" : "bg-warning"

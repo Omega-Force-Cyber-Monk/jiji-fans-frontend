@@ -124,6 +124,19 @@ const contentApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["comment"],
     }),
+    getCreatorRecentComments: builder.query({
+      query: (args: { page?: number; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (args.page) params.append("page", String(args.page));
+        if (args.limit) params.append("limit", String(args.limit));
+        return {
+          url: `contents/creator/recent-comments`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["comment"],
+    }),
   }),
 });
 
@@ -139,4 +152,5 @@ export const {
   useAddCommentMutation,
   useGetCommentsQuery,
   useAddReplyMutation,
+  useGetCreatorRecentCommentsQuery,
 } = contentApi;

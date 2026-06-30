@@ -6,10 +6,8 @@ import SliderNavigation from "@/components/ui/SliderNavigation";
 import { useInfiniteSlider } from "@/hooks/useInfiniteSlider";
 import type { TChannel } from "@/redux/features/channel/channel.api";
 
-// Card width matches the responsive classes on each card wrapper below.
-// We use the base (mobile) value; the hook measures real rendered width anyway.
-const CARD_WIDTH = 200; // px (base — sm:240 md:280)
-const GAP = 16;         // px — matches gap-4
+// Gap mirrors gap-3 (12px) on mobile, gap-4 (16px) on sm+
+const GAP = 16;
 
 interface FeaturedSliderProps {
   channels: TChannel[];
@@ -43,21 +41,29 @@ const FeaturedSlider = ({ channels }: FeaturedSliderProps) => {
         />
       </div>
 
-      {/* Slider track — hidden scrollbar */}
+      {/*
+        Scroll wrapper — ref & onScroll go here so the hook can read scrollLeft.
+        The inner grid uses min-w-full so that percentage-based auto-cols
+        are calculated relative to this wrapper's width (= same content area
+        as the main grid above), not the viewport.
+
+        auto-cols breakpoints mirror the main grid:
+          base     → grid-cols-2  + gap-3(12px) → calc(50%   -  6px)
+          sm:      → grid-cols-2  + gap-4(16px) → calc(50%   -  8px)
+          md:      → grid-cols-3  + gap-4(16px) → calc(33.33%- 10.67px)
+          xl:      → grid-cols-4  + gap-4(16px) → calc(25%   - 12px)
+          2xl:     → grid-cols-5  + gap-4(16px) → calc(20%   - 12.8px)
+      */}
       <div
         ref={trackRef}
-        className="flex overflow-x-auto pb-4 outline-none select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-        style={{ gap: GAP }}
+        className="overflow-x-auto pb-4 outline-none select-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onScroll={handleScroll}
       >
-        {tripled.map((channel, index) => (
-          <div
-            key={`${channel._id}-${index}`}
-            className="w-[150px] sm:w-[200px] lg:w-[280px] shrink-0 py-2"
-          >
-            <ChannelCard channel={channel} />
-          </div>
-        ))}
+        <div className="grid grid-flow-col min-w-full gap-3 sm:gap-4 auto-cols-[calc(50%-6px)] sm:auto-cols-[calc(50%-8px)] md:auto-cols-[calc(33.33%-11px)] xl:auto-cols-[calc(25%-12px)] 2xl:auto-cols-[calc(20%-13px)]">
+          {tripled.map((channel, index) => (
+            <ChannelCard key={`${channel._id}-${index}`} channel={channel} />
+          ))}
+        </div>
       </div>
     </div>
   );

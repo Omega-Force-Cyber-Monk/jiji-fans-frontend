@@ -40,14 +40,14 @@ const ChannelItem = ({ channel, rank }: ChannelItemProps) => {
 
       {/* Avatar Container */}
       <div className="relative h-12 w-12 shrink-0">
-        <div className="h-full w-full rounded-full overflow-hidden border-2 border-border-primary bg-secondary-bg transition-transform duration-500 group-hover:scale-110">
+        <div className="relative h-full w-full rounded-full overflow-hidden border-2 border-border-primary bg-secondary-bg transition-transform duration-500 size-14 group-hover:scale-110">
           {channel.avatar && !imageError ? (
             <Image
               src={channel.avatar}
               alt={channel.name}
-              height={48}
-              width={48}
-              className="w-full h-full object-cover"
+              fill
+              quality={100}
+              className="object-cover rounded-full"
               onError={() => setImageError(true)}
             />
           ) : (

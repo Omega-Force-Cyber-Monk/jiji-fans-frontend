@@ -1045,7 +1045,10 @@ const VideoComponent = () => {
                 {channel?.name || "Loading Channel..."}
               </h3>
               <p className="text-sm text-secondary-text mt-0.5">
-                Creator • 12.8K subscribers
+                Creator
+                {channel?.totalSubscribers !== undefined && (
+                  <> • {channel.totalSubscribers.toLocaleString()} subscriber{channel.totalSubscribers !== 1 ? "s" : ""}</>
+                )}
               </p>
             </div>
           </div>
@@ -1285,7 +1288,7 @@ const VideoComponent = () => {
       >
         <div className="w-full">
           <div className="mb-4">
-            <h1 className="text-xl xl:text-2xl font-semibold capitalize mb-2 text-center">
+            <h1 className="text-xl xl:text-2xl font-semibold capitalize mb-2 text-center text-primary-text">
               Write your report
             </h1>
           </div>
@@ -1307,7 +1310,7 @@ const VideoComponent = () => {
             >
               <Input
                 placeholder="Report Title"
-                className="placeholder:text-black!"
+                className="bg-secondary-bg! border-border-primary! text-primary-text! placeholder:text-muted-text! hover:border-brand-primary! focus:border-brand-primary!"
               />
             </Form.Item>
             <Form.Item
@@ -1325,6 +1328,7 @@ const VideoComponent = () => {
                 rows={6}
                 maxLength={100}
                 placeholder="Write here...."
+                className="bg-secondary-bg! border-border-primary! text-primary-text! placeholder:text-muted-text! hover:border-brand-primary! focus:border-brand-primary!"
               />
             </Form.Item>
             <div className="flex justify-center items-center gap-3 mt-4">

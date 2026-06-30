@@ -163,7 +163,7 @@ const dashboardApi = baseApi.injectEndpoints({
       }),
       providesTags: ["dashboard"],
     }),
-    getChannelEarnings: builder.query({
+    getChannelEarnings: builder.query<any, void>({
       query: () => ({
         url: `dashboard/channel/earnings`,
         method: "GET",
