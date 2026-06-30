@@ -53,7 +53,7 @@ const FeaturedSlider = ({ channels }: FeaturedSliderProps) => {
         {tripled.map((channel, index) => (
           <div
             key={`${channel._id}-${index}`}
-            className="w-[200px] sm:w-[240px] md:w-[280px] shrink-0 py-2"
+            className="w-[150px] sm:w-[200px] lg:w-[280px] shrink-0 py-2"
           >
             <ChannelCard channel={channel} />
           </div>

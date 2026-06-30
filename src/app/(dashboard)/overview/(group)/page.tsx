@@ -145,7 +145,7 @@ const Page = () => {
       />
 
       {firstTwenty.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
           {firstTwenty.map((channel) => (
             <ChannelCard key={channel._id} channel={channel} />
           ))}
@@ -164,7 +164,7 @@ const Page = () => {
       <FeaturedSlider channels={featuredChannels} />
 
       {visibleRemaining.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
           {visibleRemaining.map((channel) => (
             <ChannelCard key={channel._id} channel={channel} />
           ))}
@@ -173,7 +173,7 @@ const Page = () => {
 
       {/* Loading Skeletons */}
       {isFetching && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6">
           {Array.from({ length: 12 }).map((_, i) => (
             <ChannelCardSkeleton key={`skeleton-${i}`} />
           ))}

@@ -18,6 +18,7 @@ import {
   Card,
   Tag,
   Tooltip,
+  Modal,
 } from "antd";
 import {
   useGetWalletStatsQuery,
@@ -27,6 +28,9 @@ import {
   useMyWithdrawalRequestsQuery,
   useRequestWithdrawMutation,
   useUpdatePayoutSettingsMutation,
+  useGetPayoutSettingsQuery,
+  useCreatePayoutSettingsMutation,
+  useDeletePayoutSettingsMutation,
 } from "@/redux/features/wallet/wallet.api";
 import { useIdempotency } from "@/hooks/useIdempotency";
 import { queryFormat } from "@/lib/helpers/queryFormat";
@@ -48,7 +52,12 @@ import {
   FiCheckCircle,
   FiCreditCard,
   FiActivity,
-  FiDownload
+  FiDownload,
+  FiTrash2,
+  FiEdit2,
+  FiPlus,
+  FiSmartphone,
+  FiGlobe
 } from "react-icons/fi";
 import { cn } from "@/utils/cn";
 import AppBreadcrumb from "@/components/ui/AppBreadcrumb";
@@ -72,12 +81,22 @@ const Page = () => {
   const { idempotencyKey, regenerateKey } = useIdempotency();
   const [submitRequest, { isLoading: requLoading }] = useRequestWithdrawMutation();
   const [updatePayoutSettings, { isLoading: isSavingPayoutSettings }] = useUpdatePayoutSettingsMutation();
+  const [payoutForm] = Form.useForm();
+  const [isEditingPayout, setIsEditingPayout] = useState(false);
+  const [createPayoutSettings, { isLoading: isCreatingPayout }] = useCreatePayoutSettingsMutation();
+  const [deletePayoutSettings, { isLoading: isDeletingPayout }] = useDeletePayoutSettingsMutation();
+  const { data: payoutSettingsPayload, isLoading: isLoadingPayoutSettings } = useGetPayoutSettingsQuery();
+  const currentPayoutSettings = payoutSettingsPayload?.data || null;
+  const payoutMethod = Form.useWatch("payoutMethod", payoutForm) || "MOBILE_MONEY";
   const limit = 10;
 
   const { data: walletStats, isLoading: isLoadingStats } = useGetWalletStatsQuery();
   const { data: payoutStats } = useGetPayoutForClientQuery(undefined);
   const { data: kycStatusPayload, isLoading: isKycStatusLoading } = useGetMyKycStatusQuery(undefined);
   const { data: profileData } = useGetProfileQuery(undefined);
+  const isZimbabwe = profileData?.data?.country?.toUpperCase() === "ZW" ||
+    profileData?.data?.country?.toLowerCase() === "zimbabwe" ||
+    profileData?.data?.phoneNumber?.startsWith("+263");
 
   const statusSource = (kycStatusPayload || {}) as TUniObject;
   const currentKycStatus = (
@@ -606,23 +625,151 @@ const Page = () => {
             {
               key: '3',
               label: <span className="text-base px-4 pb-2 block text-primary-text font-medium">Payout Settings</span>,
-              children: (
+              children: isLoadingPayoutSettings ? (
+                <div className="py-12 px-4 max-w-xl">
+                  <Skeleton active className="dark:opacity-20" paragraph={{ rows: 4 }} />
+                </div>
+              ) : currentPayoutSettings && !isEditingPayout ? (
+                <div className="py-6 px-4 lg:px-6 max-w-xl space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold text-primary-text mb-2">Active Payout Destination</h4>
+                    <p className="text-sm text-secondary-text">Your earnings will be automatically or manually sent to the destination configured below.</p>
+                  </div>
+
+                  <div className="relative group rounded-lg border border-border-primary p-6 bg-secondary-bg text-primary-text transition-all duration-300 overflow-hidden">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-brand-primary font-bold text-sm uppercase tracking-wider">
+                          {currentPayoutSettings.payoutMethod === "BANK" ? (
+                            <FiCreditCard className="w-5 h-5" />
+                          ) : (
+                            <FiSmartphone className="w-5 h-5" />
+                          )}
+                          <span>{currentPayoutSettings.payoutMethod === "BANK" ? "Bank Transfer" : "Mobile Money"}</span>
+                        </div>
+
+                        {currentPayoutSettings.payoutMethod === "BANK" ? (
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Bank Name</span>
+                              <span className="text-primary-text font-medium">{currentPayoutSettings.bankName || "N/A"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Account Holder Name</span>
+                              <span className="text-primary-text font-medium">{currentPayoutSettings.accountHolderName || "N/A"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Account Number</span>
+                              <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.accountNumber || "N/A"}</span>
+                            </div>
+                            {currentPayoutSettings.swiftCode && (
+                              <div>
+                                <span className="text-muted-text block text-xs uppercase font-semibold">SWIFT Code</span>
+                                <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.swiftCode}</span>
+                              </div>
+                            )}
+                            {currentPayoutSettings.routingNumber && (
+                              <div>
+                                <span className="text-muted-text block text-xs uppercase font-semibold">Routing Number</span>
+                                <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.routingNumber}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Mobile Money Provider</span>
+                              <span className="text-primary-text font-medium">{currentPayoutSettings.mobileProvider || "N/A"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Account Holder Name</span>
+                              <span className="text-primary-text font-medium">{currentPayoutSettings.mobileAccountHolderName || "N/A"}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Mobile Phone Number</span>
+                              <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.mobilePhoneNumber || "N/A"}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        payoutForm.setFieldsValue({
+                          payoutMethod: currentPayoutSettings.payoutMethod,
+                          bankName: currentPayoutSettings.bankName,
+                          accountNumber: "", // don't fill masked values to force re-input if editing
+                          accountHolderName: currentPayoutSettings.accountHolderName,
+                          swiftCode: "",
+                          routingNumber: "",
+                          mobileProvider: currentPayoutSettings.mobileProvider,
+                          mobilePhoneNumber: "",
+                          mobileAccountHolderName: currentPayoutSettings.mobileAccountHolderName,
+                        });
+                        setIsEditingPayout(true);
+                      }}
+                      className="inline-flex items-center gap-2 border border-border-primary hover:border-brand-primary/50 text-secondary-text hover:text-primary-text bg-transparent font-semibold h-11 px-5 rounded-md transition-all cursor-pointer"
+                    >
+                      <FiEdit2 size={16} />
+                      Edit Details
+                    </button>
+                    <button
+                      disabled={isDeletingPayout}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: "Remove Payout Method",
+                          content: "Are you sure you want to delete your configured payout settings? Automated withdrawals will be suspended until a new method is defined.",
+                          onOk: async () => {
+                            try {
+                              await deletePayoutSettings(undefined).unwrap();
+                              messageApi.success("Payout settings removed successfully.");
+                            } catch (err) {
+                              errorAlert({ error: err as TResError, messageApi });
+                            }
+                          }
+                        });
+                      }}
+                      className="inline-flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/30 font-semibold h-11 px-5 rounded-md transition-all cursor-pointer disabled:opacity-40"
+                    >
+                      {isDeletingPayout ? (
+                        <span className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <FiTrash2 size={16} />
+                          Remove Method
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <div className="py-6 px-4 lg:px-6 max-w-xl">
-                  <h4 className="text-lg font-semibold text-primary-text mb-2">Configure Payout Method</h4>
-                  <p className="text-sm text-secondary-text mb-6">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-primary-text mb-2">Configure Payout Method</h4>
+                    <p className="text-sm text-secondary-text">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
+                  </div>
 
                   <Form
-                    layout="vertical"
-                    initialValues={{
-                      payoutMethod: profileData?.data?.payoutSettings?.payoutMethod || "MOBILE_MONEY",
-                      mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || "ecocash",
+                    form={payoutForm}
+                    layout="vertical" initialValues={{
+                      payoutMethod: "MOBILE_MONEY",
+                      mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || (isZimbabwe ? "PayNow" : "PawaPay"),
                       mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
                       mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
                     }}
                     onFinish={async (values) => {
                       try {
-                        await updatePayoutSettings(values).unwrap();
-                        messageApi.success("Payout settings updated successfully!");
+                        if (currentPayoutSettings) {
+                          await updatePayoutSettings(values).unwrap();
+                          messageApi.success("Payout settings updated successfully!");
+                        } else {
+                          await createPayoutSettings(values).unwrap();
+                          messageApi.success("Payout settings saved successfully!");
+                        }
+                        setIsEditingPayout(false);
                       } catch (error) {
                         errorAlert({ error: error as TResError, messageApi });
                       }
@@ -631,53 +778,130 @@ const Page = () => {
                     <Form.Item
                       label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
                       name="payoutMethod"
+                      rules={[{ required: true, message: "Please select a payout method." }]}
                     >
-                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3">
+                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
                         <option value="MOBILE_MONEY">Mobile Money</option>
+                        <option value="BANK">Bank Account</option>
                       </select>
                     </Form.Item>
 
-                    <Form.Item
-                      label={<span className="text-sm font-semibold text-secondary-text">Mobile Money Provider</span>}
-                      name="mobileProvider"
-                    >
-                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3">
-                        <option value="ecocash">EcoCash</option>
-                        <option value="onemoney">OneMoney</option>
-                        <option value="telecash">Telecash</option>
-                      </select>
-                    </Form.Item>
+                    {payoutMethod === "MOBILE_MONEY" && (
+                      <>
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Mobile Money Provider</span>}
+                          name="mobileProvider"
+                          rules={[{ required: true, message: "Please select a provider." }]}
+                        >
+                          <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
+                            {isZimbabwe ? (
+                              <option value="PayNow">PayNow</option>
+                            ) : (
+                              <option value="PawaPay">PawaPay</option>
+                            )}
+                          </select>
+                        </Form.Item>
 
-                    <Form.Item
-                      label={<span className="text-sm font-semibold text-secondary-text">Mobile Phone Number</span>}
-                      name="mobilePhoneNumber"
-                      rules={[{ required: true, message: "Please input mobile phone number." }]}
-                    >
-                      <Input
-                        className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                        placeholder="+263771234567"
-                      />
-                    </Form.Item>
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Mobile Phone Number</span>}
+                          name="mobilePhoneNumber"
+                          rules={[{ required: true, message: "Please input mobile phone number." }]}
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="+256783456789"
+                          />
+                        </Form.Item>
 
-                    <Form.Item
-                      label={<span className="text-sm font-semibold text-secondary-text">Account Holder Name</span>}
-                      name="mobileAccountHolderName"
-                      rules={[{ required: true, message: "Please input mobile account holder name." }]}
-                    >
-                      <Input
-                        className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                        placeholder="Creator Name"
-                      />
-                    </Form.Item>
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Account Holder Name</span>}
+                          name="mobileAccountHolderName"
+                          rules={[{ required: true, message: "Please input mobile account holder name." }]}
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="Creator Name"
+                          />
+                        </Form.Item>
+                      </>
+                    )}
 
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      loading={isSavingPayoutSettings}
-                      className="bg-brand-primary text-black font-semibold h-11 px-6 rounded-md hover:bg-brand-primary/90 border-none mt-2"
-                    >
-                      Save Payout Settings
-                    </Button>
+                    {payoutMethod === "BANK" && (
+                      <>
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Bank Name</span>}
+                          name="bankName"
+                          rules={[{ required: true, message: "Please input bank name." }]}
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="Example Bank"
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Account Holder Name</span>}
+                          name="accountHolderName"
+                          rules={[{ required: true, message: "Please input account holder name." }]}
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="Sample Creator"
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Account Number</span>}
+                          name="accountNumber"
+                          rules={[{ required: true, message: "Please input account number." }]}
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="9876543210"
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">SWIFT Code (Optional)</span>}
+                          name="swiftCode"
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="EXAMPWDX"
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span className="text-sm font-semibold text-secondary-text">Routing Number (Optional)</span>}
+                          name="routingNumber"
+                        >
+                          <Input
+                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
+                            placeholder="021000021"
+                          />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        loading={isSavingPayoutSettings || isCreatingPayout}
+                        className="bg-brand-primary text-black font-semibold h-11 px-6 rounded-md hover:bg-brand-primary/90 border-none"
+                      >
+                        Save Settings
+                      </Button>
+                      {currentPayoutSettings && (
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingPayout(false)}
+                          className="bg-transparent border border-border-primary text-secondary-text font-semibold h-11 px-6 rounded-md hover:border-brand-primary/40 hover:text-primary-text transition-all cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </Form>
                 </div>
               )

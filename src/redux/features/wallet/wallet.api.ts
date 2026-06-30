@@ -184,7 +184,7 @@ const walletApi = baseApi.injectEndpoints({
         const normalizedPagination: TPagination = payload?.pagination || {
           hasNextPage:
             typeof payload?.page === "number" &&
-            typeof payload?.totalPages === "number"
+              typeof payload?.totalPages === "number"
               ? payload.page < payload.totalPages
               : false,
           hasPreviousPage:
@@ -247,13 +247,35 @@ const walletApi = baseApi.injectEndpoints({
         response.data,
       providesTags: ["wallet", "withdraw"],
     }),
+    getPayoutSettings: builder.query<any, void>({
+      query: () => ({
+        url: `payout-settings`,
+        method: "GET",
+      }),
+      providesTags: ["wallet", "payout"],
+    }),
+    createPayoutSettings: builder.mutation({
+      query: (body) => ({
+        url: `payout-settings`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["wallet", "payout"],
+    }),
     updatePayoutSettings: builder.mutation({
       query: (body) => ({
         url: `payout-settings`,
-        method: "PUT",
+        method: "PATCH",
         body,
       }),
-      invalidatesTags: ["wallet"],
+      invalidatesTags: ["wallet", "payout"],
+    }),
+    deletePayoutSettings: builder.mutation({
+      query: () => ({
+        url: `payout-settings`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["wallet", "payout"],
     }),
     retryFailedPayout: builder.mutation({
       query: ({ id, idempotencyKey }: { id: string; idempotencyKey?: string }) => ({
@@ -320,4 +342,7 @@ export const {
   useUpdatePayoutSettingsMutation,
   useRetryFailedPayoutMutation,
   useOverrideFailedPayoutMutation,
+  useGetPayoutSettingsQuery,
+  useCreatePayoutSettingsMutation,
+  useDeletePayoutSettingsMutation,
 } = walletApi;

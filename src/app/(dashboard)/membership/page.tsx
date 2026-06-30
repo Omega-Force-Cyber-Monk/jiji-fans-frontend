@@ -22,7 +22,7 @@ const Page = () => {
   const { idempotencyKey, regenerateKey } = useIdempotency();
 
   const subscriptions = (data?.data?.subscriptions || []).filter(
-    (sub: TMySubscription) => sub && sub.channel
+    (sub: TMySubscription) => sub && sub.channelId
   );
 
   const handleCancelSubscription = async (subscriptionId: string, channelName: string) => {
@@ -32,7 +32,6 @@ const Page = () => {
       okay: "Yes, Cancel",
       conBtnColor: "#EF4444",
       func: async () => {
-
         try {
           await cancelSubscription({ subscriptionId, idempotencyKey }).unwrap();
           successAlert({
@@ -143,10 +142,10 @@ const Page = () => {
                   <div className="relative -mt-8 mb-6 h-16 w-16 rounded-md overflow-hidden border border-primary-bg bg-primary-bg shadow-sm shrink-0">
                     <Image
                       src={
-                        subscription.channel?.avatar ||
+                        subscription.channelId?.avatar ||
                         "/static/demo/channel_1.png"
                       }
-                      alt={subscription.channel?.name || "Channel"}
+                      alt={subscription.channelId?.name || "Channel"}
                       height={500}
                       width={500}
                       className="w-full h-full object-cover"
@@ -156,26 +155,56 @@ const Page = () => {
                   {/* Channel Meta */}
                   <div className="space-y-6 flex-1">
                     <h5 className="text-lg font-semibold text-primary-text group-hover:text-brand-primary transition-colors duration-200 truncate">
-                      {subscription.channel?.name || "Unknown Channel"}
+                      {subscription.channelId?.name || "Unknown Channel"}
                     </h5>
                     <p className="text-sm font-normal text-secondary-text line-clamp-3 leading-relaxed">
-                      {subscription.channel?.description || "No description available."}
+                      {subscription.channelId?.description || "No description available."}
                     </p>
                   </div>
                 </div>
 
                 {/* Action Row Footer */}
                 <div className="p-6 border-t border-border-primary/50 bg-primary-bg/50 flex items-center justify-between gap-6 mt-6">
-                  <div className="text-xs text-muted-text">
-                    Renews: <span className="font-medium text-secondary-text">June 15, 2026</span>
-                  </div>
-                  <button
-                    onClick={() => handleCancelSubscription(subscription._id, subscription.channel?.name || "Channel")}
-                    disabled={isCancelling}
-                    className="inline-flex items-center justify-center h-8 px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel Membership
-                  </button>
+                  {subscription.cancelAtPeriodEnd ? (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <div className="text-xs text-muted-text">
+                          Access until: <span className="font-medium text-secondary-text">
+                            {subscription.cancellation?.accessUntil || subscription.endDate
+                              ? new Date(subscription.cancellation?.accessUntil || subscription.endDate as string).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                              : "N/A"}
+                          </span>
+                        </div>
+                        {(subscription.cancelledAt || subscription.cancellation?.cancelledAt) && (
+                          <div className="text-xs text-muted-text">
+                            Cancelled on: <span className="font-medium text-secondary-text">
+                              {new Date((subscription.cancelledAt || subscription.cancellation?.cancelledAt) as string).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-warning bg-warning/10 border border-warning/20 rounded-md">
+                        Scheduled to Cancel
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs text-muted-text">
+                        Renews: <span className="font-medium text-secondary-text">
+                          {subscription.endDate
+                            ? new Date(subscription.endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCancelSubscription(subscription._id, subscription.channelId?.name || "Channel")}
+                        disabled={isCancelling}
+                        className="inline-flex items-center justify-center h-8 px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Cancel Membership
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

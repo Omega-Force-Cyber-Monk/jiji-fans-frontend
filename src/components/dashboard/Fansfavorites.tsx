@@ -1,11 +1,9 @@
 "use client";
 
 import { cn } from "@/utils/cn";
-import { ArrowUturnLeftIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ChevronRightIcon, FireIcon } from "@heroicons/react/20/solid";
 import Image from "@/components/ui/CImage";
-import { usePathname } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { useGetPopularChannelsQuery } from "@/redux/features/channel/channel.api";
 import { Empty, Skeleton } from "antd";
 import Link from "next/link";
@@ -110,9 +108,6 @@ const FansFavoritesSkeleton = () => (
 );
 
 const Fansfavorites = ({ className }: { className?: string }) => {
-  const [open, setOpen] = useState(true);
-  const itemsRef = useRef<HTMLDivElement>(null);
-
   const { data, isLoading } = useGetPopularChannelsQuery({ limit: 6 });
   const rawData = data?.data;
   const channels =
@@ -122,28 +117,11 @@ const Fansfavorites = ({ className }: { className?: string }) => {
         ? rawData
         : [];
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        itemsRef.current &&
-        !itemsRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   return (
     <div
-      ref={itemsRef}
       className={cn(
-        "h-full md:h-fit fixed right-0 top-0 md:sticky md:left-0 z-10 bg-primary-bg/80 backdrop-blur-xl translate-x-full md:translate-x-0 transition-all duration-500 shadow-xl md:shadow-none border-l md:border border-border-primary md:rounded-2xl p-5 w-[85vw] max-w-[360px] md:w-full md:max-w-none md:min-w-0",
-        className,
-        { "translate-x-0": open },
+        "h-fit w-full bg-primary-bg/80 backdrop-blur-xl border border-border-primary rounded-2xl p-5 md:min-w-0",
+        className
       )}
     >
       <div className="xl:flex items-center justify-between mb-6 space-y-2">

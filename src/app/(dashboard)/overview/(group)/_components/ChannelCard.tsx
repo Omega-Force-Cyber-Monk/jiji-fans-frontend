@@ -12,17 +12,17 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
       href={`/overview/channels/${channel._id}`}
       className="relative block aspect-[4/5] w-full overflow-hidden rounded-lg group border border-border-primary/20 bg-secondary-bg transition-all duration-300 hover:border-brand-primary/50 hover:shadow-lg hover:shadow-brand-primary/5 hover:-translate-y-1.5"
     >
-      {/* 1. Full-Bleed Grayscale-to-Color Background Image */}
+      {/* 1. Full-Bleed Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
           src={channel.avatar}
           alt={channel.name}
           fill
-          className="object-cover transition-all duration-700 ease-out group-hover:scale-115 filter grayscale contrast-110 group-hover:grayscale-0 brightness-[0.8] group-hover:brightness-100"
+          className="object-cover transition-all duration-700 ease-out group-hover:scale-110"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 20vw"
         />
         {/* Premium Dark Gradient Mask overlaying bottom content */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10 opacity-90 group-hover:opacity-95 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10 opacity-80 transition-opacity" />
       </div>
 
       {/* 2. Top-Right: Glassmorphic Quick-Action Arrow Badge */}
@@ -34,7 +34,7 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
 
       {/* 3. Bottom: Premium Overlay Typography */}
       <div className="absolute inset-x-0 bottom-0 z-20 p-3 sm:p-4 flex flex-col justify-end transition-all duration-300 ease-out">
-        {/* Tiny Rotating Active Diamond Accent */}
+        {/* Tiny Active Diamond Accent */}
         <div className="w-4 h-1.5 rounded-sm bg-brand-primary/80 group-hover:bg-brand-primary transition-colors mb-2" />
 
         <div className="flex flex-col">
@@ -45,7 +45,7 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
           {/* Sub-text that smoothly slides up and reveals details only on hover using grid animation */}
           <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out opacity-0 group-hover:opacity-100">
             <div className="overflow-hidden">
-              <p className="text-xs sm:text-sm text-muted-text line-clamp-2 leading-relaxed pt-1 sm:pt-1.5">
+              <p className="text-xs sm:text-sm text-gray-300 line-clamp-2 leading-relaxed pt-1 sm:pt-1.5">
                 {channel.description || "View exclusive studio broadcasts and creator content."}
               </p>
             </div>

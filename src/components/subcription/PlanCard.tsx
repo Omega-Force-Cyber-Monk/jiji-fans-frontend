@@ -30,7 +30,7 @@ const PlanCard = ({
 		viewType === "admin"
 			? "Manage Plan"
 			: isCurrentPlan
-				? "Current Plan"
+				? "Active Plan"
 				: !hasUnlockableContent
 					? "Nothing to unlock"
 					: hasSubscription
@@ -40,8 +40,8 @@ const PlanCard = ({
 	return (
 		<div className={cn(
 			"relative bg-secondary-bg/80 backdrop-blur-md shadow-sm rounded-2xl p-6 md:p-8 w-full text-left border flex flex-col transition-all duration-300",
-			isCurrentPlan 
-				? "border-brand-primary shadow-md ring-1 ring-brand-primary/20 scale-[1.02]" 
+			isCurrentPlan
+				? "border-brand-primary shadow-md ring-1 ring-brand-primary/20 scale-[1.02]"
 				: "border-border-primary hover:border-brand-primary/40 hover:shadow-md hover:-translate-y-1"
 		)}>
 			{isCurrentPlan && (
@@ -50,7 +50,7 @@ const PlanCard = ({
 					Active
 				</div>
 			)}
-			
+
 			<div className="mb-6 space-y-2">
 				<h3 className="text-xl font-bold tracking-tight text-primary-text">{data.name}</h3>
 				<div className="flex items-baseline gap-1">

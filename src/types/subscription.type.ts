@@ -37,10 +37,22 @@ export type TSubscription = {
 
 export type TMySubscription = {
   _id: string;
-  channel: {
+  channelId: {
     _id: string;
     name: string;
     avatar: string;
     description: string;
   };
+  cancelAtPeriodEnd?: boolean;
+  cancelledAt?: string;
+  cancellation?: {
+    isScheduled: boolean;
+    cancelledAt: string;
+    accessUntil: string;
+    autoRenew: boolean;
+  };
+  endDate?: string;
+  isPaid?: boolean;
+  paymentProvider?: string;
+  status?: string;
 };

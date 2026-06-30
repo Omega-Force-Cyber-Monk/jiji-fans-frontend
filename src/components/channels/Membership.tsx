@@ -52,7 +52,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 	const currentPlan = currentSubscription
 		? plans.find(
 			(plan: any) =>
-				plan._id === currentSubscription.subscriptionPlanId
+				plan._id === currentSubscription.subscriptionPlanId ||
+				plan._id === (currentSubscription.subscriptionPlanId as any)?._id
 		)
 		: undefined;
 	const [messageApi, contextHolder] = message.useMessage();
@@ -150,7 +151,7 @@ const Membership = ({ channelId }: MembershipProps) => {
 								channelId,
 								subscriptionPlanId: plan._id,
 								paymentProvider,
-								phoneNumber: user?.phoneNumber || "",
+								phoneNumber: user?.phoneNumber?.replace(/\D/g, "") || "",
 								country: fullCountryName,
 								currency: "USD",
 								language: "en",
@@ -282,7 +283,7 @@ const Membership = ({ channelId }: MembershipProps) => {
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 							<div className="space-y-1">
 								<p className="text-lg font-semibold text-primary-text">
-									{currentPlan?.name || "Current"} Plan
+									{currentPlan?.name || "Current"}
 								</p>
 								<p className="text-sm text-secondary-text">
 									Expires on:{" "}
@@ -318,7 +319,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 								key={plan._id}
 								data={plan}
 								isCurrentPlan={
-									currentSubscription?.subscriptionPlanId === plan._id
+									currentSubscription?.subscriptionPlanId === plan._id ||
+									(currentSubscription?.subscriptionPlanId as any)?._id === plan._id
 								}
 								hasSubscription={!!currentSubscription}
 								onSelectPlan={handleSelectPlan}

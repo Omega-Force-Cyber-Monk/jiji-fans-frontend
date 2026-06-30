@@ -51,7 +51,6 @@ const SignIn = ({ redirect }: { redirect?: string }) => {
 
   const devAccounts = [
     // { email: "sample.user@yopmail.com", role: "User", password: "Password123!" },
-    { email: "safe.creator.1781934625498@yopmail.com", role: "Creator", password: "Password123!" },
     { email: "admin@mycompany.com", role: "Admin", password: "SecurePass123!" },
   ];
 
