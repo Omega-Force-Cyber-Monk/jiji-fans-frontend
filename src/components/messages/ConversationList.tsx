@@ -1,5 +1,5 @@
 "use client";
-import { message } from "antd";
+import { message, Modal, Checkbox, Input, Avatar } from "antd";
 import { useEffect, useState } from "react";
 import { TQuery, TUniObject } from "@/types";
 import { useParams, useRouter } from "next/navigation";
@@ -44,28 +44,57 @@ const ConversationList = ({
 
   const isCreatorUser = user?.role === "Creator" || user?.role?.toLowerCase() === "creator";
 
-  const handleCreateGroupWithAllSubscribers = async () => {
+  const [isCreateGroupModalVisible, setIsCreateGroupModalVisible] = useState(false);
+  const [groupTitle, setGroupTitle] = useState("");
+  const [groupAvatar, setGroupAvatar] = useState(user?.avatar || "/static/demo-image.jpg");
+  const [subscribersList, setSubscribersList] = useState<any[]>([]);
+  const [selectedSubscriberIds, setSelectedSubscriberIds] = useState<string[]>([]);
+  const [subscribersSearchQuery, setSubscribersSearchQuery] = useState("");
+
+  const handleOpenCreateGroupModal = async () => {
+    setIsCreateGroupModalVisible(true);
+    setGroupTitle("");
+    setGroupAvatar(user?.avatar || "/static/demo-image.jpg");
+    setSelectedSubscriberIds([]);
     try {
       const subscribersRes = await triggerGetSubscribers({ limit: 1000 }).unwrap();
-      const subscriberList = subscribersRes?.data?.subscribers || [];
-      const subscriberIds = subscriberList
-        .map((sub: any) => sub?.subscriber?._id)
-        .filter(Boolean);
+      const rawList = subscribersRes?.data?.subscribers || [];
+      const formattedList = rawList
+        .map((sub: any) => ({
+          id: sub?.subscriber?._id,
+          username: sub?.subscriber?.username || "N/A",
+          email: sub?.subscriber?.email || "N/A",
+          avatar: sub?.subscriber?.avatar || "",
+        }))
+        .filter((u: any) => !!u.id);
+      setSubscribersList(formattedList);
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Failed to load subscribers.");
+    }
+  };
 
-      if (subscriberIds.length === 0) {
-        messageApi.warning("You have no subscribers to add to a group chat.");
-        return;
-      }
+  const handleCreateGroupSubmit = async () => {
+    if (!groupTitle.trim()) {
+      messageApi.error("Please enter a group title.");
+      return;
+    }
+    if (selectedSubscriberIds.length < 2) {
+      messageApi.error("Please select at least 2 subscribers for a group conversation.");
+      return;
+    }
 
+    try {
       const result = await createConversation({
         conversationType: "GROUP",
-        participants: subscriberIds,
-        title: "All Subscribers Group",
-        avatar: "/static/demo-image.jpg",
+        participants: selectedSubscriberIds,
+        title: groupTitle.trim(),
+        avatar: groupAvatar || "/static/demo-image.jpg",
       }).unwrap();
 
       if (result?.data?.conversationId) {
-        messageApi.success("Group chat created successfully with all subscribers!");
+        messageApi.success("Group chat created successfully!");
+        setIsCreateGroupModalVisible(false);
         fetchData({});
         router.push(`${basePath}/${result.data.conversationId}`);
       } else {
@@ -76,6 +105,12 @@ const ConversationList = ({
       messageApi.error("An error occurred while creating group conversation.");
     }
   };
+
+  const filteredSubscribers = subscribersList.filter(
+    (sub) =>
+      sub.username.toLowerCase().includes(subscribersSearchQuery.toLowerCase()) ||
+      sub.email.toLowerCase().includes(subscribersSearchQuery.toLowerCase())
+  );
 
   const fetchData = async ({
     searchTerm: search,
@@ -267,12 +302,12 @@ const ConversationList = ({
         <div className="flex items-center gap-2">
           {isCreatorUser && (
             <button
-              onClick={handleCreateGroupWithAllSubscribers}
-              disabled={isFetchingSubscribers || isCreatingGroup}
+              onClick={handleOpenCreateGroupModal}
+              disabled={isFetchingSubscribers}
               className="text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 font-semibold px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
-              title="Create a group chat with all active subscribers"
+              title="Create a group chat with selected subscribers"
             >
-              {isFetchingSubscribers || isCreatingGroup ? (
+              {isFetchingSubscribers ? (
                 <span className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <span>👥 Create Group</span>
@@ -420,6 +455,124 @@ const ConversationList = ({
           })}
         </div>
       </LoaderWraperComp>
+
+      {/* Create Group Modal */}
+      <Modal
+        title={<span className="text-lg font-semibold text-primary-text">Create Group Conversation</span>}
+        open={isCreateGroupModalVisible}
+        onOk={handleCreateGroupSubmit}
+        onCancel={() => setIsCreateGroupModalVisible(false)}
+        confirmLoading={isCreatingGroup}
+        okText="Create Group"
+        okButtonProps={{
+          className: "bg-emerald-500 hover:bg-emerald-600 border-none text-white font-semibold rounded-md",
+          disabled: selectedSubscriberIds.length < 2 || !groupTitle.trim(),
+        }}
+        cancelButtonProps={{
+          className: "border-border-primary text-secondary-text hover:text-primary-text rounded-md",
+        }}
+        className="dark-modal"
+      >
+        <div className="space-y-4 my-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-secondary-text">Group Title</label>
+            <Input
+              value={groupTitle}
+              onChange={(e) => setGroupTitle(e.target.value)}
+              placeholder="Enter group chat title..."
+              className="bg-secondary-bg border-border-primary text-primary-text placeholder:text-muted-text rounded-md h-10 focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-secondary-text">Group Avatar (Optional)</label>
+            <Input
+              value={groupAvatar}
+              onChange={(e) => setGroupAvatar(e.target.value)}
+              placeholder="Enter group avatar URL..."
+              className="bg-secondary-bg border-border-primary text-primary-text placeholder:text-muted-text rounded-md h-10 focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-semibold text-secondary-text">
+                Select Subscribers ({selectedSubscriberIds.length} selected)
+              </label>
+              <div className="flex items-center gap-3">
+                {filteredSubscribers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allFilteredIds = filteredSubscribers.map((sub) => sub.id);
+                      const allAreSelected = allFilteredIds.every((id) => selectedSubscriberIds.includes(id));
+                      if (allAreSelected) {
+                        setSelectedSubscriberIds((prev) => prev.filter((id) => !allFilteredIds.includes(id)));
+                      } else {
+                        setSelectedSubscriberIds((prev) => Array.from(new Set([...prev, ...allFilteredIds])));
+                      }
+                    }}
+                    className="text-xs text-emerald-500 font-semibold hover:text-emerald-600 cursor-pointer bg-none border-none p-0"
+                  >
+                    {filteredSubscribers.map((sub) => sub.id).every((id) => selectedSubscriberIds.includes(id))
+                      ? "Deselect All"
+                      : "Select All"}
+                  </button>
+                )}
+                <span className="text-xs text-muted-text font-medium">Requires at least 2</span>
+              </div>
+            </div>
+            <Input
+              value={subscribersSearchQuery}
+              onChange={(e) => setSubscribersSearchQuery(e.target.value)}
+              placeholder="Search subscribers..."
+              className="bg-secondary-bg border-border-primary text-primary-text placeholder:text-muted-text rounded-md mb-2 h-9 text-xs focus:border-emerald-500/50"
+            />
+
+            <div className="max-h-56 overflow-y-auto border border-border-primary/80 rounded-md p-2 divide-y divide-border-primary/40 space-y-1 bg-secondary-bg/20 custom-scrollbar">
+              {isFetchingSubscribers ? (
+                <div className="py-8 text-center text-xs text-muted-text animate-pulse">Loading subscribers...</div>
+              ) : filteredSubscribers.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-text">No subscribers found</div>
+              ) : (
+                filteredSubscribers.map((sub) => {
+                  const isChecked = selectedSubscriberIds.includes(sub.id);
+                  return (
+                    <div
+                      key={sub.id}
+                      onClick={() => {
+                        setSelectedSubscriberIds((prev) =>
+                          isChecked ? prev.filter((id) => id !== sub.id) : [...prev, sub.id]
+                        );
+                      }}
+                      className="flex items-center justify-between py-2 px-1.5 hover:bg-secondary-bg rounded-md cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar
+                          src={sub.avatar}
+                          size={28}
+                          className="border border-border-primary bg-secondary-bg text-primary-text text-xs shrink-0"
+                        >
+                          {sub.username?.charAt(0)?.toUpperCase()}
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-primary-text truncate">{sub.username}</p>
+                          <p className="text-[10px] text-muted-text truncate">{sub.email}</p>
+                        </div>
+                      </div>
+                      <Checkbox
+                        checked={isChecked}
+                        onChange={() => { }} // Handled by outer click
+                        className="pointer-events-none custom-checkbox"
+                      />
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

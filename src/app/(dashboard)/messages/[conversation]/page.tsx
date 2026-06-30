@@ -12,7 +12,7 @@ import { cn } from "@/utils/cn";
 import ChatInput from "@/components/messages/ChatInput";
 import Participant from "@/components/messages/Participant";
 import { errorAlert } from "@/lib/alerts";
-import { useLazyGetMessagesQuery, useMarkAsReadMutation } from "@/redux/features/messages/messages.api";
+import { useLazyGetMessagesQuery, useMarkAsReadMutation, useGetConversationDetailsQuery } from "@/redux/features/messages/messages.api";
 
 const Conversation = () => {
   const { socket, messageApi } = useAppContext();
@@ -31,6 +31,25 @@ const Conversation = () => {
   const prependAnchorRef = useRef<{ scrollTop: number; scrollHeight: number } | null>(null);
   const { user } = useAppSelector((state) => state.auth);
   const [messages, setMessages] = useState<TUniObject[]>([]);
+  const [participantsById, setParticipantsById] = useState<Record<string, string>>({});
+
+  const { data: conversationDetails } = useGetConversationDetailsQuery(conversationId || "", {
+    skip: !conversationId,
+  });
+
+  // Build participants map when conversation details load
+  useEffect(() => {
+    const participants = conversationDetails?.data?.participants || [];
+    if (participants.length > 0) {
+      const map: Record<string, string> = {};
+      participants.forEach((p: TUniObject) => {
+        if (p?._id) {
+          map[p._id] = p.username || p.name || p.email || "Unknown";
+        }
+      });
+      setParticipantsById(map);
+    }
+  }, [conversationDetails]);
   const [query, setQuery] = useState<TQuery>({
     page: 1,
     limit: 10,
@@ -316,6 +335,23 @@ const Conversation = () => {
                         </div>
                       ) : (
                         <div className="max-w-[80%] mr-auto flex flex-col items-start group">
+                          {/* Sender name label for incoming messages */}
+                          {(() => {
+                            const senderId =
+                              typeof message?.sender === "string"
+                                ? message.sender
+                                : message?.sender?._id || message?.senderId;
+                            const senderName =
+                              (typeof message?.sender === "object" && message?.sender !== null
+                                ? message.sender?.username || message.sender?.name
+                                : null) ||
+                              (senderId ? participantsById[senderId] : null);
+                            return senderName ? (
+                              <span className="text-[10px] font-semibold text-emerald-500 mb-0.5 px-1 tracking-wide">
+                                {senderName}
+                              </span>
+                            ) : null;
+                          })()}
                           <div className="px-4 py-2.5 bg-secondary-bg/80 border border-border-primary/40 text-primary-text rounded-2xl rounded-tl-none shadow-xs text-sm font-normal tracking-wide leading-relaxed">
                             {message.text}
                           </div>
