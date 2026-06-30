@@ -117,20 +117,20 @@ const SignIn = ({ redirect }: { redirect?: string }) => {
         duration: 1,
       });
 
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, refreshToken, user } = response?.data || {};
 
       dispatch(
         setLogin({
-          accessToken,
-          refreshToken,
+          accessToken: accessToken || "",
+          refreshToken: refreshToken || "",
           user: user,
         })
       );
 
       // Handle redirect based on role (as per user's previous preference)
-      if (user?.role.toLowerCase() === "admin") {
+      if (user?.role?.toLowerCase() === "admin") {
         router.replace("/admin/home");
-      } else if (user?.role.toLowerCase() === "creator") {
+      } else if (user?.role?.toLowerCase() === "creator") {
         router.replace("/overview");
       } else {
         router.replace("/overview");

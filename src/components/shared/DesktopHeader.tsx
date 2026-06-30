@@ -70,7 +70,7 @@ const DesktopHeader = ({ className, onMenuClick }: DesktopHeaderProps) => {
   });
 
   const hasChannel = !!channelData?.data?._id;
-  const balance = walletData?.availableBalance ?? walletData?.balance ?? 0;
+  const balance = walletData?.balance ?? walletData?.availableBalance ?? 0;
 
   const isKycCompleted = profileData?.data?.kycStatus === "APPROVED";
 

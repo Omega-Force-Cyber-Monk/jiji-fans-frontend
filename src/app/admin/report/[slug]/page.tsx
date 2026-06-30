@@ -8,14 +8,23 @@ import { useParams } from "next/navigation";
 import LoaderWraperComp from "@/components/LoaderWraperComp";
 import { formatTwoDigits } from "@/lib/helpers/getTwoDisit";
 import { handleImageError } from "@/lib/handleImageError";
+import {
+  UserIcon,
+  TvIcon,
+  ShieldCheckIcon,
+  DocumentTextIcon,
+  CalendarDaysIcon,
+  TagIcon,
+  VideoCameraIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 
 const getStatusClassName = (status?: string) => {
   const value = (status || "").toUpperCase();
-  if (value === "OPEN") return "bg-amber-100 text-amber-700 border-amber-200";
-  if (value === "RESOLVED")
-    return "bg-emerald-100 text-emerald-700 border-emerald-200";
-  if (value === "REJECTED") return "bg-red-100 text-red-700 border-red-200";
-  return "bg-slate-100 text-slate-700 border-slate-200";
+  if (value === "OPEN") return "bg-warning/10 text-warning border-warning/25";
+  if (value === "RESOLVED") return "bg-success/10 text-success border-success/25";
+  if (value === "REJECTED") return "bg-error/10 text-error border-error/25";
+  return "bg-primary-bg/30 text-muted-text border-border-primary/50";
 };
 
 const formatDate = (date?: string) => {
@@ -38,32 +47,38 @@ const Page = () => {
   const ownerAvatar = data?.owner?.avatar || "/static/demo-image.jpg";
 
   return (
-    <div>
+    <div className="space-y-6 max-w-none pb-8">
       <PageHeading title="Report Details" />
+
       <LoaderWraperComp
         isError={isError}
         isLoading={isLoading}
         error={error}
         className="h-[50vh]"
       >
-        <div className="space-y-5 mt-6">
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-5 lg:p-6">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
-                  Report #{data?.id || slug}
-                </p>
-                <h1 className="text-xl lg:text-2xl font-semibold text-slate-900 break-words">
+        <div className="space-y-6">
+          {/* Top Banner Card */}
+          <div className="relative overflow-hidden rounded-xl border border-border-primary bg-secondary-bg p-6 shadow-md transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-primary/5 via-transparent to-brand-secondary/5 pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2 text-xs font-semibold text-brand-primary uppercase tracking-widest">
+                  <TagIcon className="w-4 h-4" />
+                  <span>Report #{data?.id || slug}</span>
+                </div>
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold text-primary-text break-words tracking-tight">
                   {data?.title || "Untitled Report"}
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
-                  Created: {formatDate(data?.createdAt)}
-                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-text">
+                  <CalendarDaysIcon className="w-4 h-4" />
+                  <span>Created: {formatDate(data?.createdAt)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="shrink-0 self-start md:self-center">
                 <span
-                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                    status,
+                  className={`inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${getStatusClassName(
+                    status
                   )}`}
                 >
                   {status}
@@ -72,14 +87,22 @@ const Page = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-            <div className="xl:col-span-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-800 mb-3">
-                  Reported User
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-slate-200">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+            {/* Left Column: Users and Channels */}
+            <div className="xl:col-span-4 space-y-6">
+
+              {/* Reported User */}
+              <div className="rounded-xl border border-border-primary/80 bg-secondary-bg/80 backdrop-blur-md p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-border-primary/40">
+                  <UserIcon className="w-5 h-5 text-brand-primary" />
+                  <h3 className="text-sm font-bold text-primary-text uppercase tracking-wider">
+                    Reported User
+                  </h3>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-border-primary ring-2 ring-brand-primary/10 ring-offset-1">
                     <Image
                       src={reportedUserAvatar}
                       alt="Reported user avatar"
@@ -90,25 +113,29 @@ const Page = () => {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">
+                    <p className="font-bold text-primary-text truncate">
                       {data?.user?.username || "N/A"}
                     </p>
-                    <p className="text-sm text-slate-500 truncate">
+                    <p className="text-sm text-secondary-text truncate">
                       {data?.user?.email || "N/A"}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {data?.user?.country || "N/A"}
-                    </p>
+                    <span className="inline-block mt-1 text-[10px] font-bold tracking-widest uppercase bg-primary-bg px-2 py-0.5 rounded text-brand-secondary">
+                      Country: {data?.user?.country || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-800 mb-3">
-                  Channel
-                </p>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-slate-200">
+              {/* Channel Info */}
+              <div className="rounded-xl border border-border-primary/80 bg-secondary-bg/80 backdrop-blur-md p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-border-primary/40">
+                  <TvIcon className="w-5 h-5 text-brand-primary" />
+                  <h3 className="text-sm font-bold text-primary-text uppercase tracking-wider">
+                    Target Channel
+                  </h3>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-border-primary ring-2 ring-brand-primary/10 ring-offset-1">
                     <Image
                       src={channelAvatar}
                       alt="Channel avatar"
@@ -119,28 +146,45 @@ const Page = () => {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">
+                    <p className="font-bold text-primary-text truncate">
                       {data?.channel?.name || "N/A"}
                     </p>
-                    <p className="text-sm text-slate-500 truncate">
+                    <p className="text-xs text-muted-text line-clamp-2 mt-0.5 leading-normal">
                       {data?.channel?.description || "No channel description"}
                     </p>
                   </div>
                 </div>
-                <div className="text-sm text-slate-600">
-                  <p>
-                    {formatTwoDigits({ num: data?.totalSubscribers })} Members
-                  </p>
-                  <p>{formatTwoDigits({ num: data?.totalVideo })} Videos</p>
+
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border-primary/40 text-sm">
+                  <div className="flex items-center gap-2 text-secondary-text bg-primary-bg/50 p-2 rounded border border-border-primary/20">
+                    <UsersIcon className="w-4 h-4 text-brand-secondary" />
+                    <span>
+                      <strong className="text-primary-text font-semibold">
+                        {formatTwoDigits({ num: data?.totalSubscribers })}
+                      </strong> Members
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-secondary-text bg-primary-bg/50 p-2 rounded border border-border-primary/20">
+                    <VideoCameraIcon className="w-4 h-4 text-success" />
+                    <span>
+                      <strong className="text-primary-text font-semibold">
+                        {formatTwoDigits({ num: data?.totalVideo })}
+                      </strong> Videos
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-800 mb-3">
-                  Channel Owner
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-slate-200">
+              {/* Channel Owner */}
+              <div className="rounded-xl border border-border-primary/80 bg-secondary-bg/80 backdrop-blur-md p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-border-primary/40">
+                  <ShieldCheckIcon className="w-5 h-5 text-brand-primary" />
+                  <h3 className="text-sm font-bold text-primary-text uppercase tracking-wider">
+                    Channel Owner
+                  </h3>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 shrink-0 rounded-full overflow-hidden border border-border-primary ring-2 ring-brand-primary/10 ring-offset-1">
                     <Image
                       src={ownerAvatar}
                       alt="Owner avatar"
@@ -151,33 +195,42 @@ const Page = () => {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 truncate">
+                    <p className="font-bold text-primary-text truncate">
                       {data?.owner?.username || "N/A"}
                     </p>
-                    <p className="text-sm text-slate-500 truncate">
+                    <p className="text-sm text-secondary-text truncate">
                       {data?.owner?.email || "N/A"}
                     </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {data?.owner?.country || "N/A"}
-                    </p>
+                    <span className="inline-block mt-1 text-[10px] font-bold tracking-widest uppercase bg-primary-bg px-2 py-0.5 rounded text-brand-secondary">
+                      Country: {data?.owner?.country || "N/A"}
+                    </span>
                   </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right Column: Description */}
+            <div className="xl:col-span-8 rounded-xl border border-border-primary/80 bg-secondary-bg/80 backdrop-blur-md p-6 shadow-sm space-y-5">
+              <div className="flex items-center gap-2 pb-3 border-b border-border-primary/40">
+                <DocumentTextIcon className="w-5 h-5 text-brand-primary" />
+                <h2 className="text-base font-bold text-primary-text uppercase tracking-wider">
+                  Report Description
+                </h2>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-muted-text">
+                  Submitted by <span className="text-primary-text font-semibold">{data?.user?.username || "Anonymous User"}</span>
+                </p>
+                <div className="rounded-xl border border-border-primary/60 bg-primary-bg/40 p-5 border-l-4 border-l-brand-primary">
+                  <p className="text-primary-text/90 text-base whitespace-pre-wrap leading-relaxed">
+                    {data?.description || "No description provided by the user."}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="xl:col-span-8 rounded-2xl border border-slate-200 bg-white p-5 lg:p-6">
-              <h2 className="text-lg lg:text-xl font-semibold text-slate-900">
-                Report Description
-              </h2>
-              <p className="text-sm text-slate-500 mt-1 mb-4">
-                Submitted by {data?.user?.username || "N/A"}
-              </p>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
-                  {data?.description || "No description provided by the user."}
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </LoaderWraperComp>

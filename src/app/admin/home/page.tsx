@@ -1,7 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { Skeleton } from "antd";
-import EarningBarChart from "@/components/dashboard/EarningBarChart";
+import CountryMarketShareChart from "@/components/admin/CountryMarketShareChart";
 import RecentSubscriber from "@/components/dashboard/RecentSubscriber";
 import { formatTwoDigits } from "@/lib/helpers/getTwoDisit";
 import {
@@ -216,7 +216,7 @@ const Page = () => {
         <div className="xl:col-span-2 bg-secondary-bg border border-border-primary rounded-lg p-5 shadow-sm overflow-hidden flex flex-col justify-between h-[380px] hover:border-brand-primary">
 
           <div className="w-full flex-1 min-h-0">
-            <EarningBarChart className="!pt-0" />
+            <CountryMarketShareChart className="!pt-0" />
           </div>
         </div>
 
@@ -277,7 +277,7 @@ const Page = () => {
             <p className="text-sm text-muted-text font-normal mt-0.5">New user signups and onboardings</p>
           </div>
           <div className="flex-1 overflow-y-auto no-scrollbar">
-            <RecentSubscriber title="" subscriptions={(recentUserData?.data || []).slice(0, 6)} viewType="admin" />
+            <RecentSubscriber title="" subscriptions={(Array.isArray(recentUserData?.data) ? recentUserData.data : []).slice(0, 6)} viewType="admin" />
           </div>
         </div>
       </div>

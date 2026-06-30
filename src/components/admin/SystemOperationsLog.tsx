@@ -274,7 +274,14 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
           dataSource={transactions}
           loading={loading}
           pagination={false}
-          locale={{ emptyText: "No operational logs" }}
+          locale={{
+            emptyText: (
+              <div className="text-center py-10 flex flex-col items-center justify-center gap-2 bg-secondary-bg/30 border border-dashed border-border-primary/50 rounded-lg">
+                <ClockIcon className="w-8 h-8 text-muted-text/40 animate-pulse" />
+                <p className="text-sm text-muted-text font-medium">No system operations logs found.</p>
+              </div>
+            )
+          }}
           className="ant-table-custom"
           size="middle"
         />

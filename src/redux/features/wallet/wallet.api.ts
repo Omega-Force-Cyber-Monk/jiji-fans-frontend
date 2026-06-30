@@ -327,6 +327,32 @@ const walletApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["wallet", "withdraw"],
     }),
+    getFailedTransactions: builder.query({
+      query: (paramsObj?: {
+        page?: number;
+        limit?: number;
+        type?: string;
+        method?: string;
+        startDate?: string;
+        endDate?: string;
+        groupBy?: string;
+      }) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `transactions/failed`,
+          method: "GET",
+          params,
+        };
+      },
+      providesTags: ["wallet"],
+    }),
   }),
 });
 
@@ -345,4 +371,5 @@ export const {
   useGetPayoutSettingsQuery,
   useCreatePayoutSettingsMutation,
   useDeletePayoutSettingsMutation,
+  useGetFailedTransactionsQuery,
 } = walletApi;

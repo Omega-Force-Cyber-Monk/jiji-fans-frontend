@@ -6,7 +6,7 @@ import ViewsRatioChart from "@/components/admin/ViewsRatioChart";
 import PaymentMethodsPieChart from "@/components/admin/PaymentMethodsPieChart";
 import FailedTransactionsAreaChart from "@/components/admin/FailedTransactionsAreaChart";
 import RegionalRevenueSplit from "@/components/admin/RegionalRevenueSplit";
-import ActiveRegionsMap from "@/components/admin/ActiveRegionsMap";
+// import ActiveRegionsMap from "@/components/admin/ActiveRegionsMap";
 import AnalyticsMetricsGrid from "@/components/admin/AnalyticsMetricsGrid";
 import { Breadcrumb } from "antd";
 import React from "react";
@@ -39,7 +39,7 @@ const Page = () => {
         <RecentViewers className="xl:col-span-5" />
         <UsedDevices className="xl:col-span-7" />
       </div>
-      <ActiveRegionsMap />
+      {/* <ActiveRegionsMap /> */}
     </div>
   );
 };

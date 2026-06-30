@@ -476,7 +476,7 @@ const VideoComponent = () => {
     try {
       // console.log(values.report);
       await submitReport({
-        channel: content?.channel!,
+        channel: (targetChannelId as string)!,
         title: values.title,
         description: values.report,
       }).unwrap();
@@ -1089,7 +1089,6 @@ const VideoComponent = () => {
               <SparklesIcon className="w-5 h-5 text-black" />
               <span>Tip Creator</span>
             </button>
-
 
             {/* Report Option (Popover) */}
             <Popover

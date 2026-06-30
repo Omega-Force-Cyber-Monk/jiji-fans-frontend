@@ -69,37 +69,56 @@ const AnalyticsMetricsGrid = () => {
       {/* Row 1: Unified Metric Card Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <AnalyticsMetricCard
-          title="Total Registered Users"
+          title="User Directory"
           value={stats ? totalUsers.toLocaleString() : "..."}
-          type="simple"
+          type="list"
           icon={<UsersIcon />}
           trend={stats ? { value: `${userGrowthPercent >= 0 ? "+" : ""}${userGrowthPercent.toFixed(1)}%`, isPositive: userGrowthPercent >= 0 } : undefined}
-          subValue={stats ? `Active Channels: ${totalChannels.toLocaleString()}` : undefined}
+          listData={[
+            { label: "Active Fans", value: String(stats?.people?.activeFans || 0), percentage: 0 },
+            { label: "Creators", value: String(stats?.people?.creators || 0), percentage: 0 },
+            { label: "Total Channels", value: String(totalChannels), percentage: 0 },
+          ]}
         />
 
         <AnalyticsMetricCard
-          title="Total Channels"
-          value={stats ? totalChannels.toLocaleString() : "..."}
-          type="simple"
-          icon={<UsersIcon />}
-          subValue="Active creator publications"
-        />
-
-        <AnalyticsMetricCard
-          title="Total Subscriptions"
-          value={stats ? (stats.totalSubscriptions || 0).toLocaleString() : "..."}
-          type="simple"
-          icon={<CreditCardIcon />}
-          subValue="Active fan memberships"
-        />
-
-        <AnalyticsMetricCard
-          title="Total Revenue"
-          value={stats ? `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "..."}
-          type="simple"
+          title="Revenue Split"
+          value={stats ? `$${(stats?.revenue?.gross?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "..."}
+          type="list"
           icon={<CurrencyDollarIcon />}
           trend={stats ? { value: `${revenueGrowthPercent >= 0 ? "+" : ""}${revenueGrowthPercent.toFixed(1)}%`, isPositive: revenueGrowthPercent >= 0 } : undefined}
-          subValue={stats ? `Current Period Earnings` : undefined}
+          listData={[
+            { label: "Creator Share", value: `$${(stats?.revenue?.creatorShare?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, percentage: stats?.revenue?.creatorShare?.percentage || 90 },
+            { label: "Platform Commission", value: `$${(stats?.revenue?.platformCommission?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, percentage: stats?.revenue?.platformCommission?.percentage || 10 },
+          ]}
+        />
+
+        <AnalyticsMetricCard
+          title="Income Streams"
+          value={stats ? `${(stats.totalSubscriptions || 0).toLocaleString()} Subscriptions` : "..."}
+          type="split"
+          icon={<CreditCardIcon />}
+          splitData={{
+            labelA: "Membership Fees",
+            valueA: `$${(stats?.revenue?.subscriptions?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            labelB: "Tips & Donations",
+            valueB: `$${(stats?.revenue?.tips?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            ratioA: 0
+          }}
+        />
+
+        <AnalyticsMetricCard
+          title="Payout Operations"
+          value={stats ? `$${(stats?.payouts?.payoutAmount?.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "..."}
+          type="split"
+          icon={<GlobeAltIcon />}
+          splitData={{
+            labelA: "Completed Payouts",
+            valueA: `$${(stats?.payouts?.completedPayoutAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            labelB: "Pending Requests",
+            valueB: `$${(stats?.payouts?.pendingPayoutAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            ratioA: 0
+          }}
         />
       </div>
 

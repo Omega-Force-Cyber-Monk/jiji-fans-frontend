@@ -7,6 +7,8 @@ import { getYouTubeThumbnailUrl } from "@/lib/helpers/youtube";
 import Link from "next/link";
 import { Skeleton } from "antd";
 
+import { FiThumbsUp, FiMessageSquare } from "react-icons/fi";
+
 /** Strip HTML tags so raw markup like <p>23</p> never renders as text */
 const stripHtml = (html: string) => {
   if (!html) return "";
@@ -42,11 +44,11 @@ const VideoSuggetions = ({
 
   const allVideos = contents?.data?.contents ?? [];
 
-  // Filter out the currently playing video and any suspended videos
+  // Filter out the currently playing video and keep only APPROVED ones
   const suggestions = allVideos.filter((v: any) => {
     const isCurrent = currentVideoId && v._id === currentVideoId;
-    const isSuspended = v.status?.toUpperCase() === "SUSPENDED";
-    return !isCurrent && !isSuspended;
+    const isApproved = v.status?.toUpperCase() === "APPROVED";
+    return !isCurrent && isApproved;
   });
 
   return (
@@ -115,12 +117,17 @@ const VideoSuggetions = ({
                     </p>
                   )}
 
-                  {/* Meta row */}
-                  <p className="text-[11px] text-muted-text">
-                    {content.viewCount != null
-                      ? `${Number(content.viewCount).toLocaleString()} views`
-                      : ""}
-                  </p>
+                  {/* Meta row: likes and comments instead of views */}
+                  <div className="flex items-center gap-3 text-[11px] text-muted-text mt-1">
+                    <div className="flex items-center gap-1">
+                      <FiThumbsUp className="w-3 h-3" />
+                      <span>{content.likeCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <FiMessageSquare className="w-3 h-3" />
+                      <span>{content.commentCount ?? 0}</span>
+                    </div>
+                  </div>
                 </div>
               </Link>
             );

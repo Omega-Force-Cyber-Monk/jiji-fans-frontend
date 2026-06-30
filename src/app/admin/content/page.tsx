@@ -20,24 +20,40 @@ import CPagination from "@/components/ui/CPagination";
 import { debounceSearch } from "@/utils/debounce";
 
 const Page = () => {
-  const [query, setQuery] = useState<TQuery<{ status: string }>>({
+  const [query, setQuery] = useState<TQuery<{ status?: string }>>({
     page: 1,
     limit: 10,
-    status: "PENDING",
   });
   const { data, isLoading, isError, error } = useDashboardContentQuery(
     queryFormat(query)
   );
+
+  const sortedResults = React.useMemo(() => {
+    const results = data?.data?.results || [];
+    return [...results].sort((a: any, b: any) => {
+      if (a.status?.toUpperCase() === "PENDING" && b.status?.toUpperCase() !== "PENDING") {
+        return -1;
+      }
+      if (a.status?.toUpperCase() !== "PENDING" && b.status?.toUpperCase() === "PENDING") {
+        return 1;
+      }
+      return 0;
+    });
+  }, [data?.data?.results]);
   const columns: TableColumnsType = [
     {
       title: "#Creator Id",
-      dataIndex: "owner",
-      render: (owner) => <p>{owner._id}</p>,
+      render: (record) => {
+        const owner = record?.owner || record?.ownerId;
+        return <p>{owner?._id || "N/A"}</p>;
+      },
     },
     {
       title: "Creator",
-      dataIndex: "owner",
-      render: (owner) => <p>{owner.username}</p>,
+      render: (record) => {
+        const owner = record?.owner || record?.ownerId;
+        return <p>{owner?.username || owner?.email || "N/A"}</p>;
+      },
     },
     // {
     //   title: "Email ",
@@ -58,16 +74,30 @@ const Page = () => {
         //   "text-red-400": text === "Absent",
         // })}
         >
-          {new Date(text).toDateString()}
+          {text ? new Date(text).toDateString() : "N/A"}
         </p>
       ),
       // align: "center",
     },
     {
+      title: "Status",
+      dataIndex: "status",
+      render: (status: string) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-semibold uppercase border ${status?.toUpperCase() === "APPROVED"
+            ? "bg-success/10 text-success border-success/20"
+            : status?.toUpperCase() === "PENDING"
+              ? "bg-warning/10 text-warning border-warning/20"
+              : "bg-error/10 text-error border-error/20"
+          }`}>
+          {status || "N/A"}
+        </span>
+      ),
+    },
+    {
       title: "Action",
       // dataIndex: "email",
       render: (record) => (
-        <Link href={`/admin/content/${record._id}`}>
+        <Link href={`/admin/content/${record?._id}`}>
           <Button type="primary" className="">
             View details
           </Button>
@@ -162,7 +192,7 @@ const Page = () => {
     <div>
       {/* <PageHeading title={`Content (${376})`} /> */}
       <div className="flex justify-between gap-2 bg-secondery rounded-t-lg py-4">
-        <PageHeading title={`Content(${data?.data?.results?.length})`} />
+        <PageHeading title={`Content(${data?.data?.results?.length ?? 0})`} />
         <ConfigProvider
           theme={{
             components: {
@@ -190,15 +220,21 @@ const Page = () => {
               className="!w-full md:!w-52 lg:!w-72 !h-10"
             />
             <Select
-              defaultValue="PENDING"
+              defaultValue="ALL"
               onChange={(value) => {
-                setQuery((c) => ({
-                  ...c,
-                  status: value,
-                }));
+                setQuery((c) => {
+                  const newQuery = { ...c };
+                  if (value === "ALL") {
+                    delete newQuery.status;
+                  } else {
+                    newQuery.status = value;
+                  }
+                  return newQuery;
+                });
               }}
               className="!w-full md:!w-42 !h-10"
               options={[
+                { value: "ALL", label: "All content" },
                 { value: "PENDING", label: "Recent content" },
                 { value: "APPROVED", label: "Approved content" },
                 { value: "REJECTED", label: "Rejected content" },
@@ -221,7 +257,7 @@ const Page = () => {
             // scroll={{y: 100,}}
             // rowSelection={ { type: "checkbox", ...rowSelection }}
             columns={columns}
-            dataSource={data?.data?.results}
+            dataSource={sortedResults}
             pagination={false}
           />
           <CPagination
