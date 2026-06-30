@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Avatar, Input, Table, TableColumnsType, Empty, Breadcrumb } from "antd";
+import { MagnifyingGlassIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { Avatar, Input, Table, TableColumnsType, Empty, Breadcrumb, message } from "antd";
 import { useGetMySubscribersQuery } from "@/redux/features/channel/channel.api";
 import SectionContainer from "@/components/ui/SectionContainer";
 import SubscriberSkeleton from "@/Common/Skeleton/app/(dashboard)/subscriber/SubscriberSkeleton";
+import { useCreateConversationMutation } from "@/redux/features/messages/messages.api";
+import { useRouter } from "next/navigation";
 
 const formatDate = (dateString: string | Date) => {
 	const date = new Date(dateString);
@@ -20,6 +22,7 @@ const formatDate = (dateString: string | Date) => {
 interface TableDataType {
 	key: string;
 	id: string;
+	subscriberId: string;
 	name: string;
 	email: string;
 	avatar?: string;
@@ -31,6 +34,9 @@ interface TableDataType {
 }
 
 export default function Page() {
+	const router = useRouter();
+	const [loadingId, setLoadingId] = useState<string | null>(null);
+	const [createConversation] = useCreateConversationMutation();
 	const [cursor, setCursor] = useState<string | undefined>(undefined);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [allSubscribers, setAllSubscribers] = useState<any[]>([]);
@@ -45,6 +51,30 @@ export default function Page() {
 
 	const subscribers = subscribersData?.data;
 	const pagination = subscribers?.pagination;
+
+	const handleStartChat = async (subscriberId: string) => {
+		if (!subscriberId) return;
+		setLoadingId(subscriberId);
+		try {
+			const result = await createConversation({
+				conversationType: "PRIVATE",
+				participants: [subscriberId],
+				title: "",
+				avatar: "",
+			}).unwrap();
+
+			if (result?.data?.conversationId) {
+				router.push(`/messages/${result.data.conversationId}?receiver=${subscriberId}`);
+			} else {
+				message.error("Failed to start conversation.");
+			}
+		} catch (error) {
+			console.error(error);
+			message.error("Failed to create conversation.");
+		} finally {
+			setLoadingId(null);
+		}
+	};
 
 	// Append new subscribers when data changes
 	useEffect(() => {
@@ -176,6 +206,28 @@ export default function Page() {
 			render: (text: string) => <p className="text-secondary-text text-base">{text}</p>,
 			align: "center",
 		},
+		{
+			title: "Action",
+			key: "action",
+			render: (_, record) => {
+				const isCreatingThis = loadingId === record.subscriberId;
+				return (
+					<button
+						onClick={() => handleStartChat(record.subscriberId)}
+						disabled={!!loadingId}
+						className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 rounded-md transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center"
+						title="Message Subscriber"
+					>
+						{isCreatingThis ? (
+							<span className="block w-5 h-5 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+						) : (
+							<ChatBubbleLeftRightIcon className="w-5 h-5" />
+						)}
+					</button>
+				);
+			},
+			align: "center",
+		},
 	];
 
 	const data: TableDataType[] = allSubscribers
@@ -191,6 +243,7 @@ export default function Page() {
 		.map((sub) => ({
 			key: sub?._id,
 			id: sub?._id,
+			subscriberId: sub?.subscriber?._id || "",
 			name: sub?.subscriber?.username || "N/A",
 			email: sub?.subscriber?.email || "N/A",
 			avatar: sub?.subscriber?.avatar,
@@ -257,7 +310,8 @@ export default function Page() {
 				</div>
 			) : (
 				<>
-					<div className="bg-primary-bg border border-border-primary rounded-lg overflow-hidden shadow-sm">
+					{/* Desktop View Table */}
+					<div className="hidden md:block bg-primary-bg border border-border-primary rounded-lg overflow-hidden shadow-sm">
 						<div className="w-full overflow-x-auto">
 							<Table
 								columns={columns}
@@ -266,6 +320,77 @@ export default function Page() {
 								locale={{ emptyText: "No subscribers found" }}
 							/>
 						</div>
+					</div>
+
+					{/* Mobile View Card Grid */}
+					<div className="block md:hidden space-y-4">
+						{data.map((record) => (
+							<div key={record.key} className="bg-secondary-bg border border-border-primary rounded-lg p-4 space-y-3">
+								<div className="flex items-center justify-between gap-3">
+									<div className="flex items-center gap-3">
+										<Avatar
+											src={record.avatar}
+											size={40}
+											className="border border-border-primary bg-secondary-bg text-primary-text"
+										>
+											{record.name?.charAt(0)?.toUpperCase()}
+										</Avatar>
+										<div className="min-w-0">
+											<p className="font-semibold text-primary-text text-base truncate">{record.name}</p>
+											<p className="text-xs text-muted-text truncate">{record.email}</p>
+										</div>
+									</div>
+									{/* Action button */}
+									<button
+										onClick={() => handleStartChat(record.subscriberId)}
+										disabled={!!loadingId}
+										className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 rounded-md transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center shrink-0"
+										title="Message Subscriber"
+									>
+										{loadingId === record.subscriberId ? (
+											<span className="block w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+										) : (
+											<ChatBubbleLeftRightIcon className="w-4 h-4" />
+										)}
+									</button>
+								</div>
+
+								<div className="grid grid-cols-2 gap-y-2.5 gap-x-4 pt-3 border-t border-border-primary/50 text-sm">
+									<div>
+										<p className="text-xs text-muted-text">Plan</p>
+										<p className="font-medium text-primary-text mt-0.5">{record.plan}</p>
+									</div>
+									<div>
+										<p className="text-xs text-muted-text">Status</p>
+										<div className="mt-0.5">
+											{(() => {
+												let statusStyles = "bg-muted-text/10 text-secondary-text";
+												if (record.status === "Active") {
+													statusStyles = "bg-success/10 text-success";
+												} else if (record.status === "Expired" || record.status === "Cancelled") {
+													statusStyles = "bg-error/10 text-error";
+												} else if (record.status === "Past Due") {
+													statusStyles = "bg-warning/10 text-warning";
+												}
+												return (
+													<span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${statusStyles}`}>
+														{record.status}
+													</span>
+												);
+											})()}
+										</div>
+									</div>
+									<div>
+										<p className="text-xs text-muted-text">Platform Joined</p>
+										<p className="text-secondary-text mt-0.5">{record.startDate}</p>
+									</div>
+									<div>
+										<p className="text-xs text-muted-text">Subscribed At</p>
+										<p className="text-secondary-text mt-0.5">{record.joinDate}</p>
+									</div>
+								</div>
+							</div>
+						))}
 					</div>
 
 					{/* Infinite scroll trigger */}

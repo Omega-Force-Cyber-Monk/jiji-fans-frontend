@@ -1,14 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import Cookies from "js-cookie";
 import dayjs from "dayjs";
 import { Button, Empty, Image, message, Spin } from "antd";
 import { TQuery, TUniObject } from "@/types";
 import { useAppSelector } from "@/redux/hook";
-import { apiUrl } from "@/config";
 import { useParams, useSearchParams } from "next/navigation";
-import { compareByCTime } from "@/lib/helpers/compareByCTime";
 import { cn } from "@/utils/cn";
 import { ChevronLeftIcon } from "@heroicons/react/16/solid";
 import {
@@ -17,6 +14,10 @@ import {
 } from "@/redux/features/users/users.api";
 import { handleImageError } from "@/lib/handleImageError";
 import { errorAlert } from "@/lib/alerts";
+import {
+  useLazyGetMessagesQuery,
+  useLazyGetConversationDetailsQuery,
+} from "@/redux/features/messages/messages.api";
 
 const AdminConversation = () => {
   const params = useParams();
@@ -44,6 +45,9 @@ const AdminConversation = () => {
   const [openSuspend, setOpenSuspend] = useState(false);
   const [updateUserStatus, { isLoading: isUpdatingUserStatus }] =
     useUpdateUserStatusMutation();
+
+  const [triggerGetMessages] = useLazyGetMessagesQuery();
+  const [triggerGetConversationDetails] = useLazyGetConversationDetailsQuery();
 
   const receiverStatus =
     typeof receiver?.status === "string" &&
@@ -81,8 +85,8 @@ const AdminConversation = () => {
   };
   const tryLoadNextPage = (scrollTop: number, isScrollingUp: boolean) => {
     if (
-      (isScrollingUp || scrollTop <= 5) &&
-      scrollTop <= 5 &&
+      (isScrollingUp || scrollTop <= 24) &&
+      scrollTop <= 24 &&
       !isLoading &&
       !nextLoading &&
       !!query.page &&
@@ -103,31 +107,25 @@ const AdminConversation = () => {
       } else {
         setIsLoading(true);
       }
-      const token = Cookies.get("accessToken");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const params = new URLSearchParams();
-      params.set("page", String(type === "next" ? query.page : 1));
-      params.set("limit", String(query.limit));
-      const response = await fetch(
-        `${apiUrl}/messages/${conversationId}?${params.toString()}`,
-        { method: "GET", headers },
-      );
-      if (!response.ok) throw new Error("Failed to fetch messages");
-      const res = await response.json();
+
+      const res = await triggerGetMessages({
+        conversationId,
+        page: type === "next" ? (query.page as number) : 1,
+        limit: query.limit,
+      }).unwrap();
       const participantsFromResponse = extractParticipants(res);
       if (participantsFromResponse.length) {
         setParticipants(participantsFromResponse);
       }
-      const currentPage = res?.data?.page || 1;
-      const total = res?.data?.totalPages || 1;
+
+      const resData = res?.data;
+      const currentPage = resData?.page || 1;
+      const total = resData?.totalPages || 1;
       setQuery((c) => ({
         ...c,
         page: currentPage < total ? currentPage + 1 : null,
       }));
-      const fetchedResults = res?.data?.results || res?.data || [];
+      const fetchedResults = resData?.results || resData?.result || [];
       const pageResults = (Array.isArray(fetchedResults) ? [...fetchedResults] : []).reverse();
       if (type === "next") {
         setMessages((c) => [...pageResults, ...c]);
@@ -152,17 +150,7 @@ const AdminConversation = () => {
   const fetchConversationParticipants = async () => {
     if (!conversationId) return;
     try {
-      const token = Cookies.get("accessToken");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const response = await fetch(`${apiUrl}/conversations/${conversationId}`, {
-        method: "GET",
-        headers,
-      });
-      if (!response.ok) return;
-      const res = await response.json();
+      const res = await triggerGetConversationDetails(conversationId).unwrap();
       const foundParticipants = extractParticipants(res);
       if (foundParticipants.length) {
         setParticipants(foundParticipants);

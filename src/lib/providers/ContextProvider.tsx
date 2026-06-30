@@ -12,6 +12,8 @@ import Cookies from "js-cookie";
 import { io, Socket } from "socket.io-client";
 import type { MessageInstance } from "antd/es/message/interface";
 import { socketUrl } from "@/config";
+import { useDispatch } from "react-redux";
+import { baseApi } from "@/redux/api/baseApi";
 
 type AppContextType = {
   socket: Socket | null;
@@ -27,6 +29,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const ContextProvider = ({ children }: ContextProviderProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const dispatch = useDispatch();
   useEffect(() => {
     const token = Cookies.get("accessToken") || null;
     if (!token || socket) return;
@@ -65,16 +68,16 @@ const ContextProvider = ({ children }: ContextProviderProps) => {
         (typeof res?.conversation === "string"
           ? res.conversation
           : res?.conversation?._id);
-
+      dispatch(baseApi.util.invalidateTags(["conversation", "message"]));
       if (!isMessagesPage || activeConversationId !== incomingConversationId) {
-        messageApi.info(res?.text || "New message received.");
+        messageApi.info("New Message received. Please check inbox.");
       }
     };
     socket.on("new-message", handler);
     return () => {
       socket.off("new-message", handler);
     };
-  }, [socket, messageApi]);
+  }, [socket, messageApi, dispatch]);
   // console.log(socket)
   return (
     <AppContext.Provider value={{ socket, messageApi }}>

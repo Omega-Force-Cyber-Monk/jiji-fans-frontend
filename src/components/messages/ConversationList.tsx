@@ -1,10 +1,8 @@
 "use client";
 import { message } from "antd";
 import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
 import { TQuery, TUniObject } from "@/types";
 import { useParams, useRouter } from "next/navigation";
-import { apiUrl } from "@/config";
 import LoaderWraperComp from "../LoaderWraperComp";
 import { cn } from "@/utils/cn";
 import { handleImageError } from "@/lib/handleImageError";
@@ -13,6 +11,11 @@ import { useAppSelector } from "@/redux/hook";
 import { errorAlert } from "@/lib/alerts";
 import Image from "@/components/ui/CImage";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { useLazyGetConversationsQuery, useCreateConversationMutation } from "@/redux/features/messages/messages.api";
+import { useLazyGetMySubscribersQuery } from "@/redux/features/channel/channel.api";
+import { useAppContext } from "@/lib/providers/ContextProvider";
+import { apiUrl } from "@/config";
+import Cookies from "js-cookie";
 
 const ConversationList = ({
   className,
@@ -25,13 +28,54 @@ const ConversationList = ({
   const [messageApi, contextHolder] = message.useMessage();
   const { conversation: conversationId } = useParams();
   const { user } = useAppSelector((state) => state.auth);
+  const { socket } = useAppContext();
   const [data, setData] = useState<TUniObject[]>([]);
+  const [lastMessagesMap, setLastMessagesMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [query, setQuery] = useState<TQuery>({
     page: 1,
     limit: 10,
   });
+
+  const [triggerGetConversations] = useLazyGetConversationsQuery();
+  const [triggerGetSubscribers, { isLoading: isFetchingSubscribers }] = useLazyGetMySubscribersQuery();
+  const [createConversation, { isLoading: isCreatingGroup }] = useCreateConversationMutation();
+
+  const isCreatorUser = user?.role === "Creator" || user?.role?.toLowerCase() === "creator";
+
+  const handleCreateGroupWithAllSubscribers = async () => {
+    try {
+      const subscribersRes = await triggerGetSubscribers({ limit: 1000 }).unwrap();
+      const subscriberList = subscribersRes?.data?.subscribers || [];
+      const subscriberIds = subscriberList
+        .map((sub: any) => sub?.subscriber?._id)
+        .filter(Boolean);
+
+      if (subscriberIds.length === 0) {
+        messageApi.warning("You have no subscribers to add to a group chat.");
+        return;
+      }
+
+      const result = await createConversation({
+        conversationType: "GROUP",
+        participants: subscriberIds,
+        title: "All Subscribers Group",
+        avatar: "/static/demo-image.jpg",
+      }).unwrap();
+
+      if (result?.data?.conversationId) {
+        messageApi.success("Group chat created successfully with all subscribers!");
+        fetchData({});
+        router.push(`${basePath}/${result.data.conversationId}`);
+      } else {
+        messageApi.error("Failed to create group conversation.");
+      }
+    } catch (error) {
+      console.error(error);
+      messageApi.error("An error occurred while creating group conversation.");
+    }
+  };
 
   const fetchData = async ({
     searchTerm: search,
@@ -40,45 +84,32 @@ const ConversationList = ({
     searchTerm?: string;
     type?: "search" | "next";
   }) => {
-    let params = `?page=1`;
-    if (type === "search") {
-      params = `?search=${search}&page=1`;
-    } else if (type === "next") {
-      params = !!search
-        ? `?search=${search}&page=${query.page}`
-        : `?page=${query.page}`;
-    }
     try {
       if (type === "next") {
         if (!query.page) return;
       } else {
         setIsLoading(true);
       }
-      const token = Cookies.get("accessToken");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "Custom-Header": "custom-value",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-      const response = await fetch(apiUrl + "/conversations" + params, {
-        method: "GET",
-        headers: headers,
-      });
-      if (!response.ok) throw new Error("Failed to fetch data");
 
-      const resData = await response.json();
+      const res = await triggerGetConversations({
+        page: type === "next" ? (query.page as number) : 1,
+        search: search || undefined,
+        limit: query.limit,
+      }).unwrap();
+
+      const resData = res?.data;
+      const nextPage = resData?.page < resData?.totalPages ? resData?.page + 1 : null;
       setQuery((c) => ({
         ...c,
-        page: resData?.pagination?.nextPage ?? null,
+        page: nextPage,
       }));
-      const fetchedResults = resData?.data?.result || resData?.data?.results || resData?.data || [];
+      const fetchedResults = resData?.result || resData?.results || [];
       const dataArray = Array.isArray(fetchedResults) ? fetchedResults : [];
 
       if (type === "next") {
         setData((c) => [...c, ...dataArray]);
       } else {
+        console.log("CONVERSATIONS RESPONSE DATA:", dataArray);
         setData(dataArray);
       }
     } catch (error) {
@@ -92,6 +123,109 @@ const ConversationList = ({
   useEffect(() => {
     fetchData({});
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (msg: any) => {
+      const incomingConversationId =
+        msg?.conversationId ||
+        (typeof msg?.conversation === "string"
+          ? msg.conversation
+          : msg?.conversation?._id);
+
+      if (!incomingConversationId) return;
+
+      // Update local message map
+      setLastMessagesMap((prev) => ({
+        ...prev,
+        [incomingConversationId]: msg.text || "sent an attachment",
+      }));
+
+      setData((prevData) => {
+        const exists = prevData.some((c) => c._id === incomingConversationId);
+
+        if (!exists) {
+          setTimeout(() => {
+            fetchData({});
+          }, 0);
+          return prevData;
+        }
+
+        const isMessagesPage = typeof window !== "undefined" && window.location.pathname.startsWith("/messages/");
+        const isViewingThis = isMessagesPage && conversationId === incomingConversationId;
+
+        const updated = prevData.map((c) => {
+          if (c._id === incomingConversationId) {
+            const currentUnread = c.unreadCount || 0;
+            return {
+              ...c,
+              updatedAt: msg.createdAt || new Date().toISOString(),
+              unreadCount: isViewingThis ? 0 : currentUnread + 1,
+              lastMessage: {
+                text: msg.text || "",
+                attachments: msg.attachments || [],
+                createdAt: msg.createdAt || new Date().toISOString(),
+              },
+            };
+          }
+          return c;
+        });
+
+        return [...updated].sort((a, b) => {
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
+      });
+    };
+    socket.on("new-message", handler);
+    return () => {
+      socket.off("new-message", handler);
+    };
+  }, [socket, conversationId]);
+
+  // Fetch the last message for each conversation when the list is loaded or refreshed
+  useEffect(() => {
+    if (!data.length) return;
+    const token = Cookies.get("accessToken");
+    if (!token) return;
+
+    data.forEach((conv) => {
+      const convId = conv._id;
+      if (!convId || lastMessagesMap[convId]) return;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      fetch(`${apiUrl}/messages/${convId}?limit=1`, { headers })
+        .then((r) => r.json())
+        .then((res) => {
+          const fetchedResults = res?.data?.result || res?.data?.results || [];
+          const lastMsg = fetchedResults[0];
+          if (lastMsg) {
+            setLastMessagesMap((prev) => ({
+              ...prev,
+              [convId]: lastMsg.text || "sent an attachment",
+            }));
+          }
+        })
+        .catch((err) => {
+          console.error(`Failed to fetch last message for conv ${convId}:`, err);
+        });
+    });
+  }, [data]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    setData((prevData) =>
+      prevData.map((c) => {
+        if (c._id === conversationId) {
+          return { ...c, unreadCount: 0 };
+        }
+        return c;
+      })
+    );
+  }, [conversationId]);
 
   const handleSearchChange = (val: string) => {
     setSearchTerm(val);
@@ -130,9 +264,25 @@ const ConversationList = ({
 
       <div className="mb-3 pr-3 flex justify-between items-center shrink-0">
         <span className="font-semibold text-primary-text text-base tracking-wide">Conversations</span>
-        <span className="text-xs font-medium text-muted-text bg-secondary-bg/60 px-2 py-0.5 rounded-full">
-          {data?.length} chat{data?.length === 1 ? "" : "s"}
-        </span>
+        <div className="flex items-center gap-2">
+          {isCreatorUser && (
+            <button
+              onClick={handleCreateGroupWithAllSubscribers}
+              disabled={isFetchingSubscribers || isCreatingGroup}
+              className="text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 font-semibold px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+              title="Create a group chat with all active subscribers"
+            >
+              {isFetchingSubscribers || isCreatingGroup ? (
+                <span className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <span>👥 Create Group</span>
+              )}
+            </button>
+          )}
+          <span className="text-xs font-medium text-muted-text bg-secondary-bg/60 px-2 py-0.5 rounded-full">
+            {data?.length} chat{data?.length === 1 ? "" : "s"}
+          </span>
+        </div>
       </div>
 
       <LoaderWraperComp
@@ -167,10 +317,29 @@ const ConversationList = ({
             const avatar =
               (isCreator ? other?.channel?.avatar : other?.avatar) ||
               "/static/demo-image.jpg";
+
+            const getPreviewText = (conv: TUniObject) => {
+              const lastMsg = conv?.lastMessage;
+              if (lastMsg) {
+                if (typeof lastMsg === "string") return lastMsg.trim();
+                if (Array.isArray(lastMsg) && lastMsg.length > 0) {
+                  return (lastMsg[0]?.text || "sent an attachment").trim();
+                }
+                if (typeof lastMsg === "object") {
+                  return (lastMsg.text || "sent an attachment").trim();
+                }
+              }
+              if (conv?.latestMessage?.text) return conv.latestMessage.text.trim();
+              if (conv?.message?.text) return conv.message.text.trim();
+              if (typeof conv?.text === "string") return conv.text.trim();
+              return "Start a conversation";
+            };
+
             const previewText =
-              conversation?.lastMessage?.[0]?.text?.trim() ||
-              "Start a conversation";
+              lastMessagesMap[conversation._id] ||
+              getPreviewText(conversation);
             const isSelected = conversationId === conversation._id;
+            const isUnread = conversation.unreadCount > 0;
             return (
               <div
                 key={conversation?._id || index}
@@ -219,19 +388,30 @@ const ConversationList = ({
                   </div>
                   <div className="flex justify-between items-center w-full min-w-0 gap-3">
                     <div className="min-w-0 flex-1">
-                      <h1 className="font-semibold text-base text-primary-text truncate line-clamp-1">
+                      <h1 className={cn("text-base text-primary-text truncate line-clamp-1", {
+                        "font-bold": isUnread,
+                        "font-semibold": !isUnread,
+                      })}>
                         {title}
                       </h1>
-                      <p className="text-xs text-muted-text truncate mt-0.5">
+                      <p className={cn("text-xs truncate mt-0.5", {
+                        "text-primary-text font-semibold": isUnread,
+                        "text-muted-text": !isUnread,
+                      })}>
                         {previewText}
                       </p>
                     </div>
-                    <div className="text-xs text-right shrink-0">
-                      <span className="text-muted-text font-medium">
+                    <div className="text-xs text-right shrink-0 flex flex-col items-end gap-1.5">
+                      <span className={cn("font-medium", isUnread ? "text-emerald-500 font-semibold" : "text-muted-text")}>
                         {compareByCTime({
                           preTime: conversation.updatedAt,
                         })}
                       </span>
+                      {isUnread && (
+                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white shadow-sm shadow-emerald-500/10">
+                          {conversation.unreadCount}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

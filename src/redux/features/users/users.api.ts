@@ -121,17 +121,6 @@ const usersApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["user"],
     }),
-    sendMessage: builder.mutation({
-      query: (body) => {
-        return {
-          url: `messages`,
-          method: "POST",
-          body,
-        };
-      },
-      // invalidatesTags: ["],
-    }),
-
   }),
 });
 
@@ -146,5 +135,4 @@ export const {
   useGetPublicUserByIdQuery,
   useGetCreatorDetailsQuery,
   useUpdateUserStatusMutation,
-  useSendMessageMutation,
 } = usersApi;

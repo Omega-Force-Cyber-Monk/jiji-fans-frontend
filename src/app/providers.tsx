@@ -6,8 +6,8 @@ import React from "react"; // adjust path
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ContextProvider>
-      <ReduxProvider>{children}</ReduxProvider>
-    </ContextProvider>
+    <ReduxProvider>
+      <ContextProvider>{children}</ContextProvider>
+    </ReduxProvider>
   );
 }

@@ -1,24 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import { cn } from "../../utils/cn";
-import { Avatar } from "antd";
+import { Avatar, Spin } from "antd";
 import {
 	PaperAirplaneIcon,
 	CheckCircleIcon,
 	ChatBubbleOvalLeftEllipsisIcon
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-
-interface UnansweredMessage {
-	id: string;
-	username: string;
-	avatar?: string;
-	tier: string;
-	duration: string;
-	text: string;
-	time: string;
-	price: number;
-}
+import { useGetConversationsPriorityQuery, useSendMessageMutation } from "@/redux/features/messages/messages.api";
+import { compareByCTime } from "@/lib/helpers/compareByCTime";
 
 interface CreatorMiniInboxProps {
 	className?: string;
@@ -26,60 +17,34 @@ interface CreatorMiniInboxProps {
 }
 
 const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxProps) => {
-	const [messages, setMessages] = useState<UnansweredMessage[]>([
-		{
-			id: "msg-1",
-			username: "Sarah Jenkins",
-			avatar: undefined,
-			tier: "Elite Backstage",
-			duration: "14 mo",
-			text: "Loved the VIP behind-the-scenes video! When is the next exclusive track coming out?",
-			time: "20m ago",
-			price: 24.99,
-		},
-		{
-			id: "msg-2",
-			username: "Marcus Vance",
-			avatar: undefined,
-			tier: "VIP Fan Club",
-			duration: "8 mo",
-			text: "Hey! Can you check your DMs? Sent a collaboration proposal last week. Would love to chat!",
-			time: "2h ago",
-			price: 9.99,
-		},
-		{
-			id: "msg-3",
-			username: "Clara Alvarez",
-			avatar: undefined,
-			tier: "VIP Fan Club",
-			duration: "5 mo",
-			text: "The exclusive soundtrack is amazing! Is there any chance we can get a FLAC version?",
-			time: "4h ago",
-			price: 9.99,
-		},
-	]);
+	const { data: priorityData, isLoading: isPriorityLoading } = useGetConversationsPriorityQuery();
+	const [sendMessage] = useSendMessageMutation();
 
 	const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
 	const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
 	const [sendingIds, setSendingIds] = useState<Record<string, boolean>>({});
 	const [repliedIds, setRepliedIds] = useState<Record<string, boolean>>({});
 
-	const handleReplySubmit = (msgId: string) => {
+	const handleReplySubmit = async (msgId: string) => {
 		const text = replyTexts[msgId]?.trim();
 		if (!text) return;
 
 		setSendingIds((prev) => ({ ...prev, [msgId]: true }));
-
-		setTimeout(() => {
-			setSendingIds((prev) => ({ ...prev, [msgId]: false }));
+		try {
+			await sendMessage({ conversationId: msgId, text }).unwrap();
 			setRepliedIds((prev) => ({ ...prev, [msgId]: true }));
-
+			setReplyTexts((prev) => ({ ...prev, [msgId]: "" }));
 			setTimeout(() => {
-				setMessages((prev) => prev.filter((m) => m.id !== msgId));
 				setActiveReplyId(null);
 			}, 1000);
-		}, 800);
+		} catch (err) {
+			console.error("Failed to send reply:", err);
+		} finally {
+			setSendingIds((prev) => ({ ...prev, [msgId]: false }));
+		}
 	};
+
+	const conversations = priorityData?.data?.results || [];
 
 	return (
 		<div className={cn("h-full flex flex-col justify-between overflow-hidden", className)}>
@@ -93,7 +58,11 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 
 			{/* Message list container - Safely scrolls inside if items expand */}
 			<div className="flex-1 overflow-y-auto no-scrollbar min-h-0 flex flex-col" style={{ gap: "8px" }}>
-				{messages.length === 0 ? (
+				{isPriorityLoading ? (
+					<div className="flex justify-center items-center h-full">
+						<Spin size="small" />
+					</div>
+				) : conversations.length === 0 ? (
 					<div 
 						className="flex flex-col items-center justify-center h-full text-center bg-primary-bg/10 rounded-md border border-border-primary/40 border-dashed"
 						style={{ padding: "16px", gap: "12px" }}
@@ -102,15 +71,21 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 						<p className="text-xs text-primary-text font-medium">All caught up!</p>
 					</div>
 				) : (
-					messages.map((msg) => {
-						const isReplying = activeReplyId === msg.id;
-						const isSending = sendingIds[msg.id];
-						const isReplied = repliedIds[msg.id];
-						const replyText = replyTexts[msg.id] || "";
+					conversations.map((conv) => {
+						const isReplying = activeReplyId === conv._id;
+						const isSending = sendingIds[conv._id];
+						const isReplied = repliedIds[conv._id];
+						const replyText = replyTexts[conv._id] || "";
+						
+						const otherUser = conv.otherUser;
+						const username = otherUser?.username || otherUser?.email || "User";
+						const avatarLetter = username.charAt(0).toUpperCase();
+						const duration = compareByCTime({ preTime: conv.updatedAt });
+						const text = "Priority conversation active (score: " + (conv.priorityScore || 0) + ")";
 
 						return (
 							<div
-								key={msg.id}
+								key={conv._id}
 								className={cn(
 									"border border-border-primary rounded-md transition-all duration-300 bg-primary-bg/10 flex flex-col justify-between overflow-hidden shrink-0",
 									isReplying ? "border-brand-primary/60 bg-brand-primary/[0.01]" : "hover:border-brand-primary/20"
@@ -121,33 +96,35 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 								<div className="flex flex-col" style={{ gap: "8px" }}>
 									<div className="flex items-start justify-between" style={{ gap: "8px" }}>
 										<div className="flex items-center min-w-0" style={{ gap: "8px" }}>
-											<Avatar size={30} className="bg-brand-primary/10 text-brand-primary font-semibold shrink-0">
-												{msg.username.charAt(0)}
+											<Avatar size={30} src={otherUser?.avatar} className="bg-brand-primary/10 text-brand-primary font-semibold shrink-0">
+												{avatarLetter}
 											</Avatar>
 											<div className="flex flex-col min-w-0">
 												{/* Responsive Wrap Grid for User Info & Badges */}
 												<div className="flex items-center flex-wrap" style={{ gap: "6px" }}>
-													<span className="text-sm text-primary-text font-semibold truncate">{msg.username}</span>
+													<span className="text-sm text-primary-text font-semibold truncate">{username}</span>
 													<span 
 														className="text-[10px] bg-brand-primary/15 text-brand-primary rounded font-medium truncate shrink-0"
 														style={{ padding: "2px 6px" }}
 													>
-														{msg.tier}
+														{otherUser?.role || "Subscriber"}
 													</span>
-													<span 
-														className="text-[10px] bg-indigo-500/10 text-indigo-400 rounded font-medium shrink-0"
-														style={{ padding: "2px 6px" }}
-													>
-														{msg.duration}
-													</span>
+													{conv.priorityScore !== undefined && (
+														<span 
+															className="text-[10px] bg-indigo-500/10 text-indigo-400 rounded font-medium shrink-0"
+															style={{ padding: "2px 6px" }}
+														>
+															Priority: {conv.priorityScore}
+														</span>
+													)}
 												</div>
 											</div>
 										</div>
-										<span className="text-xs text-muted-text shrink-0" style={{ marginTop: "2px" }}>{msg.time}</span>
+										<span className="text-xs text-muted-text shrink-0" style={{ marginTop: "2px" }}>{duration}</span>
 									</div>
 
 									<p className="text-sm text-primary-text/80 leading-normal break-words">
-										{msg.text}
+										{text}
 									</p>
 								</div>
 
@@ -159,7 +136,7 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 											style={{ padding: "4px 8px", gap: "6px" }}
 										>
 											<CheckCircleIcon className="w-4 h-4 shrink-0" />
-											<span>Reply sent! Marked resolved.</span>
+											<span>Reply sent!</span>
 										</div>
 									) : isReplying ? (
 										/* Expands cleanly under the message text */
@@ -167,8 +144,8 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 											<textarea
 												rows={2}
 												value={replyText}
-												onChange={(e) => setReplyTexts({ ...replyTexts, [msg.id]: e.target.value })}
-												placeholder={`Reply to ${msg.username}...`}
+												onChange={(e) => setReplyTexts({ ...replyTexts, [conv._id]: e.target.value })}
+												placeholder={`Reply to ${username}...`}
 												disabled={isSending}
 												className="w-full text-sm rounded-md bg-primary-bg border border-border-primary focus:outline-none focus:border-brand-primary resize-none text-primary-text placeholder:text-muted-text"
 												style={{ padding: "8px" }}
@@ -182,7 +159,7 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 													Cancel
 												</button>
 												<button
-													onClick={() => handleReplySubmit(msg.id)}
+													onClick={() => handleReplySubmit(conv._id)}
 													disabled={isSending || !replyText.trim()}
 													className={cn(
 														"inline-flex items-center justify-center h-8 px-6 text-sm rounded-md bg-brand-primary text-white transition-colors font-semibold shadow-sm cursor-pointer",
@@ -203,7 +180,7 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 										<div className="flex justify-between items-center border-t border-border-primary/10" style={{ paddingTop: "8px" }}>
 											<span className="text-sm text-amber-500/80 font-medium">Unanswered</span>
 											<button
-												onClick={() => setActiveReplyId(msg.id)}
+												onClick={() => setActiveReplyId(conv._id)}
 												className="inline-flex items-center text-sm text-brand-primary hover:text-brand-primary/80 transition-colors font-medium cursor-pointer"
 												style={{ gap: "6px" }}
 											>
@@ -220,10 +197,10 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 			</div>
 
 			{/* Sleek bottom footer with View All */}
-			{showViewAll && messages.length > 0 && (
+			{showViewAll && conversations.length > 0 && (
 				<Link href="/admin/conversations" className="border-t border-border-primary/30 text-center shrink-0 block no-underline" style={{ marginTop: "12px", paddingTop: "8px" }}>
 					<span className="text-sm text-brand-primary hover:text-brand-primary/80 transition-colors font-medium cursor-pointer">
-						View All Priority Messages ({messages.length})
+						View All Priority Messages ({conversations.length})
 					</span>
 				</Link>
 			)}

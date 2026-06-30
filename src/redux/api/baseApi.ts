@@ -83,7 +83,9 @@ export const baseApi = createApi({
     "kyc",
     "creatorWaitlist",
     "react",
-    'comment'
+    'comment',
+    "conversation",
+    "message"
   ],
   endpoints: () => ({}),
 });

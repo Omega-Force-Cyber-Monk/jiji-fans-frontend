@@ -23,6 +23,7 @@ import {
   getChannelShareUrl,
   resolveChannelSlug,
 } from "@/lib/helpers/channelSlug";
+import { useCreateConversationMutation } from "@/redux/features/messages/messages.api";
 
 import ChannelBanner from "./ChannelBanner";
 import ChannelProfileInfo from "./ChannelProfileInfo";
@@ -48,6 +49,7 @@ const ChannelInfo = ({
 
   const [openReportModal, setOpenReportModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
+  const [createConversation] = useCreateConversationMutation();
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [origin, setOrigin] = useState("");
 
@@ -122,26 +124,15 @@ const ChannelInfo = ({
     }
     setIsCreatingConversation(true);
     try {
-      const token = Cookies.get("accessToken");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const result = await createConversation({
+        conversationType: "PRIVATE",
+        participants: [channelData.owner],
+        title: "",
+        avatar: "",
+      }).unwrap();
 
-      const response = await fetch(apiUrl + "/conversations", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          conversationType: "PRIVATE",
-          participants: [channelData.owner],
-          title: "",
-          avatar: "",
-        }),
-      });
-
-      const result = await response.json();
-      if (!response.ok || !result?.data?.conversationId) {
-        throw new Error(result?.message || "Failed to create conversation.");
+      if (!result?.data?.conversationId) {
+        throw new Error("Failed to create conversation.");
       }
 
       const newConversationId = result.data.conversationId;

@@ -440,6 +440,7 @@ export const {
   useGetPopularChannelsQuery,
   useGetChannelsByCategoryQuery,
   useGetMySubscribersQuery,
+  useLazyGetMySubscribersQuery,
   useAdminChannelDetailsQuery,
   useGetContentsByOwnerQuery,
 } = channelApi;

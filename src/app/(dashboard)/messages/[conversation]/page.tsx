@@ -1,19 +1,18 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 
-import Cookies from "js-cookie";
 import dayjs from "dayjs";
 import { Empty, Skeleton } from "antd";
 import { TQuery, TUniObject } from "@/types";
 import { useAppContext } from "@/lib/providers/ContextProvider";
 import { useAppSelector } from "@/redux/hook";
-import { apiUrl } from "@/config";
 import { useParams, useSearchParams } from "next/navigation";
 import { compareByCTime } from "@/lib/helpers/compareByCTime";
 import { cn } from "@/utils/cn";
 import ChatInput from "@/components/messages/ChatInput";
 import Participant from "@/components/messages/Participant";
 import { errorAlert } from "@/lib/alerts";
+import { useLazyGetMessagesQuery, useMarkAsReadMutation } from "@/redux/features/messages/messages.api";
 
 const Conversation = () => {
   const { socket, messageApi } = useAppContext();
@@ -39,6 +38,10 @@ const Conversation = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const groupedMessages = groupMessagesByDate(messages);
   const messageSkeletons = Array.from({ length: 8 });
+
+  const [triggerGetMessages] = useLazyGetMessagesQuery();
+  const [markAsRead] = useMarkAsReadMutation();
+
   const isOwnMessage = (message: TUniObject) => {
     const senderId =
       typeof message?.sender === "string"
@@ -70,14 +73,6 @@ const Conversation = () => {
     if (inFlightRef.current) return;
     if (type === "next" && (!query.page || query.page > totalPages)) return;
 
-    let params = `?page=1&limit=${query.limit}`;
-    if (type === "search") {
-      params = `?searchTerm=${searchTerm}&page=1&limit=${query.limit}`;
-    } else if (type === "next") {
-      params = !!searchTerm
-        ? `?searchTerm=${searchTerm}&page=${query.page}&limit=${query.limit}`
-        : `?page=${query.page}&limit=${query.limit}`;
-    }
     try {
       inFlightRef.current = true;
       if (type === "next") {
@@ -92,33 +87,23 @@ const Conversation = () => {
         setIsLoading(true);
         shouldScrollToBottomRef.current = true;
       }
-      const token = Cookies.get("accessToken");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "Custom-Header": "custom-value",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-      const response = await fetch(
-        apiUrl + `/messages/${conversationId}` + params,
-        {
-          method: "GET",
-          headers: headers,
-        }
-      );
-      if (!response.ok) throw new Error("Failed to fetch data");
 
-      const data = await response.json();
+      const res = await triggerGetMessages({
+        conversationId,
+        page: type === "next" ? (query.page as number) : 1,
+        limit: query.limit,
+        searchTerm: searchTerm || undefined,
+      }).unwrap();
 
-      const currentPage = data?.data?.page || 1;
-      const total = data?.data?.totalPages || 1;
+      const resData = res?.data;
+      const currentPage = resData?.page || 1;
+      const total = resData?.totalPages || 1;
       setTotalPages(total);
       setQuery((c) => ({
         ...c,
         page: currentPage < total ? currentPage + 1 : null,
       }));
-      const fetchedResults = data?.data?.results || data?.data || [];
+      const fetchedResults = resData?.results || resData?.result || [];
       const pageResults = (Array.isArray(fetchedResults) ? [...fetchedResults] : []).reverse();
       if (type === "next") {
         setMessages((c) => [...pageResults, ...c]);
@@ -146,9 +131,13 @@ const Conversation = () => {
     lastScrollTopRef.current = 0;
     shouldScrollToBottomRef.current = false;
     prependAnchorRef.current = null;
+
+    if (conversationId) {
+      markAsRead(conversationId).catch((err) => console.error("Failed to mark as read:", err));
+    }
   }, [conversationId]);
   useEffect(() => {
-    if (!initialFetchDoneRef.current) {
+    if (!initialFetchDoneRef.current && conversationId) {
       fetchData({});
       initialFetchDoneRef.current = true;
     }

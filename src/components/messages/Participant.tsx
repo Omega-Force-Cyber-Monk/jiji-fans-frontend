@@ -7,6 +7,9 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { TUniObject } from "@/types";
 import { cn } from "@/utils/cn";
 import { useGetPublicUserByIdQuery } from "@/redux/features/users/users.api";
+import { useGetConversationDetailsQuery } from "@/redux/features/messages/messages.api";
+import { useAppSelector } from "@/redux/hook";
+import { useParams } from "next/navigation";
 
 const Participant = ({
   data,
@@ -15,17 +18,35 @@ const Participant = ({
   data: TUniObject;
   className?: string;
 }) => {
-  const receiverId = typeof data?.receiver === "string" ? data.receiver : "";
-  const { data: userDetails, isLoading } = useGetPublicUserByIdQuery(receiverId, {
-    skip: !receiverId,
+  const params = useParams();
+  const conversationId = Array.isArray(params.conversation)
+    ? params.conversation[0]
+    : params.conversation;
+
+  const { user } = useAppSelector((state) => state.auth);
+  
+  const { data: conversationData, isLoading: isLoadingConv } = useGetConversationDetailsQuery(conversationId || "", {
+    skip: !conversationId,
   });
 
-  console.log("Participant User Details Debug:", { receiverId, userDetails, isLoading });
+  const conversation = conversationData?.data;
+  const participants = conversation?.participants || [];
+  const conversationOtherUser = conversation?.otherUser || participants.find((p: any) => p?._id !== user?._id);
 
-  const details = userDetails as any;
+  const receiverId = typeof data?.receiver === "string" ? data.receiver : "";
+  const { data: userDetails, isLoading: isLoadingUser } = useGetPublicUserByIdQuery(receiverId, {
+    skip: !receiverId || !!conversationOtherUser,
+  });
+
+  const details = conversationOtherUser || userDetails;
+  const isLoading = (isLoadingConv && !conversationOtherUser) || (isLoadingUser && !userDetails && !conversationOtherUser);
+
   const isCreator = details?.role?.toLowerCase?.() === "creator" || !!details?.channel;
-  const displayName =
-    (isCreator
+  const isGroup = conversation?.conversationType === "GROUP";
+
+  const displayName = isGroup
+    ? conversation?.title || conversation?.conversationName || "Group Chat"
+    : (isCreator
       ? details?.channel?.name || details?.username || details?.name
       : details?.username || details?.name) ||
     details?.username ||
@@ -33,8 +54,9 @@ const Participant = ({
     details?.email ||
     "Unknown User";
 
-  const displayAvatar =
-    (isCreator ? details?.channel?.avatar : details?.avatar) ||
+  const displayAvatar = isGroup
+    ? conversation?.avatar || "/static/demo-image.jpg"
+    : (isCreator ? details?.channel?.avatar : details?.avatar) ||
     details?.avatar ||
     "/static/demo-image.jpg";
 
@@ -79,7 +101,11 @@ const Participant = ({
           )}
           <div className="flex items-center gap-1 mt-0.5">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <p className="text-xs text-emerald-500 font-medium tracking-wide">Online</p>
+            <p className="text-xs text-emerald-500 font-medium tracking-wide">
+              {isGroup
+                ? `${conversation?.participantCount || participants?.length || 0} members`
+                : "Online"}
+            </p>
           </div>
         </div>
       </div>
