@@ -29,7 +29,7 @@ const Videos = ({
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  console.log(contents, "Contents");
+  
   const handleImageError = (videoId: string) => {
     setImageErrors((prev) => ({ ...prev, [videoId]: true }));
   };
@@ -89,7 +89,7 @@ const Videos = ({
   if (displayedContents.length === 0) {
     return <Empty description="No videos available" />;
   }
-  
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-3 2xl:grid-cols-4 gap-x-2 gap-y-5 sm:gap-x-5 2xl:gap-x-6 2xl:gap-y-7 items-stretch">

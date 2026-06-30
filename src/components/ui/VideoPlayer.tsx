@@ -38,50 +38,16 @@ interface YTPlayerEvent {
   data?: number;
 }
 
-interface YT {
-  Player: new (
-    elementId: string,
-    config: {
-      videoId: string;
-      host?: string;
-      playerVars: {
-        autoplay?: number;
-        controls?: number;
-        modestbranding?: number;
-        rel?: number;
-        showinfo?: number;
-        autohide?: number;
-        disablekb?: number;
-        fs?: number;
-        iv_load_policy?: number;
-        cc_load_policy?: number;
-        playsinline?: number;
-        enablejsapi?: number;
-        origin?: string;
-      };
-      events: {
-        onReady: (event: YTPlayerEvent) => void;
-        onStateChange?: (event: YTPlayerEvent) => void;
-      };
-    },
-  ) => YTPlayer;
-}
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
 const VideoPlayer = ({
   content,
 }: {
   content?: { url: string; title: string } | null;
 }) => {
   const playerRef = useRef<YTPlayer | null>(null);
+  const nativeVideoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
   const [showOverlay, setShowOverlay] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<"main" | "quality" | "speed">("main");
@@ -97,59 +63,25 @@ const VideoPlayer = ({
   const [showControls, setShowControls] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const videoId = content?.url ? getYouTubeVideoId(content.url) : null;
-  // Unique player element ID to avoid conflicts between multiple instances
+  const isYouTube = !!videoId;
+
+  // Unique player element ID to avoid conflicts
   const playerElementId = React.useMemo(
     () => `yt-player-${videoId ?? "none"}-${Math.random().toString(36).slice(2, 7)}`,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [videoId],
   );
-
-  // Redirect creators to their channel page
-  // useEffect(() => {
-  //   if (user?.role?.toLowerCase() === "creator") {
-  //     router.push("/mychannel");
-  //   }
-  // }, [user, router]);
 
   // Obfuscate video ID to prevent easy extraction
   const obfuscatedVideoId = React.useMemo(() => {
     if (!videoId) return null;
-    // Create a simple obfuscation (this runs client-side)
     return btoa(videoId + Date.now().toString(36)).substring(0, 16);
   }, [videoId]);
 
+  // YouTube API initialization
   useEffect(() => {
-    // Disable keyboard shortcuts that could expose YouTube
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "F11" ||
-        e.key === "F12" ||
-        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
-        (e.ctrlKey &&
-          e.shiftKey &&
-          (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J"))
-      ) {
-        e.preventDefault();
-        return false;
-      }
-    };
-
-    // Disable right-click on the entire page
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Prevent text selection
-    const handleSelectStart = (e: Event) => {
-      e.preventDefault();
-      return false;
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("selectstart", handleSelectStart);
+    if (!isYouTube) return;
 
     const initPlayer = () => {
       if (
@@ -159,7 +91,6 @@ const VideoPlayer = ({
         window.YT.Player &&
         wrapperRef.current
       ) {
-        // Clear wrapper and dynamically create player element to avoid detached DOM node issues under StrictMode double-mounting
         wrapperRef.current.innerHTML = "";
         const playerDiv = document.createElement("div");
         playerDiv.id = playerElementId;
@@ -186,11 +117,9 @@ const VideoPlayer = ({
           events: {
             onReady: (event: YTPlayerEvent) => {
               setDuration(event.target.getDuration());
-              // Suggest HD quality immediately
               if (event.target && typeof event.target.setPlaybackQuality === 'function') {
                 event.target.setPlaybackQuality('hd1080');
               }
-              // Fetch available qualities
               if (event.target && typeof event.target.getPlaybackQuality === 'function') {
                 setCurrentQuality(event.target.getPlaybackQuality() || 'auto');
               }
@@ -247,9 +176,6 @@ const VideoPlayer = ({
     }
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("selectstart", handleSelectStart);
       if (checkInterval) {
         clearInterval(checkInterval);
       }
@@ -265,12 +191,49 @@ const VideoPlayer = ({
         wrapperRef.current.innerHTML = "";
       }
     };
-  }, [videoId]);
+  }, [videoId, isYouTube, playerElementId]);
 
-  // Update progress
+  // Disable context menu and copy/paste
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "F11" ||
+        e.key === "F12" ||
+        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
+        (e.ctrlKey &&
+          e.shiftKey &&
+          (e.key === "i" || e.key === "I" || e.key === "j" || e.key === "J"))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleSelectStart = (e: Event) => {
+      e.preventDefault();
+      return false;
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("selectstart", handleSelectStart);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("selectstart", handleSelectStart);
+    };
+  }, []);
+
+  // Update progress for YouTube
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isPlaying && playerRef.current) {
+    if (isYouTube && isPlaying && playerRef.current) {
       interval = setInterval(() => {
         if (playerRef.current) {
           setCurrentTime(playerRef.current.getCurrentTime());
@@ -278,7 +241,7 @@ const VideoPlayer = ({
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, isYouTube]);
 
   // Listen for fullscreen changes
   useEffect(() => {
@@ -306,46 +269,86 @@ const VideoPlayer = ({
   };
 
   const handlePlayPause = () => {
-    if (!playerRef.current) return;
-
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-      setIsPlaying(false);
+    if (isYouTube) {
+      if (!playerRef.current) return;
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+        setIsPlaying(false);
+      } else {
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+      }
     } else {
-      playerRef.current.playVideo();
-      setIsPlaying(true);
+      if (!nativeVideoRef.current) return;
+      if (isPlaying) {
+        nativeVideoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        nativeVideoRef.current.play();
+        setIsPlaying(true);
+        setShowOverlay(false);
+        setShowEndOverlay(false);
+      }
     }
   };
 
   const handleReplay = () => {
-    if (playerRef.current) {
-      playerRef.current.seekTo(0, true);
-      playerRef.current.playVideo();
-      setShowEndOverlay(false);
-      setShowOverlay(false);
-      setIsPlaying(true);
+    if (isYouTube) {
+      if (playerRef.current) {
+        playerRef.current.seekTo(0, true);
+        playerRef.current.playVideo();
+        setShowEndOverlay(false);
+        setShowOverlay(false);
+        setIsPlaying(true);
+      }
+    } else {
+      if (nativeVideoRef.current) {
+        nativeVideoRef.current.currentTime = 0;
+        nativeVideoRef.current.play();
+        setShowEndOverlay(false);
+        setShowOverlay(false);
+        setIsPlaying(true);
+      }
     }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseInt(e.target.value);
     setVolume(vol);
-    if (playerRef.current) {
-      playerRef.current.setVolume(vol);
-      if (vol > 0) setIsMuted(false);
+    if (isYouTube) {
+      if (playerRef.current) {
+        playerRef.current.setVolume(vol);
+        if (vol > 0) setIsMuted(false);
+      }
+    } else {
+      if (nativeVideoRef.current) {
+        nativeVideoRef.current.volume = vol / 100;
+        if (vol > 0) setIsMuted(false);
+      }
     }
   };
 
   const toggleMute = () => {
-    if (!playerRef.current) return;
-
-    if (isMuted) {
-      playerRef.current.unMute();
-      setIsMuted(false);
-      if (volume === 0) setVolume(50);
+    if (isYouTube) {
+      if (!playerRef.current) return;
+      if (isMuted) {
+        playerRef.current.unMute();
+        setIsMuted(false);
+        if (volume === 0) setVolume(50);
+      } else {
+        playerRef.current.mute();
+        setIsMuted(true);
+      }
     } else {
-      playerRef.current.mute();
-      setIsMuted(true);
+      if (!nativeVideoRef.current) return;
+      if (isMuted) {
+        nativeVideoRef.current.muted = false;
+        setIsMuted(false);
+        if (volume === 0) setVolume(50);
+      } else {
+        nativeVideoRef.current.muted = true;
+        setIsMuted(true);
+      }
     }
   };
 
@@ -373,8 +376,25 @@ const VideoPlayer = ({
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // Don't render anything until we have valid content and a video ID
-  if (!content || !videoId) {
+  // Native HTML5 video events
+  const handleNativeTimeUpdate = () => {
+    if (nativeVideoRef.current) {
+      setCurrentTime(nativeVideoRef.current.currentTime);
+    }
+  };
+
+  const handleNativeLoadedMetadata = () => {
+    if (nativeVideoRef.current) {
+      setDuration(nativeVideoRef.current.duration);
+    }
+  };
+
+  const handleNativeEnded = () => {
+    setShowEndOverlay(true);
+    setIsPlaying(false);
+  };
+
+  if (!content || !content.url) {
     return (
       <div className="relative w-full pb-[56.25%] bg-black rounded-lg overflow-hidden shadow-xl flex items-center justify-center">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/50">
@@ -425,7 +445,6 @@ const VideoPlayer = ({
             height: 0 !important;
           }
 
-          /* Hide all YouTube buttons in top right corner */
           .ytp-chrome-top-buttons button,
           .ytp-chrome-top-buttons a,
           .ytp-chrome-top .ytp-button {
@@ -442,7 +461,6 @@ const VideoPlayer = ({
             -webkit-touch-callout: none !important;
           }
 
-          /* Prevent iframe inspection */
           iframe {
             pointer-events: none !important;
           }
@@ -451,14 +469,12 @@ const VideoPlayer = ({
             pointer-events: auto !important;
           }
 
-          /* Hide video source in dev tools */
           video {
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             user-select: none !important;
           }
 
-          /* Custom volume slider styling */
           input[type="range"].volume-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -520,7 +536,6 @@ const VideoPlayer = ({
             border-radius: 2px;
           }
 
-          /* Progress bar styling */
           input[type="range"].progress-slider {
             -webkit-appearance: none;
             appearance: none;
@@ -600,7 +615,7 @@ const VideoPlayer = ({
         onContextMenu={(e) => e.preventDefault()}
         data-video-id={obfuscatedVideoId}
       >
-        {/* YouTube Player */}
+        {/* Watermark Logo */}
         <div className="absolute top-[2.7%] right-[1.3%] size-[8.3%] z-40 overflow-hidden backdrop-blur-xs rounded-full">
           <Image
             src="/static/2Fans-02.svg"
@@ -610,20 +625,37 @@ const VideoPlayer = ({
             sizes="100vw"
           />
         </div>
-        {/* YouTube Player Wrapper */}
-        <div
-          ref={wrapperRef}
-          id="youtube-player"
-          className="absolute top-0 left-0 w-full h-full video-container"
-          onContextMenu={(e) => e.preventDefault()}
-          onCopy={(e) => e.preventDefault()}
-          onCut={(e) => e.preventDefault()}
-          onPaste={(e) => e.preventDefault()}
-          onDragStart={(e) => e.preventDefault()}
-        />
+
+        {/* Player Area */}
+        {isYouTube ? (
+          /* YouTube Player Wrapper */
+          <div
+            ref={wrapperRef}
+            id="youtube-player"
+            className="absolute top-0 left-0 w-full h-full video-container"
+            onContextMenu={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
+            onPaste={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+          />
+        ) : (
+          /* Native HTML5 Video Element */
+          <video
+            ref={nativeVideoRef}
+            src={content.url}
+            className="absolute top-0 left-0 w-full h-full object-contain bg-black"
+            onTimeUpdate={handleNativeTimeUpdate}
+            onLoadedMetadata={handleNativeLoadedMetadata}
+            onEnded={handleNativeEnded}
+            playsInline
+            onClick={handlePlayPause}
+            onContextMenu={(e) => e.preventDefault()}
+          />
+        )}
 
         {/* Transparent overlay to block YouTube UI interactions */}
-        {!showOverlay && !showEndOverlay && (
+        {isYouTube && !showOverlay && !showEndOverlay && (
           <div
             className="absolute inset-0 z-10 cursor-pointer"
             onClick={handlePlayPause}
@@ -703,9 +735,15 @@ const VideoPlayer = ({
                 value={currentTime}
                 onChange={(e) => {
                   const seekTime = parseFloat(e.target.value);
-                  if (playerRef.current) {
-                    playerRef.current.seekTo(seekTime, true);
-                    setCurrentTime(seekTime);
+                  setCurrentTime(seekTime);
+                  if (isYouTube) {
+                    if (playerRef.current) {
+                      playerRef.current.seekTo(seekTime, true);
+                    }
+                  } else {
+                    if (nativeVideoRef.current) {
+                      nativeVideoRef.current.currentTime = seekTime;
+                    }
                   }
                 }}
                 className="progress-slider w-full cursor-pointer relative z-[10]"
@@ -718,7 +756,7 @@ const VideoPlayer = ({
               {/* Play/Pause Button */}
               <button
                 onClick={handlePlayPause}
-                className="text-white hover:scale-110 transition-transform flex-shrink-0 w-8 h-8 flex items-center justify-center"
+                className="text-white hover:scale-110 transition-transform flex-shrink-0 w-8 h-8 flex items-center justify-center cursor-pointer bg-transparent border-none"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
@@ -753,7 +791,7 @@ const VideoPlayer = ({
               <div className="flex items-center gap-3 flex-shrink-0">
                 <button
                   onClick={toggleMute}
-                  className="text-white hover:scale-110 transition-transform w-6 h-6 flex items-center justify-center"
+                  className="text-white hover:scale-110 transition-transform w-6 h-6 flex items-center justify-center cursor-pointer bg-transparent border-none"
                   aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted || volume === 0 ? (
@@ -786,7 +824,7 @@ const VideoPlayer = ({
                     setShowSettings(!showSettings);
                     setSettingsView("main");
                   }}
-                  className="text-white hover:scale-110 transition-transform w-6 h-6 flex items-center justify-center cursor-pointer"
+                  className="text-white hover:scale-110 transition-transform w-6 h-6 flex items-center justify-center cursor-pointer bg-transparent border-none"
                   aria-label="Settings"
                 >
                   <svg
@@ -803,30 +841,32 @@ const VideoPlayer = ({
                   <div className="absolute bottom-10 right-0 w-48 bg-black/95 border border-white/10 rounded-lg shadow-2xl p-2 z-50 text-white text-xs">
                     {settingsView === "main" && (
                       <div className="space-y-1">
-                        <button
-                          onClick={() => setSettingsView("quality")}
-                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer"
-                        >
-                          <span>Quality</span>
-                          <span className="text-white/55">
-                            {(() => {
-                              const labels: Record<string, string> = {
-                                auto: "Auto",
-                                highres: "1080p",
-                                hd1080: "1080p",
-                                hd720: "720p",
-                                large: "480p",
-                                medium: "360p",
-                                small: "240p",
-                                tiny: "144p",
-                              };
-                              return labels[currentQuality.toLowerCase()] || "Auto";
-                            })()} &gt;
-                          </span>
-                        </button>
+                        {isYouTube && (
+                          <button
+                            onClick={() => setSettingsView("quality")}
+                            className="w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer bg-transparent border-none text-white"
+                          >
+                            <span>Quality</span>
+                            <span className="text-white/55">
+                              {(() => {
+                                const labels: Record<string, string> = {
+                                  auto: "Auto",
+                                  highres: "1080p",
+                                  hd1080: "1080p",
+                                  hd720: "720p",
+                                  large: "480p",
+                                  medium: "360p",
+                                  small: "240p",
+                                  tiny: "144p",
+                                };
+                                return labels[currentQuality.toLowerCase()] || "Auto";
+                              })()} &gt;
+                            </span>
+                          </button>
+                        )}
                         <button
                           onClick={() => setSettingsView("speed")}
-                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer"
+                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer bg-transparent border-none text-white"
                         >
                           <span>Playback Speed</span>
                           <span className="text-white/55">{playbackRate === 1 ? "Normal" : `${playbackRate}x`} &gt;</span>
@@ -834,11 +874,11 @@ const VideoPlayer = ({
                       </div>
                     )}
 
-                    {settingsView === "quality" && (
+                    {isYouTube && settingsView === "quality" && (
                       <div className="space-y-1">
                         <button
                           onClick={() => setSettingsView("main")}
-                          className="w-full text-left px-3 py-1 text-white/55 hover:bg-white/5 rounded border-b border-white/5 mb-1 cursor-pointer"
+                          className="w-full text-left px-3 py-1 text-white/55 hover:bg-white/5 rounded border-b border-white/5 mb-1 cursor-pointer bg-transparent border-none"
                         >
                           &lt; Back
                         </button>
@@ -863,7 +903,7 @@ const VideoPlayer = ({
                                 }
                                 setShowSettings(false);
                               }}
-                              className={`w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer ${currentQuality === opt.value ? "text-red-500 font-bold" : ""}`}
+                              className={`w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer bg-transparent border-none text-white ${currentQuality === opt.value ? "text-red-500 font-bold" : ""}`}
                             >
                               <span>{opt.label}</span>
                               {currentQuality === opt.value && <span>✓</span>}
@@ -877,7 +917,7 @@ const VideoPlayer = ({
                       <div className="space-y-1">
                         <button
                           onClick={() => setSettingsView("main")}
-                          className="w-full text-left px-3 py-1 text-white/55 hover:bg-white/5 rounded border-b border-white/5 mb-1 cursor-pointer"
+                          className="w-full text-left px-3 py-1 text-white/55 hover:bg-white/5 rounded border-b border-white/5 mb-1 cursor-pointer bg-transparent border-none"
                         >
                           &lt; Back
                         </button>
@@ -886,12 +926,18 @@ const VideoPlayer = ({
                             key={rate}
                             onClick={() => {
                               setPlaybackRate(rate);
-                              if (playerRef.current && typeof playerRef.current.setPlaybackRate === "function") {
-                                playerRef.current.setPlaybackRate(rate);
+                              if (isYouTube) {
+                                if (playerRef.current && typeof playerRef.current.setPlaybackRate === "function") {
+                                  playerRef.current.setPlaybackRate(rate);
+                                }
+                              } else {
+                                if (nativeVideoRef.current) {
+                                  nativeVideoRef.current.playbackRate = rate;
+                                }
                               }
                               setShowSettings(false);
                             }}
-                            className={`w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer ${playbackRate === rate ? "text-red-500 font-bold" : ""}`}
+                            className={`w-full text-left px-3 py-2 hover:bg-white/10 rounded flex justify-between items-center cursor-pointer bg-transparent border-none text-white ${playbackRate === rate ? "text-red-500 font-bold" : ""}`}
                           >
                             <span>{rate === 1.0 ? "Normal" : `${rate}x`}</span>
                             {playbackRate === rate && <span>✓</span>}
@@ -906,7 +952,7 @@ const VideoPlayer = ({
               {/* Fullscreen Button */}
               <button
                 onClick={toggleFullscreen}
-                className="text-white hover:scale-110 transition-transform flex-shrink-0 w-6 h-6 flex items-center justify-center"
+                className="text-white hover:scale-110 transition-transform flex-shrink-0 w-6 h-6 flex items-center justify-center cursor-pointer bg-transparent border-none"
                 aria-label="Fullscreen"
               >
                 {isFullscreen ? (

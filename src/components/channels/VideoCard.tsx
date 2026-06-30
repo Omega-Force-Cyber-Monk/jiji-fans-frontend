@@ -90,11 +90,11 @@ const VideoCardContent = ({
           <div className="flex items-center gap-3 text-muted-text">
             <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-pointer" title="Like">
               <HandThumbUpIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">0</span>
+              <span className="text-sm font-medium">{video.likeCount ?? 0}</span>
             </div>
             <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-pointer" title="Comment">
               <ChatBubbleLeftRightIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">0</span>
+              <span className="text-sm font-medium">{video.commentCount ?? 0}</span>
             </div>
           </div>
         </div>

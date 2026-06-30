@@ -25,6 +25,11 @@ export interface TContent {
   hasAccess?: boolean;
   subscriptionTierId?: string;
   status?: string;
+  likeCount?: number;
+  dislikeCount?: number;
+  shareCount?: number;
+  commentCount?: number;
+  viewCount?: number;
 }
 
 export interface TPagination {
@@ -84,14 +89,14 @@ export interface PopularChannelsResponse {
   success: boolean;
   message: string;
   data:
-    | TChannel[]
-    | {
-        results: TChannel[];
-        page?: number;
-        limit?: number;
-        totalPages?: number;
-        totalResults?: number;
-      };
+  | TChannel[]
+  | {
+    results: TChannel[];
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    totalResults?: number;
+  };
 }
 
 export interface TChannelPagination {

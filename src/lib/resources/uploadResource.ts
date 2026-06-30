@@ -15,6 +15,7 @@ export const RESOURCE_PURPOSE = {
   CHANNEL_BANNER: "CHANNEL_BANNER",
   CATEGORY_ICON: "CATEGORY_ICON",
   KYC_DOCUMENT: "KYC_DOCUMENT",
+  VIDEO: "VIDEO",
 } as const;
 
 type TResourcePurpose =
