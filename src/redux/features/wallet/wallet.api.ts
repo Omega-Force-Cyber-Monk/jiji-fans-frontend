@@ -318,11 +318,12 @@ const walletApi = baseApi.injectEndpoints({
       providesTags: ["wallet"],
     }),
     requestProcessing: builder.mutation({
-      query: ({ id, body }) => {
+      query: ({ id, body, idempotencyKey }: { id: string; body: any; idempotencyKey?: string }) => {
         return {
           url: `withdrawal-requests/${id}/process`,
           method: "POST",
           body,
+          headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
         };
       },
       invalidatesTags: ["wallet", "withdraw"],

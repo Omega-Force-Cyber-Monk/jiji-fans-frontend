@@ -14,6 +14,7 @@ import { useGetProfileQuery } from "@/redux/features/users/users.api";
 import {
   useLazyGetYouTubeAuthUrlQuery,
   useCreateYouTubeUploadSessionMutation,
+  useSaveYouTubeVideoIdMutation,
 } from "@/redux/features/youtube/youtube.api";
 import { uploadResource, RESOURCE_PURPOSE } from "@/lib/resources/uploadResource";
 import SectionContainer from "@/components/ui/SectionContainer";
@@ -59,6 +60,7 @@ const Page = () => {
   const { data: profileData, isLoading: isLoadingProfile } = useGetProfileQuery(undefined);
   const [triggerGetYouTubeAuthUrl, { isFetching: isFetchingAuthUrl }] = useLazyGetYouTubeAuthUrlQuery();
   const [createYouTubeUploadSession] = useCreateYouTubeUploadSessionMutation();
+  const [saveYouTubeVideoId] = useSaveYouTubeVideoIdMutation();
 
   const user = profileData?.data;
   const youtubeConnected = user?.youtubeConnected;
@@ -153,7 +155,7 @@ const Page = () => {
   };
 
   // Upload to YouTube via Resumable Upload
-  const uploadVideoToYouTube = (uploadUrl: string, file: File): Promise<string> => {
+  const uploadVideoToYouTube = (uploadUrl: string, file: File): Promise<{ url: string; videoId: string }> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadUrl);
@@ -172,7 +174,10 @@ const Page = () => {
             const responseData = JSON.parse(xhr.responseText);
             const videoId = responseData.id;
             if (videoId) {
-              resolve(`https://www.youtube.com/watch?v=${videoId}`);
+              resolve({
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                videoId,
+              });
             } else {
               reject(new Error("Video ID not found in YouTube response."));
             }
@@ -192,6 +197,7 @@ const Page = () => {
   // Form Submit Handler
   const onFinish: FormProps<TUniObject>["onFinish"] = async (values) => {
     let finalVideoUrl = values.url;
+    let youtubeVideoId = "";
 
     try {
       // 1. Native S3 Upload Flow
@@ -231,24 +237,39 @@ const Page = () => {
         const sessionRes = await createYouTubeUploadSession({
           title: values.title,
           description: values.description?.replace(/<[^>]*>/g, ""), // strip HTML for YouTube
+          privacyStatus: "public",
         }).unwrap();
 
         const uploadUrl = sessionRes.data.uploadUrl;
         setStatusMessage("Uploading video directly to YouTube...");
 
-        finalVideoUrl = await uploadVideoToYouTube(uploadUrl, videoFile);
+        const uploadResult = await uploadVideoToYouTube(uploadUrl, videoFile);
+        finalVideoUrl = uploadResult.url;
+        youtubeVideoId = uploadResult.videoId;
       }
 
       // 3. Finalize Content Creation
       setUploadStatus("verifying");
       setStatusMessage("Registering video content...");
 
-      await uploadContent({
+      const contentRes = await uploadContent({
         title: values.title,
         description: values.description,
         subscriptionTier: values.subscriptionTier,
         url: finalVideoUrl,
       }).unwrap();
+
+      // 4. Link YouTube Video ID if uploading through YouTube API
+      if (uploadType === "youtube_api" && youtubeVideoId) {
+        setStatusMessage("Linking YouTube video reference...");
+        const contentId = contentRes?.data?._id || contentRes?._id;
+        if (contentId) {
+          await saveYouTubeVideoId({
+            contentId,
+            youtubeVideoId,
+          }).unwrap();
+        }
+      }
 
       setUploadStatus("success");
       setStatusMessage("Content published successfully!");

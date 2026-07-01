@@ -65,11 +65,11 @@ const WithdrawalsTable = ({ title, status, onViewDetails }: WithdrawalsTableProp
         return (
           <span
             className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${
-              normalized === "PENDING"
+              normalized === "PENDING" || normalized === "PROCESSING"
                 ? "bg-warning/10 text-warning"
                 : normalized === "COMPLETED"
                   ? "bg-success/10 text-success"
-                  : normalized === "REJECTED"
+                  : normalized === "REJECTED" || normalized === "FAILED"
                     ? "bg-error/10 text-error"
                     : "bg-muted-text/10 text-secondary-text"
             }`}

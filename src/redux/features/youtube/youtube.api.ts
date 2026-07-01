@@ -48,13 +48,24 @@ const youtubeApi = baseApi.injectEndpoints({
     }),
     createYouTubeUploadSession: builder.mutation<
       YouTubeUploadSessionResponse,
-      { title: string; description?: string }
+      { title: string; description?: string; privacyStatus?: string }
     >({
       query: (body) => ({
         url: "youtube/upload-session",
         method: "POST",
         body,
       }),
+    }),
+    saveYouTubeVideoId: builder.mutation<
+      any,
+      { contentId: string; youtubeVideoId: string }
+    >({
+      query: (body) => ({
+        url: "youtube/save-video-id",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["content"],
     }),
   }),
 });
@@ -64,4 +75,5 @@ export const {
   useLazyGetYouTubeAuthUrlQuery,
   useYoutubeCallbackMutation,
   useCreateYouTubeUploadSessionMutation,
+  useSaveYouTubeVideoIdMutation,
 } = youtubeApi;

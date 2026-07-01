@@ -92,6 +92,7 @@ const Page = () => {
           status,
           ...(status === "REJECTED" ? { rejectReason: rejectReason.trim() } : {}),
         },
+        idempotencyKey,
       }).unwrap();
       messageApi.open({
         key: "payment",
@@ -104,6 +105,7 @@ const Page = () => {
       });
       setOpenModal(false);
       setRejectReason("");
+      regenerateKey();
     } catch (error) {
       errorAlert({ error: error, messageApi });
     }
@@ -210,7 +212,7 @@ const Page = () => {
                       </p>
                     </div>
                   )}
-                  {modalType !== "history" && modalData?.status === "pending" && (
+                  {modalType !== "history" && modalData?.status?.toUpperCase() === "PENDING" && (
                     <div className="pt-2">
                       <p className="font-medium text-muted-text mb-2">
                         Reject Reason
@@ -236,7 +238,7 @@ const Page = () => {
               >
                 Close
               </Button>
-              {modalType !== "history" && modalData?.status === "pending" && (
+              {modalType !== "history" && modalData?.status?.toUpperCase() === "PENDING" && (
                 <>
                   <Button
                     onClick={() => handlePayment("COMPLETED")}

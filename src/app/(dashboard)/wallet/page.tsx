@@ -143,7 +143,7 @@ const Page = () => {
   const pagination = transactionsData?.pagination;
   const withdrawalRequests = withdrawalData?.results || (withdrawalData as any)?.withdrawals || [];
 
-  const hasPendingWithdrawal = withdrawalRequests.some((req: any) => req.status === "PENDING");
+  const hasPendingWithdrawal = withdrawalRequests.some((req: any) => ["PENDING", "PROCESSING"].includes(req.status?.toUpperCase()));
   const disableWithdraw = !isKycCompleted || !canWithdrawByPayout || isBelowMinimumThreshold || hasPendingWithdrawal;
 
   const transactionSkeletons = Array.from({ length: 5 });
@@ -278,7 +278,8 @@ const Page = () => {
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
       case "COMPLETED": return "bg-green-500/10 text-green-400 border border-green-500/20";
-      case "PENDING": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+      case "PENDING":
+      case "PROCESSING": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       case "FAILED": return "bg-red-500/10 text-red-400 border border-red-500/20";
       default: return "bg-slate-500/10 text-slate-400 border border-slate-500/20";
     }
@@ -287,7 +288,8 @@ const Page = () => {
   const getStatusTag = (status: string) => {
     switch (status?.toUpperCase()) {
       case "COMPLETED": return <Tag color="success" className="font-semibold px-2.5 py-0.5 rounded-md">COMPLETED</Tag>;
-      case "PENDING": return <Tag color="processing" className="font-semibold px-2.5 py-0.5 rounded-md">PENDING</Tag>;
+      case "PENDING": return <Tag color="warning" className="font-semibold px-2.5 py-0.5 rounded-md">PENDING</Tag>;
+      case "PROCESSING": return <Tag color="processing" className="font-semibold px-2.5 py-0.5 rounded-md">PROCESSING</Tag>;
       case "FAILED": return <Tag color="error" className="font-semibold px-2.5 py-0.5 rounded-md">FAILED</Tag>;
       default: return <Tag className="font-semibold px-2.5 py-0.5 rounded-md">{status?.toUpperCase()}</Tag>;
     }
