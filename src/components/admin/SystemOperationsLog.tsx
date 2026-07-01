@@ -72,6 +72,8 @@ interface SystemOperationsLogProps {
   onStatusChange?: (val: string) => void;
   actorIdVal?: string;
   onActorIdChange?: (val: string) => void;
+  actionTypeVal?: string;
+  onActionTypeChange?: (val: string) => void;
   page?: number;
   pageSize?: number;
   total?: number;
@@ -88,6 +90,8 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
   onStatusChange,
   actorIdVal = "",
   onActorIdChange,
+  actionTypeVal = "",
+  onActionTypeChange,
   page = 1,
   pageSize = 10,
   total = 0,
@@ -143,12 +147,23 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
               <select
                 value={statusVal}
                 onChange={(e) => onStatusChange?.(e.target.value)}
-                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text focus:outline-none focus:border-brand-primary transition-all cursor-pointer"
+                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text focus:outline-none focus:border-brand-primary transition-all appearance-none cursor-pointer"
               >
-                <option value="">All Status</option>
-                <option value="SUCCESS">Success</option>
+                <option value="">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
                 <option value="PENDING">Pending</option>
                 <option value="FAILED">Failed</option>
+              </select>
+              <select
+                value={actionTypeVal}
+                onChange={(e) => onActionTypeChange?.(e.target.value)}
+                className="px-3.5 py-1.5 bg-primary-bg border border-border-primary rounded-md text-sm text-primary-text focus:outline-none focus:border-brand-primary transition-all appearance-none cursor-pointer max-w-[160px] truncate"
+              >
+                <option value="">All Actions</option>
+                <option value="TRANSACTION_CREATED">Transaction Created</option>
+                <option value="KYC_SYNCED">KYC Synced</option>
+                <option value="PAYOUT_PROCESSED">Payout Processed</option>
+                <option value="PAYOUT_FAILED">Payout Failed</option>
               </select>
               <input
                 type="text"

@@ -10,6 +10,7 @@ const SystemLogsPage = () => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [actorId, setActorId] = useState("");
+  const [actionType, setActionType] = useState("");
 
   const { data: logsData, isLoading: isLogsLoading } = useGetSystemLogsQuery({
     page,
@@ -17,6 +18,7 @@ const SystemLogsPage = () => {
     search: search || undefined,
     status: status || undefined,
     actorId: actorId || undefined,
+    actionType: actionType || undefined,
   });
 
   const transactions = useMemo(() => {
@@ -35,8 +37,8 @@ const SystemLogsPage = () => {
       status: ["success", "completed", "succeeded"].includes(log.status?.toLowerCase() || "")
         ? "success"
         : ["pending", "warning", "processing"].includes(log.status?.toLowerCase() || "")
-        ? "warning"
-        : "error",
+          ? "warning"
+          : "error",
       label: log.status || "Unknown",
     }));
   }, [logsData]);
@@ -75,6 +77,11 @@ const SystemLogsPage = () => {
         actorIdVal={actorId}
         onActorIdChange={(val) => {
           setActorId(val);
+          setPage(1);
+        }}
+        actionTypeVal={actionType}
+        onActionTypeChange={(val) => {
+          setActionType(val);
           setPage(1);
         }}
         page={page}

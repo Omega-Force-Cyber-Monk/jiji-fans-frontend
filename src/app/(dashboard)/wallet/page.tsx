@@ -55,6 +55,7 @@ import {
   FiDownload,
   FiTrash2,
   FiEdit2,
+  FiInfo,
   FiPlus,
   FiSmartphone,
   FiGlobe
@@ -76,6 +77,7 @@ const Page = () => {
   const [withdrawalSubmitError, setWithdrawalSubmitError] = useState("");
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { idempotencyKey, regenerateKey } = useIdempotency();
@@ -632,7 +634,16 @@ const Page = () => {
               ) : currentPayoutSettings && !isEditingPayout ? (
                 <div className="py-6 px-4 lg:px-6 max-w-xl space-y-6">
                   <div>
-                    <h4 className="text-lg font-semibold text-primary-text mb-2">Active Payout Destination</h4>
+                    <h4 className="text-lg font-semibold text-primary-text mb-2 flex items-center gap-3">
+                      Active Payout Destination
+                      <button
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="inline-flex items-center justify-center p-1.5 rounded-full bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-black transition-all group"
+                        title="How it works"
+                      >
+                        <FiInfo className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      </button>
+                    </h4>
                     <p className="text-sm text-secondary-text">Your earnings will be automatically or manually sent to the destination configured below.</p>
                   </div>
 
@@ -748,7 +759,16 @@ const Page = () => {
               ) : (
                 <div className="py-6 px-4 lg:px-6 max-w-xl">
                   <div className="mb-6">
-                    <h4 className="text-lg font-semibold text-primary-text mb-2">Configure Payout Method</h4>
+                    <h4 className="text-lg font-semibold text-primary-text mb-2 flex items-center gap-3">
+                      Configure Payout Method
+                      <button
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="inline-flex items-center justify-center p-1.5 rounded-full bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-black transition-all group"
+                        title="How it works"
+                      >
+                        <FiInfo className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      </button>
+                    </h4>
                     <p className="text-sm text-secondary-text">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
                   </div>
 
@@ -909,6 +929,79 @@ const Page = () => {
           ]}
         />
       </div>
+
+      <GlobalModal
+        isModalOpen={isGuideModalOpen}
+        setIsModalOpen={setIsGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+        maxWidth="650px"
+      >
+        <div className="w-full rounded-md p-4">
+          <h2 className="text-2xl font-semibold mb-8 text-center text-primary-text flex flex-col items-center justify-center gap-3">
+            <div className="w-14 h-14 bg-brand-primary/10 rounded-full flex items-center justify-center">
+              <FiInfo className="w-8 h-8 text-brand-primary" />
+            </div>
+            How Automatic Scheduler Works
+          </h2>
+          
+          <div className="space-y-6 text-base text-secondary-text">
+            <div className="bg-secondary-bg rounded-xl p-6 border border-border-primary">
+              <h4 className="font-bold text-lg text-primary-text mb-4 uppercase tracking-wider text-sm flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-primary text-black text-xs font-bold">1</span>
+                Scheduler Evaluation Rules
+              </h4>
+              <ul className="list-none space-y-3">
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm">The scheduler runs checks automatically on scheduled payout days.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm">Creators must have an <strong>Approved KYC/KYB</strong> status.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm">Creators must have configured valid <strong>Payout Settings</strong> (Bank Transfer or Mobile Money).</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm">Creators with active <strong>Pending</strong> or <strong>Processing</strong> manual/auto withdrawal requests are automatically skipped to avoid double payouts.</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="bg-secondary-bg rounded-xl p-6 border border-border-primary">
+              <h4 className="font-bold text-lg text-primary-text mb-4 uppercase tracking-wider text-sm flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-primary text-black text-xs font-bold">2</span>
+                Thresholds & Holding Periods
+              </h4>
+              <ul className="list-none space-y-3">
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm"><strong>Minimum Threshold:</strong> Wallet balance must meet or exceed this amount for the auto-payout to trigger.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm"><strong>Holding Period:</strong> Cooldown window (in days) applied to incoming earnings before they become eligible for withdrawal.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-primary mt-2 flex-shrink-0"></div>
+                  <span className="text-sm"><strong>Processing Window:</strong> Duration (in days) allocated to process/dispatch transfers through Stripe or PawaPay.</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="pt-6 flex justify-center">
+              <button
+                onClick={() => setIsGuideModalOpen(false)}
+                className="bg-brand-primary border-none h-12 px-10 rounded-full text-base font-semibold text-black transition-transform hover:scale-105"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      </GlobalModal>
 
       {/* 4. Withdrawal Preview Profile Details Modal Overlay */}
       <GlobalModal
