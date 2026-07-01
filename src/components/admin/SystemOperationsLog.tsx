@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Table, TableColumnsType, Modal } from "antd";
+import { Modal } from "antd";
 import { cn } from "@/utils/cn";
 import {
   CheckCircleIcon,
@@ -107,116 +107,24 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
       t.date,
       t.label
     ]);
-    
+
     const csvContent = [
       headers.join(","),
       ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
     ].join("\n");
-    
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `system_logs_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `system_logs_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const columns: TableColumnsType<TTransaction> = [
-    {
-      title: "Log ID",
-      dataIndex: "id",
-      className: "whitespace-nowrap",
-      render: (text: string) => (
-        <span className="font-mono text-sm font-semibold text-primary-text pl-2">
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "User / Creator",
-      dataIndex: "creator",
-      className: "whitespace-nowrap",
-      render: (text: string) => (
-        <span className="text-sm font-semibold text-primary-text">
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "Action Type",
-      dataIndex: "type",
-      className: "whitespace-nowrap",
-      render: (text: string) => (
-        <span className="text-sm text-secondary-text font-normal">
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      className: "whitespace-nowrap",
-      render: (text: string) => (
-        <span className="text-sm font-semibold text-primary-text">
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "Date",
-      dataIndex: "date",
-      className: "whitespace-nowrap",
-      render: (text: string) => (
-        <span className="text-sm text-muted-text font-normal">
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      className: "whitespace-nowrap",
-      render: (status: string, record) => (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider whitespace-nowrap",
-            status === "success" &&
-            "bg-success/10 text-success border border-success/20",
-            status === "warning" &&
-            "bg-warning/10 text-warning border border-warning/20",
-            status === "error" &&
-            "bg-error/10 text-error border border-error/20"
-          )}
-        >
-          {status === "success" && (
-            <CheckCircleIcon className="w-3.5 h-3.5 shrink-0" />
-          )}
-          {status === "warning" && (
-            <ClockIcon className="w-3.5 h-3.5 shrink-0" />
-          )}
-          {status === "error" && (
-            <XCircleIcon className="w-3.5 h-3.5 shrink-0" />
-          )}
-          {record.label}
-        </span>
-      ),
-    },
-    {
-      title: "Action",
-      className: "whitespace-nowrap",
-      render: (_, record) => (
-        <button
-          onClick={() => setSelectedLog(record)}
-          className="bg-brand-primary hover:opacity-90 transition-all text-white px-3.5 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer"
-        >
-          View details
-        </button>
-      ),
-    },
-  ];
+
 
   return (
     <div className="bg-secondary-bg border border-border-primary rounded-lg p-5 shadow-sm overflow-hidden hover:border-brand-primary">
@@ -258,7 +166,7 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
               />
             </>
           )}
-          <button 
+          <button
             onClick={handleExportCSV}
             className="px-3.5 py-1.5 bg-brand-primary rounded-md text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-all border-none cursor-pointer"
           >
@@ -267,24 +175,100 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
         </div>
       </div>
 
-      {/* Standard Design Token Antd Table */}
-      <div className="w-full overflow-x-auto">
-        <Table
-          columns={columns}
-          dataSource={transactions}
-          loading={loading}
-          pagination={false}
-          locale={{
-            emptyText: (
-              <div className="text-center py-10 flex flex-col items-center justify-center gap-2 bg-secondary-bg/30 border border-dashed border-border-primary/50 rounded-lg">
-                <ClockIcon className="w-8 h-8 text-muted-text/40 animate-pulse" />
-                <p className="text-sm text-muted-text font-medium">No system operations logs found.</p>
-              </div>
-            )
-          }}
-          className="ant-table-custom"
-          size="middle"
-        />
+      {/* Custom Table Component */}
+      <div className="w-full overflow-x-auto rounded-lg border border-border-primary bg-secondary-bg/20">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr className="border-b border-border-primary bg-primary-bg/40">
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">Log ID</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">User / Creator</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">Action Type</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">Amount</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">Date</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text">Status</th>
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-secondary-text text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-5 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <span className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></span>
+                    <span className="text-sm text-muted-text">Loading logs...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : transactions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-5 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 bg-secondary-bg/30 border border-dashed border-border-primary/50 rounded-lg py-10">
+                    <ClockIcon className="w-8 h-8 text-muted-text/40 animate-pulse" />
+                    <p className="text-sm text-muted-text font-medium">No system operations logs found.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              transactions.map((item) => {
+                const s = item.status?.toLowerCase();
+                const isSuccess = s === "success" || s === "completed";
+                const isWarning = s === "warning" || s === "pending" || s === "under review";
+                const isError = s === "error" || s === "failed" || s === "flagged/suspended";
+
+                return (
+                  <tr key={item.key} className="border-b border-border-primary/40 hover:bg-primary-bg/25 transition-all duration-150">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="font-mono text-sm font-semibold text-primary-text pl-2">
+                        {item.id}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-primary-text">
+                        {item.creator}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="text-sm text-secondary-text font-normal">
+                        {item.type}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-primary-text">
+                        {item.amount}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="text-sm text-muted-text font-normal">
+                        {item.date}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className={cn(
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider whitespace-nowrap border",
+                        isSuccess && "bg-green-500/10 text-green-500 border-green-500/20",
+                        isWarning && "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+                        isError && "bg-red-500/10 text-red-500 border-red-500/20"
+                      )}>
+                        {isSuccess && <CheckCircleIcon className="w-3.5 h-3.5 shrink-0" />}
+                        {isWarning && <ClockIcon className="w-3.5 h-3.5 shrink-0" />}
+                        {isError && <XCircleIcon className="w-3.5 h-3.5 shrink-0" />}
+                        {item.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right">
+                      <button
+                        onClick={() => setSelectedLog(item)}
+                        className="bg-brand-primary hover:opacity-90 transition-all text-white px-3.5 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer"
+                      >
+                        View details
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
 
       {!isDashboard && total > 0 && onPageChange && (
@@ -347,9 +331,9 @@ const SystemOperationsLog: React.FC<SystemOperationsLogProps> = ({
               <span className="text-xs text-muted-text uppercase block font-semibold">Status</span>
               <span className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mt-1",
-                selectedLog.status === "success" && "bg-success/10 text-success border border-success/20",
-                selectedLog.status === "warning" && "bg-warning/10 text-warning border border-warning/20",
-                selectedLog.status === "error" && "bg-error/10 text-error border border-error/20"
+                (selectedLog.status?.toLowerCase() === "success") && "bg-green-500/10 text-green-500 border border-green-500/20",
+                (selectedLog.status?.toLowerCase() === "warning" || selectedLog.status?.toLowerCase() === "pending") && "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20",
+                (selectedLog.status?.toLowerCase() === "error" || selectedLog.status?.toLowerCase() === "failed") && "bg-red-500/10 text-red-500 border border-red-500/20"
               )}>
                 {selectedLog.label}
               </span>

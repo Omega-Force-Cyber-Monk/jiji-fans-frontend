@@ -27,7 +27,7 @@ const ConversationItem = ({
 	handleReplySubmit,
 }: any) => {
 	const { data: messagesData, isLoading: isMessagesLoading } = useGetMessagesQuery({ conversationId: conv._id, limit: 10 });
-	
+
 	const messages = messagesData?.data?.results || messagesData?.data?.result || [];
 	const lastUserMessage = messages.find((msg: any) => {
 		const sender = msg.sender || msg.senderId;
@@ -40,7 +40,7 @@ const ConversationItem = ({
 	const isSending = sendingIds[conv._id];
 	const isReplied = repliedIds[conv._id];
 	const replyText = replyTexts[conv._id] || "";
-	
+
 	const otherUser = conv.otherUser;
 	const username = otherUser?.username || otherUser?.email || "User";
 	const avatarLetter = username.charAt(0).toUpperCase();
@@ -65,14 +65,14 @@ const ConversationItem = ({
 							{/* Responsive Wrap Grid for User Info & Badges */}
 							<div className="flex items-center flex-wrap" style={{ gap: "6px" }}>
 								<span className="text-sm text-primary-text font-semibold truncate">{username}</span>
-								<span 
+								<span
 									className="text-[10px] bg-brand-primary/15 text-brand-primary rounded font-medium truncate shrink-0"
 									style={{ padding: "2px 6px" }}
 								>
 									{otherUser?.role || "Subscriber"}
 								</span>
 								{conv.priorityScore !== undefined && (
-									<span 
+									<span
 										className="text-[10px] bg-indigo-500/10 text-indigo-400 rounded font-medium shrink-0"
 										style={{ padding: "2px 6px" }}
 									>
@@ -93,7 +93,7 @@ const ConversationItem = ({
 			{/* Dynamic Action Footers or Fields */}
 			<div className="transition-all duration-200">
 				{isReplied ? (
-					<div 
+					<div
 						className="flex items-center text-sm text-success bg-success/5 border border-success/15 rounded animate-fade-in"
 						style={{ padding: "4px 8px", gap: "6px" }}
 					>
@@ -192,7 +192,7 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 			<div className="flex flex-col shrink-0" style={{ marginBottom: "12px" }}>
 				<h4 className="text-lg font-semibold text-primary-text" style={{ marginBottom: "6px" }}>Priority Inbox</h4>
 				<p className="text-sm text-muted-text">
-					Unanswered messages from your top subscribers
+					Unanswered messages requiring attention
 				</p>
 			</div>
 
@@ -203,12 +203,13 @@ const CreatorMiniInbox = ({ className, showViewAll = false }: CreatorMiniInboxPr
 						<Spin size="small" />
 					</div>
 				) : conversations.length === 0 ? (
-					<div 
+					<div
 						className="flex flex-col items-center justify-center h-full text-center bg-primary-bg/10 rounded-md border border-border-primary/40 border-dashed"
 						style={{ padding: "16px", gap: "12px" }}
 					>
 						<CheckCircleIcon className="w-6 h-6 text-success" />
-						<p className="text-xs text-primary-text font-medium">All caught up!</p>
+						<p className="text-base text-primary-text font-medium">All caught up!</p>
+						<p className="text-sm text-muted-text">No unanswered messages found.</p>
 					</div>
 				) : (
 					conversations.map((conv) => (

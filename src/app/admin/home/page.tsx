@@ -75,7 +75,11 @@ const Page = () => {
         day: "2-digit",
         year: "numeric"
       }) : "N/A",
-      status: log.status?.toLowerCase() === "success" ? "success" : log.status?.toLowerCase() === "pending" ? "warning" : "error",
+      status: ["success", "completed", "succeeded"].includes(log.status?.toLowerCase() || "")
+        ? "success"
+        : ["pending", "warning", "processing"].includes(log.status?.toLowerCase() || "")
+        ? "warning"
+        : "error",
       label: log.status || "Unknown",
     }));
   }, [logsData]);

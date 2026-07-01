@@ -69,6 +69,12 @@ const CountryMarketShareChart = ({ className }: { className?: string }) => {
         <div className="w-full flex-grow min-h-[250px] flex items-center justify-center">
           <Skeleton active paragraph={{ rows: 6 }} title={false} />
         </div>
+      ) : chartData.length === 0 || summary.totalTransactions === 0 ? (
+        <div className="w-full flex-grow min-h-[250px] flex flex-col items-center justify-center border border-dashed border-border-primary/50 rounded-lg p-6 text-center">
+          <GlobeAltIcon className="w-10 h-10 text-muted-text/40 mb-2" />
+          <p className="text-sm font-medium text-secondary-text">No market share data available</p>
+          <p className="text-xs text-muted-text mt-1">There are no transactions recorded yet.</p>
+        </div>
       ) : (
         <div className="flex-1 w-full min-h-0 overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
