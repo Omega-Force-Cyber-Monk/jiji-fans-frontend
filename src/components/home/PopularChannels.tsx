@@ -14,6 +14,7 @@ import "swiper/css/pagination";
 import "swiper/css/free-mode";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { useGetPopularChannelsQuery } from "@/redux/features/channel/channel.api";
 import { Spin, Empty } from "antd";
 import { resolveChannelSlug } from "@/lib/helpers/channelSlug";
@@ -30,8 +31,13 @@ interface ChannelSlideProps {
 
 const ChannelSlide = ({ channel }: ChannelSlideProps) => {
   const [imageError, setImageError] = useState(false);
-  const slug = resolveChannelSlug(channel);
-  const href = slug ? `/${slug}` : "/";
+  const { isAuthenticated, isAdmin } = useAuth();
+
+  const href = !isAuthenticated
+    ? `/sign-in?redirect=channelId:${channel._id}`
+    : isAdmin
+    ? `/admin/creators/${channel._id}`
+    : `/overview/channels/${channel._id}`;
 
   return (
     <article className="group h-full">

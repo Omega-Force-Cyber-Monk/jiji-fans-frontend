@@ -127,6 +127,21 @@ const SignIn = ({ redirect }: { redirect?: string }) => {
         })
       );
 
+      if (redirect?.startsWith("channelId:")) {
+        const cId = redirect.split(":")[1];
+        if (user?.role?.toLowerCase() === "admin") {
+          router.replace(`/admin/creators/${cId}`);
+        } else {
+          router.replace(`/overview/channels/${cId}`);
+        }
+        return;
+      }
+
+      if (redirect) {
+        router.replace(redirect);
+        return;
+      }
+
       // Handle redirect based on role (as per user's previous preference)
       if (user?.role?.toLowerCase() === "admin") {
         router.replace("/admin/home");
