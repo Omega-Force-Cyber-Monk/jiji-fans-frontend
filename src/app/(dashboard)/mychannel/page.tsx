@@ -135,8 +135,8 @@ const Page = () => {
 
   return (
     <ChannelStatusGuard channelStatus={channelStatus} isLoading={isLoading}>
-      <div className="animate-in fade-in duration-700 pb-12">
-        <div className="pt-4 pb-2">
+      <div className="animate-in fade-in duration-700 pb-16 space-y-6">
+        <div className="flex items-center justify-between pt-4 pb-2">
           <Breadcrumb
             items={[
               { title: "Home", href: "/dashboard" },
@@ -144,21 +144,22 @@ const Page = () => {
             ]}
           />
         </div>
+
         {/* Status Notification - Centered */}
         {channelStatus && (
-          <div className="pt-6">
+          <div className="pt-2 animate-in fade-in slide-in-from-top-4 duration-500">
             <StatusBanner status={channelStatus} />
           </div>
         )}
 
-        {/* Hero Section - Full Width */}
-        <div className="w-full bg-primary-bg overflow-hidden border-b border-border-primary">
+        {/* Hero Section - Elevated Floating Card */}
+        <div className="w-full bg-secondary-bg/40 backdrop-blur-md overflow-hidden border border-border-primary rounded-2xl shadow-xl hover:shadow-2xl hover:border-brand-primary/35 transition-all duration-500 pb-6">
           <ChannelInfo channelData={channelData?.data} isLoading={isLoading} />
         </div>
 
-        <SectionContainer className="space-y-8 mt-8">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xl:gap-6">
+        <div className="space-y-8 mt-6">
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
             <StatCard
               label="Total Members"
               value={channelData?.data?.totalSubscribers || 0}
@@ -176,9 +177,9 @@ const Page = () => {
             />
           </div>
 
-          {/* Content Explorer */}
-          <div className="bg-primary-bg border border-border-primary rounded-lg shadow-sm">
-            <div className="p-1 sm:p-2 border-b border-border-primary">
+          {/* Content Explorer Card */}
+          <div className="bg-secondary-bg/30 backdrop-blur-md border border-border-primary rounded-2xl shadow-xl overflow-hidden hover:border-brand-primary/20 transition-all duration-500">
+            <div className="p-3 sm:p-4 border-b border-border-primary bg-primary-bg/15">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4">
                 <Tabs
                   activeKey={activeKey}
@@ -187,12 +188,13 @@ const Page = () => {
                   className="flex-1 custom-tabs"
                 />
                 {activeKey === "videos" && (
-                  <div className="flex items-center gap-3 pb-2 md:pb-0">
-                    <span className="text-xs font-semibold text-secondary-text uppercase hidden sm:block">Filter:</span>
+                  <div className="flex items-center gap-3 pb-2 md:pb-0 animate-in fade-in duration-300">
+                    <span className="text-xs font-semibold text-secondary-text uppercase hidden sm:block tracking-wider">Filter:</span>
                     <Select
                       defaultValue="ALL"
                       onChange={handleStatusChange}
-                      className="w-full md:w-44 h-10"
+                      className="w-full md:w-48 h-10 custom-select"
+                      popupClassName="custom-select-dropdown"
                       options={[
                         { value: "ALL", label: "All Status" },
                         { value: "PENDING", label: "Pending" },
@@ -206,7 +208,7 @@ const Page = () => {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 lg:p-8 min-h-[400px]">
+            <div className="p-6 sm:p-8 min-h-[400px]">
               {activeKey === "membership" ? (
                 <Membership />
               ) : activeKey === "about" ? (
@@ -222,7 +224,7 @@ const Page = () => {
               )}
             </div>
           </div>
-        </SectionContainer>
+        </div>
       </div>
     </ChannelStatusGuard>
   );
