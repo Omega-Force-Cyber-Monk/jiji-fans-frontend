@@ -481,6 +481,25 @@ const VerificationForm: React.FC = () => {
               </div>
 
               <div className="p-4 md:p-6">
+                {currentKycStatus === "REJECTED" && (
+                  <div className="bg-error/5 border border-error/25 p-5 rounded-lg flex items-start gap-4 mb-6">
+                    <FiXCircle className="w-6 h-6 text-error shrink-0 mt-0.5" />
+                    <div className="space-y-1.5 text-left">
+                      <h5 className="font-semibold text-error text-base">Previous Verification Attempt Rejected</h5>
+                      {(statusSource?.kycRejectedReason || statusSource?.latestRequest?.rejectionReason) && (
+                        <p className="text-sm text-secondary-text mt-1">
+                          <strong className="text-primary-text font-semibold">Reason:</strong> {statusSource?.kycRejectedReason || statusSource?.latestRequest?.rejectionReason}
+                        </p>
+                      )}
+                      {(statusSource?.kycAdjustmentNote || statusSource?.latestRequest?.adjustmentNote) && (
+                        <p className="text-sm text-secondary-text">
+                          <strong className="text-primary-text font-semibold">Adjustment Note:</strong> {statusSource?.kycAdjustmentNote || statusSource?.latestRequest?.adjustmentNote}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false} className="space-y-6">
 
                   {/* Step 1: Choose type */}
@@ -738,9 +757,19 @@ const VerificationForm: React.FC = () => {
               ) : (
                 <>
                   <h2 className="text-xl font-semibold text-primary-text">Verification Under Review</h2>
-                  <p className="text-base text-secondary-text max-w-md mx-auto">
+                  <p className="text-base text-secondary-text max-w-md mx-auto mb-4">
                     Your verification request has already been submitted and is currently <strong className="text-primary-text">{currentKycStatus.replace('_', ' ')}</strong>. You will be notified of any administrative updates.
                   </p>
+                  <div className="pt-2">
+                    <button
+                      onClick={handleSyncKycStatus}
+                      disabled={isSyncing}
+                      className="px-6 py-2.5 rounded-md bg-brand-primary text-black font-semibold hover:opacity-90 transition-all shadow-sm flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
+                    >
+                      <FiClock className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                      {isSyncing ? "Syncing..." : "Sync Status"}
+                    </button>
+                  </div>
                 </>
               )}
               <div className="pt-4">

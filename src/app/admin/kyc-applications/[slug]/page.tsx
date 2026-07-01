@@ -27,6 +27,9 @@ interface IKycApplication {
   status: TKycStatus;
   note?: string;
   rejectionReason?: string;
+  adjustmentNote?: string;
+  kycAdjustmentNote?: string;
+  kycRejectedReason?: string;
   data: {
     legalName?: string;
     dateOfBirth?: string;
@@ -241,13 +244,25 @@ const Page = () => {
                 )}
 
                 {data?.status === "REJECTED" && (
-                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
-                      Rejection Reason
-                    </p>
-                    <p className="mt-1 text-sm font-medium text-red-400">
-                      {data?.rejectionReason || "No reason provided"}
-                    </p>
+                  <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
+                        Rejection Reason
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-red-400 font-semibold">
+                        {data?.rejectionReason || (data as any)?.kycRejectedReason || "No reason provided"}
+                      </p>
+                    </div>
+                    {(data?.adjustmentNote || (data as any)?.kycAdjustmentNote) && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
+                          Adjustment Note
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-red-400">
+                          {data?.adjustmentNote || (data as any)?.kycAdjustmentNote}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

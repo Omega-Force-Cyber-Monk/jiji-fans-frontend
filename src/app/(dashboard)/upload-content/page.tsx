@@ -334,7 +334,7 @@ const Page = () => {
               type="button"
               onClick={() => setUploadType("youtube_api")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border-none",
+                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border-none hidden",
                 uploadType === "youtube_api"
                   ? "bg-brand-primary text-black font-semibold shadow-sm"
                   : "text-muted-text hover:text-primary-text"

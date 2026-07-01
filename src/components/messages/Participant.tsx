@@ -38,7 +38,7 @@ const Participant = ({
     skip: !receiverId || !!conversationOtherUser,
   });
 
-  const details = conversationOtherUser || userDetails;
+  const details = (conversationOtherUser || userDetails) as any;
   const isLoading = (isLoadingConv && !conversationOtherUser) || (isLoadingUser && !userDetails && !conversationOtherUser);
 
   const isCreator = details?.role?.toLowerCase?.() === "creator" || !!details?.channel;

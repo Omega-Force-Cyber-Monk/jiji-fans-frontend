@@ -99,7 +99,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								body: {
 									contentId,
 									amount,
-									phoneNumber: user?.phoneNumber || "",
+									phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
 									country: fullCountryName || "kenya",
 									currency: (user as any)?.currency || "KES",
 								},
@@ -110,7 +110,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								body: {
 									contentId,
 									amount,
-									phoneNumber: user?.phoneNumber || "",
+									phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
 									country: fullCountryName || "zimbabwe",
 									currency: (user as any)?.currency || "USD",
 								},
@@ -299,9 +299,8 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								{/* PawaPay Option */}
 								<button
 									onClick={() => handleTip("PAWAPAY")}
-									disabled={isCreatingSession || !isPawaPayEligible}
-									className={`flex items-center gap-4 p-4 rounded-xl border border-border-primary/80 bg-primary-bg/30 hover:border-brand-primary hover:bg-brand-primary/5 hover:-translate-y-[1px] hover:shadow-md transition-all duration-200 text-left group cursor-pointer ${!isPawaPayEligible ? "opacity-40 cursor-not-allowed hover:border-border-primary hover:bg-primary-bg/30 hover:translate-y-0 hover:shadow-none" : ""
-										}`}
+									disabled={isCreatingSession}
+									className="flex items-center gap-4 p-4 rounded-xl border border-border-primary/80 bg-primary-bg/30 hover:border-brand-primary hover:bg-brand-primary/5 hover:-translate-y-[1px] hover:shadow-md transition-all duration-200 text-left group cursor-pointer"
 								>
 									<div className="p-3 bg-brand-primary/15 rounded-lg text-brand-primary group-hover:bg-brand-primary/25 border border-brand-primary/10 transition-all shrink-0">
 										<WalletIcon className="w-5 h-5" />
@@ -311,7 +310,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 										<p className="text-xs text-muted-text truncate mt-0.5">Local Mobile Money payments</p>
 										{!isPawaPayEligible && (
 											<span className="inline-block text-[11px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full mt-1.5">
-												Unavailable in {user?.country || "your location"}
+												Unavailable in {user?.country || "your location"} (Testing Active)
 											</span>
 										)}
 									</div>
@@ -320,9 +319,8 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								{/* Paynow Option */}
 								<button
 									onClick={() => handleTip("PAYNOW")}
-									disabled={isCreatingSession || !isPaynowEligible}
-									className={`flex items-center gap-4 p-4 rounded-xl border border-border-primary/80 bg-primary-bg/30 hover:border-brand-primary hover:bg-brand-primary/5 hover:-translate-y-[1px] hover:shadow-md transition-all duration-200 text-left group cursor-pointer ${!isPaynowEligible ? "opacity-40 cursor-not-allowed hover:border-border-primary hover:bg-primary-bg/30 hover:translate-y-0 hover:shadow-none" : ""
-										}`}
+									disabled={isCreatingSession}
+									className="flex items-center gap-4 p-4 rounded-xl border border-border-primary/80 bg-primary-bg/30 hover:border-brand-primary hover:bg-brand-primary/5 hover:-translate-y-[1px] hover:shadow-md transition-all duration-200 text-left group cursor-pointer"
 								>
 									<div className="p-3 bg-brand-primary/15 rounded-lg text-brand-primary group-hover:bg-brand-primary/25 border border-brand-primary/10 transition-all shrink-0">
 										<WalletIcon className="w-5 h-5" />
@@ -332,7 +330,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 										<p className="text-xs text-muted-text truncate mt-0.5">EcoCash, OneMoney, Telecash</p>
 										{!isPaynowEligible && (
 											<span className="inline-block text-[11px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full mt-1.5">
-												Zimbabwe region only
+												Zimbabwe region only (Testing Active)
 											</span>
 										)}
 									</div>
