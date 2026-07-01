@@ -57,14 +57,19 @@ const Page = () => {
   // API Hooks
   const [uploadContent, { isLoading: isSubmitting }] = useUploadContentMutation();
   const { data: subscriptionPlans, isLoading: isLoadingPlans, error: plansError } = useGetAllSubscriptionPlansQuery(undefined);
-  const { data: profileData, isLoading: isLoadingProfile } = useGetProfileQuery(undefined);
+  const { data: profileData, isLoading: isLoadingProfile, refetch: refetchProfile } = useGetProfileQuery(undefined);
   const [triggerGetYouTubeAuthUrl, { isFetching: isFetchingAuthUrl }] = useLazyGetYouTubeAuthUrlQuery();
   const [createYouTubeUploadSession] = useCreateYouTubeUploadSessionMutation();
   const [saveYouTubeVideoId] = useSaveYouTubeVideoIdMutation();
 
   const user = profileData?.data;
   const youtubeConnected = user?.youtubeConnected;
-  const youtubeChannelTitle = user?.youtubeTokens?.channelTitle;
+  const youtubeChannelTitle = user?.youtubeTokens?.channelTitle || user?.youtubeChannelTitle || user?.youtubeChannelName;
+
+  // Force profile refetch on mount to ensure we get the latest youtubeConnected state
+  useEffect(() => {
+    refetchProfile();
+  }, [refetchProfile]);
 
   // Reset states when changing upload types
   useEffect(() => {
