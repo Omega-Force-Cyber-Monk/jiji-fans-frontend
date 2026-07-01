@@ -34,6 +34,7 @@ const PayoutSchedulePage = () => {
         limit: 10
     });
     const [messageApi, contextHolder] = message.useMessage();
+    const selectedFrequency = Form.useWatch('payoutFrequency', form);
 
     const { data, isLoading, isError, error } = useGetPayoutSchedulesQuery(queryFormat(query));
     const [createPayoutSchedule, { isLoading: isCreating }] = useCreatePayoutScheduleMutation();
@@ -41,16 +42,17 @@ const PayoutSchedulePage = () => {
 
     const handleCreate = async (values: any) => {
         try {
-            const payload: any = { ...values };
-            const daysArr = Array.isArray(values.days) ? values.days : [values.days];
-            
-            if (values.payoutFrequency === 'WEEKLY') {
-                payload.weekDays = daysArr;
-                delete payload.days;
+            const { days, weekDays, ...payloadRest } = values;
+            const payload: any = { ...payloadRest };
+
+            if (payload.payoutFrequency === 'WEEKLY') {
+                payload.weekDays = Array.isArray(days) ? days : [days];
+            } else if (payload.payoutFrequency === 'ON_DEMAND') {
+                // Omit both days and weekDays entirely for ON_DEMAND
             } else {
-                payload.days = daysArr;
+                payload.days = Array.isArray(days) ? days : [days];
             }
-            
+
             await createPayoutSchedule(payload).unwrap();
             messageApi.success("Payout schedule created successfully");
             setIsModalOpen(false);
@@ -293,18 +295,20 @@ const PayoutSchedulePage = () => {
                                     />
                                 </Form.Item>
 
-                                <Form.Item
-                                    label={<span className="text-secondary-text font-medium text-sm">Days (e.g. 15 for mid-month)</span>}
-                                    name="days"
-                                    rules={[{ required: true }]}
-                                    tooltip={{
-                                        title: "Specific trigger day of the cycle. For monthly, enter the day number (1-31). For weekly, enter the day of the week (1-7).",
-                                        icon: <InformationCircleIcon className="text-brand-primary" style={{ width: 16, height: 16, display: 'inline-block', color: 'var(--brand-primary)' }} />
-                                    }}
-                                    className="mb-2"
-                                >
-                                    <InputNumber className="!w-full bg-primary-bg border-border-primary text-primary-text rounded-md" placeholder="Enter day" min={1} max={31} />
-                                </Form.Item>
+                                {selectedFrequency !== 'ON_DEMAND' && (
+                                    <Form.Item
+                                        label={<span className="text-secondary-text font-medium text-sm">Days (e.g. 15 for mid-month)</span>}
+                                        name="days"
+                                        rules={[{ required: true }]}
+                                        tooltip={{
+                                            title: "Specific trigger day of the cycle. For monthly, enter the day number (1-31). For weekly, enter the day of the week (1-7).",
+                                            icon: <InformationCircleIcon className="text-brand-primary" style={{ width: 16, height: 16, display: 'inline-block', color: 'var(--brand-primary)' }} />
+                                        }}
+                                        className="mb-2"
+                                    >
+                                        <InputNumber className="!w-full bg-primary-bg border-border-primary text-primary-text rounded-md" placeholder="Enter day" min={1} max={31} />
+                                    </Form.Item>
+                                )}
 
                                 <Form.Item
                                     label={<span className="text-secondary-text font-medium text-sm">Minimum Threshold ($)</span>}

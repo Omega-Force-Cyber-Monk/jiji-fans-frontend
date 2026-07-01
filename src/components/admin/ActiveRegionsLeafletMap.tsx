@@ -68,15 +68,17 @@ const MapController = ({ center }: { center: [number, number] }) => {
 };
 
 interface ActiveRegionsLeafletMapProps {
-  onSelectRegion: (region: typeof REGION_STATS[0]) => void;
+  onSelectRegion: (region: typeof REGION_STATS[0] | any) => void;
   activeCoords: [number, number];
   mapMode: "light" | "dark" | "satellite";
+  regions?: any[];
 }
 
 const ActiveRegionsLeafletMap = ({
   onSelectRegion,
   activeCoords,
   mapMode,
+  regions,
 }: ActiveRegionsLeafletMapProps) => {
   useEffect(() => {
     // Overriding Default Leaflet icons because React-Leaflet bundling strips the assets
@@ -106,7 +108,7 @@ const ActiveRegionsLeafletMap = ({
 
         <MapController center={activeCoords} />
 
-        {REGION_STATS.map((region) => (
+        {(regions || REGION_STATS).map((region) => (
           <Marker
             key={region.id}
             position={region.coords}

@@ -1,9 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import MapErrorBoundary from "./MapErrorBoundary";
+import { useGetCountryParticipantsQuery } from "@/redux/features/adminHome/adminHome.api";
+
+const COUNTRY_COORDS: Record<string, [number, number]> = {
+  US: [37.0902, -95.7129],
+  BD: [23.6850, 90.3563],
+  GB: [55.3781, -3.4360],
+  IN: [20.5937, 78.9629],
+  CA: [56.1304, -106.3468],
+  AU: [-25.2744, 133.7751],
+  DE: [51.1657, 10.4515],
+  BR: [-14.2350, -51.9253],
+  ZA: [-30.5595, 22.9375],
+  FR: [46.2276, 2.2137],
+  NG: [9.0820, 8.6753],
+};
 
 // Dynamic import of Leaflet map to prevent Next.js SSR document is not defined errors
 const ActiveRegionsLeafletMap = dynamic(
@@ -38,10 +53,29 @@ const REGIONS_LIST = [
 ];
 
 const ActiveRegionsMap = () => {
+  const { data, isLoading } = useGetCountryParticipantsQuery({});
   const [selectedRegion, setSelectedRegion] = useState(INITIAL_STATS);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [mapMode, setMapMode] = useState<"light" | "dark" | "satellite">("dark");
+
+  const apiRegions = useMemo(() => {
+    if (!data?.data?.countries) return REGIONS_LIST;
+    return data.data.countries.map((c: any) => ({
+      id: c.countryCode.toLowerCase(),
+      name: c.country,
+      coords: COUNTRY_COORDS[c.countryCode.toUpperCase()] || [20, 0],
+      users: (c.viewerCount || 0) + (c.subscriberCount || 0),
+      creators: c.participantCount || 0,
+      activity: `${c.participantPercentage || 0}%`,
+    }));
+  }, [data]);
+
+  useEffect(() => {
+    if (apiRegions.length > 0 && selectedRegion.id === "na") {
+      setSelectedRegion(apiRegions[0]);
+    }
+  }, [apiRegions]);
 
   const handleSelectRegion = (region: any) => {
     // Map Leaflet colors dynamically based on activity
@@ -60,7 +94,7 @@ const ActiveRegionsMap = () => {
     setShowDropdown(false);
   };
 
-  const filteredRegions = REGIONS_LIST.filter((r) =>
+  const filteredRegions = apiRegions.filter((r) =>
     r.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -152,11 +186,18 @@ const ActiveRegionsMap = () => {
           </div>
 
           <MapErrorBoundary>
-            <ActiveRegionsLeafletMap
-              onSelectRegion={handleSelectRegion}
-              activeCoords={selectedRegion.coords}
-              mapMode={mapMode}
-            />
+            {isLoading ? (
+              <div className="w-full h-[450px] bg-primary-bg rounded-md border border-border-primary animate-pulse flex items-center justify-center text-muted-text text-sm">
+                Loading Data...
+              </div>
+            ) : (
+              <ActiveRegionsLeafletMap
+                onSelectRegion={handleSelectRegion}
+                activeCoords={selectedRegion.coords}
+                mapMode={mapMode}
+                regions={apiRegions}
+              />
+            )}
           </MapErrorBoundary>
         </div>
 

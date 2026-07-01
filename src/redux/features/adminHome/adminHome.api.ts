@@ -124,6 +124,23 @@ const adminDashboardApi = baseApi.injectEndpoints({
         };
       },
     }),
+    getCountryParticipants: builder.query({
+      query: (paramsObj?: { period?: string; limit?: number }) => {
+        const params = new URLSearchParams();
+        if (paramsObj) {
+          Object.entries(paramsObj).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              params.append(key, String(value));
+            }
+          });
+        }
+        return {
+          url: `analytics/country-participants`,
+          method: "GET",
+          params,
+        };
+      },
+    }),
   }),
 });
 
@@ -137,4 +154,5 @@ export const {
   useRecentViewersQuery,
   useDiviceStatusQuery,
   useGetSystemLogsQuery,
+  useGetCountryParticipantsQuery,
 } = adminDashboardApi;

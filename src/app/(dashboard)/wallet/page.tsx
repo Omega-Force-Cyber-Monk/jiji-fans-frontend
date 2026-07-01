@@ -117,6 +117,7 @@ const Page = () => {
     payoutStats?.data?.minimum_threshold ?? payoutStats?.minimum_threshold ?? 0,
   );
   const canWithdrawByPayout = Boolean(payoutStats?.data?.isAvailable) || Boolean(payoutStats?.isAvailable);
+  const nextPayoutDate = payoutStats?.data?.nextPayoutDate || payoutStats?.nextPayoutDate;
   const isBelowMinimumThreshold =
     minimumWithdrawalAmount > 0 &&
     typeof walletStats?.balance === "number" &&
@@ -413,12 +414,12 @@ const Page = () => {
               <div className="my-5 border-t border-border-primary/60"></div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 relative z-10">
+              <div className="flex flex-col items-center justify-center w-full gap-3 relative z-10">
 
                 <button
                   disabled={disableWithdraw}
                   onClick={showModal}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold px-5 py-3 rounded-md hover:bg-brand-primary/90 disabled:opacity-40 transition-all active:scale-[0.97]"
+                  className="w-full flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold px-5 py-3 rounded-md hover:bg-brand-primary/90 disabled:opacity-40 transition-all active:scale-[0.97]"
                 >
                   <FiDownload className="w-4 h-4" />
                   Withdraw Funds
@@ -432,8 +433,14 @@ const Page = () => {
                     Complete KYC
                   </button>
                 )}
-              </div>
 
+                {nextPayoutDate && !canWithdrawByPayout && (
+                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+                    <FiClock className="w-3.5 h-3.5" />
+                    <span>Next Available Payout: {new Date(nextPayoutDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <Card className="bg-secondary-bg! border-border-primary! h-[250px] rounded-lg flex items-center justify-center">
@@ -943,7 +950,7 @@ const Page = () => {
             </div>
             How Automatic Scheduler Works
           </h2>
-          
+
           <div className="space-y-6 text-base text-secondary-text">
             <div className="bg-secondary-bg rounded-xl p-6 border border-border-primary">
               <h4 className="font-bold text-lg text-primary-text mb-4 uppercase tracking-wider text-sm flex items-center gap-2">
@@ -969,7 +976,7 @@ const Page = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="bg-secondary-bg rounded-xl p-6 border border-border-primary">
               <h4 className="font-bold text-lg text-primary-text mb-4 uppercase tracking-wider text-sm flex items-center gap-2">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-primary text-black text-xs font-bold">2</span>
@@ -990,7 +997,7 @@ const Page = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="pt-6 flex justify-center">
               <button
                 onClick={() => setIsGuideModalOpen(false)}
