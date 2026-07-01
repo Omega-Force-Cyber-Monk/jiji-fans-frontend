@@ -32,6 +32,7 @@ const ChannelBanner = ({
         alt="channel cover"
         fill
         unoptimized
+        priority
         className="object-cover"
       />
 

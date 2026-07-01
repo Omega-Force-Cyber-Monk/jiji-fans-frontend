@@ -102,7 +102,7 @@ const WithdrawalsTable = ({ title, status, onViewDetails }: WithdrawalsTableProp
     <div className="w-full bg-primary-bg border border-border-primary rounded-lg overflow-hidden shadow-sm">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-secondary-bg border-b border-border-primary px-6 py-4">
         <h3 className="text-xl font-semibold text-primary-text m-0 whitespace-nowrap">
-          {title} ({data?.data?.totalResults || 0})
+          {title} ({data?.data?.meta?.total || data?.data?.totalResults || 0})
         </h3>
         
         <ConfigProvider
@@ -139,7 +139,7 @@ const WithdrawalsTable = ({ title, status, onViewDetails }: WithdrawalsTableProp
           <div className="w-full overflow-x-auto">
             <Table
               columns={columns}
-              dataSource={data?.data?.results}
+              dataSource={data?.data?.withdrawals || data?.data?.results}
               pagination={false}
               rowKey={"_id"}
               loading={isFetching}
@@ -147,12 +147,12 @@ const WithdrawalsTable = ({ title, status, onViewDetails }: WithdrawalsTableProp
               locale={{ emptyText: "No requests found" }}
             />
           </div>
-          {(data?.data?.results?.length || 0) > 0 && (
+          {(data?.data?.withdrawals?.length || data?.data?.results?.length || 0) > 0 && (
             <div className="p-4 border-t border-border-primary bg-primary-bg">
               <CPagination
                 setQuery={setQuery}
                 query={query}
-                totalData={data?.data?.totalResults}
+                totalData={data?.data?.meta?.total || data?.data?.totalResults}
                 showSizeChanger={false}
                 showQuickJumper={false}
                 customNavigation={false}

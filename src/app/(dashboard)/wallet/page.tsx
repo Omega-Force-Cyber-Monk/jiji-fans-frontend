@@ -122,7 +122,9 @@ const Page = () => {
     minimumWithdrawalAmount > 0 &&
     typeof walletStats?.balance === "number" &&
     walletStats.balance < minimumWithdrawalAmount;
-  const disableWithdraw = !isKycCompleted || !canWithdrawByPayout || isBelowMinimumThreshold;
+
+  // We will define hasPendingWithdrawal below when withdrawalRequests is defined
+  // but we can define disableWithdraw here using a function or let, or move the logic down.
 
   const queryArgs = cursor
     ? [
@@ -139,7 +141,10 @@ const Page = () => {
   } = useMyWithdrawalRequestsQuery(queryFormat(withdrawalQuery));
 
   const pagination = transactionsData?.pagination;
-  const withdrawalRequests = withdrawalData?.results || [];
+  const withdrawalRequests = withdrawalData?.results || (withdrawalData as any)?.withdrawals || [];
+
+  const hasPendingWithdrawal = withdrawalRequests.some((req: any) => req.status === "PENDING");
+  const disableWithdraw = !isKycCompleted || !canWithdrawByPayout || isBelowMinimumThreshold || hasPendingWithdrawal;
 
   const transactionSkeletons = Array.from({ length: 5 });
   const withdrawalSkeletons = Array.from({ length: 5 });
@@ -416,14 +421,21 @@ const Page = () => {
               {/* Actions */}
               <div className="flex flex-col items-center justify-center w-full gap-3 relative z-10">
 
-                <button
-                  disabled={disableWithdraw}
-                  onClick={showModal}
-                  className="w-full flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold px-5 py-3 rounded-md hover:bg-brand-primary/90 disabled:opacity-40 transition-all active:scale-[0.97]"
-                >
-                  <FiDownload className="w-4 h-4" />
-                  Withdraw Funds
-                </button>
+                <div className="w-full">
+                  <button
+                    disabled={disableWithdraw}
+                    onClick={showModal}
+                    className="w-full flex items-center justify-center gap-2 bg-brand-primary text-black font-semibold px-5 py-3 rounded-md hover:bg-brand-primary/90 disabled:opacity-40 transition-all active:scale-[0.97]"
+                  >
+                    <FiDownload className="w-4 h-4" />
+                    Withdraw Funds
+                  </button>
+                  {hasPendingWithdrawal && (
+                    <p className="text-xs text-amber-500 font-medium text-center mt-2">
+                      You already have a pending withdrawal request.
+                    </p>
+                  )}
+                </div>
 
                 {!isKycCompleted && !isKycStatusLoading && (
                   <button
