@@ -31,6 +31,8 @@ const ChannelBanner = ({
         src={channelData.banner || "/static/2Fans-01.svg"}
         alt="channel cover"
         fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+        quality={85}
         unoptimized
         priority
         className="object-cover"

@@ -247,6 +247,7 @@ const VerificationForm: React.FC = () => {
 
   const handleStartKyc = async () => {
     try {
+      await uploadMu({ type: "KYC", note: "Starting individual verification" }).unwrap();
       const res = await startKyc().unwrap();
       console.log("Start KYC response:", res);
       const token = res?.data?.token || res?.token;
@@ -273,6 +274,7 @@ const VerificationForm: React.FC = () => {
 
   const handleStartKyb = async () => {
     try {
+      await uploadMu({ type: "KYB", note: "Starting business verification" }).unwrap();
       const res = await startKyc().unwrap();
       console.log("Start KYB response:", res);
       const token = res?.data?.token || res?.token;
@@ -385,13 +387,15 @@ const VerificationForm: React.FC = () => {
         />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className=""></div>
-          <button
-            onClick={() => router.push("/verification/requests")}
-            className="px-4 py-2 rounded-md border border-border-primary text-sm font-medium text-secondary-text hover:border-brand-primary hover:text-primary-text transition-all bg-secondary-bg shrink-0 flex items-center gap-2"
-          >
-            <FiExternalLink className="w-4 h-4" />
-            View All Requests
-          </button>
+          {false && (
+            <button
+              onClick={() => router.push("/verification/requests")}
+              className="px-4 py-2 rounded-md border border-border-primary text-sm font-medium text-secondary-text hover:border-brand-primary hover:text-primary-text transition-all bg-secondary-bg shrink-0 flex items-center gap-2"
+            >
+              <FiExternalLink className="w-4 h-4" />
+              View All Requests
+            </button>
+          )}
         </div>
       </div>
 
@@ -429,8 +433,8 @@ const VerificationForm: React.FC = () => {
               if (statusUpper === "PENDING") {
                 return (
                   <button
-                    onClick={() => router.push("/verification/requests")}
-                    className="px-4 py-2 rounded-md bg-brand-primary text-black text-sm font-medium hover:opacity-90 transition-all active:scale-95 shadow-sm shadow-brand-primary/20 flex items-center justify-center shrink-0 text-white"
+                    disabled
+                    className="px-4 py-2 rounded-md bg-brand-primary/50 text-black text-sm font-medium transition-all shadow-sm flex items-center justify-center shrink-0 text-white cursor-not-allowed"
                   >
                     Pending for Review
                   </button>
@@ -576,7 +580,7 @@ const VerificationForm: React.FC = () => {
                   </div>
 
                   {/* KYC Fields (Hidden, using automated flow) */}
-                  {/* type === "KYC" && (
+                  {false && type === "KYC" && (
                     <div className="space-y-6 pt-6 border-t border-border-primary">
                       <div className="space-y-4">
                         <p className="text-sm font-medium uppercase tracking-wider text-muted-text flex items-center gap-2">
@@ -637,7 +641,7 @@ const VerificationForm: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ) */}
+                  )}
 
                   {/* KYB Fields - Hidden as per client requests, using automated Sumsub flow */}
                   {false && type === "KYB" && (
@@ -724,17 +728,30 @@ const VerificationForm: React.FC = () => {
           ) : (
             <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-lg p-8 text-center space-y-4">
               <FiShield className="w-10 h-10 text-brand-primary mx-auto" />
-              <h2 className="text-xl font-semibold text-primary-text">Verification Under Review or Completed</h2>
-              <p className="text-base text-secondary-text max-w-md mx-auto">
-                Your verification request has already been submitted and is currently <strong className="text-primary-text">{currentKycStatus.replace('_', ' ')}</strong>. You will be notified of any administrative updates.
-              </p>
+              {["APPROVED", "COMPLETED", "VERIFIED"].includes(currentKycStatus.toUpperCase()) ? (
+                <>
+                  <h2 className="text-xl font-semibold text-success">Verification Completed Successfully!</h2>
+                  <p className="text-base text-secondary-text max-w-md mx-auto">
+                    Congratulations! Your identity has been successfully verified and you have been granted clearance. You now have full access to all verified features.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-xl font-semibold text-primary-text">Verification Under Review</h2>
+                  <p className="text-base text-secondary-text max-w-md mx-auto">
+                    Your verification request has already been submitted and is currently <strong className="text-primary-text">{currentKycStatus.replace('_', ' ')}</strong>. You will be notified of any administrative updates.
+                  </p>
+                </>
+              )}
               <div className="pt-4">
-                <button
-                  onClick={() => router.push("/verification/requests")}
-                  className="px-6 py-2.5 rounded-md bg-brand-primary text-black font-semibold hover:opacity-90 transition-all shadow-sm shadow-brand-primary/20 text-white"
-                >
-                  View Verification Requests
-                </button>
+                {false && (
+                  <button
+                    onClick={() => router.push("/verification/requests")}
+                    className="px-6 py-2.5 rounded-md bg-brand-primary text-black font-semibold hover:opacity-90 transition-all shadow-sm shadow-brand-primary/20 text-white"
+                  >
+                    View Verification Requests
+                  </button>
+                )}
               </div>
             </div>
           )}

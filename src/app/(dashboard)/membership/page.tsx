@@ -54,7 +54,7 @@ const Page = () => {
   }
 
   return (
-    <div className="w-full container mx-auto">
+    <div className="w-full">
       <Breadcrumb
         items={[
           { title: "Home", href: "/overview" },
@@ -164,10 +164,10 @@ const Page = () => {
                 </div>
 
                 {/* Action Row Footer */}
-                <div className="p-6 border-t border-border-primary/50 bg-primary-bg/50 flex items-center justify-between gap-6 mt-6">
+                <div className="p-4 sm:p-6 border-t border-border-primary/50 bg-primary-bg/50 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 sm:gap-6 mt-auto">
                   {subscription.cancelAtPeriodEnd ? (
                     <>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 min-w-0">
                         <div className="text-xs text-muted-text">
                           Access until: <span className="font-medium text-secondary-text">
                             {subscription.cancellation?.accessUntil || subscription.endDate
@@ -183,13 +183,13 @@ const Page = () => {
                           </div>
                         )}
                       </div>
-                      <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-warning bg-warning/10 border border-warning/20 rounded-md">
+                      <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-warning bg-warning/10 border border-warning/20 rounded-md whitespace-nowrap shrink-0">
                         Scheduled to Cancel
                       </span>
                     </>
                   ) : (
                     <>
-                      <div className="text-xs text-muted-text">
+                      <div className="text-xs text-muted-text min-w-0">
                         Renews: <span className="font-medium text-secondary-text">
                           {subscription.endDate
                             ? new Date(subscription.endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -199,7 +199,7 @@ const Page = () => {
                       <button
                         onClick={() => handleCancelSubscription(subscription._id, subscription.channelId?.name || "Channel")}
                         disabled={isCancelling}
-                        className="inline-flex items-center justify-center h-8 px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center justify-center h-8 px-4 sm:px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
                       >
                         Cancel Membership
                       </button>

@@ -303,69 +303,76 @@ const Page = () => {
                 </h3>
                 <span className="text-sm font-medium text-muted-text">{documents.filter(d => d.url).length} of {documents.length} Uploaded</span>
               </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {documents.map((doc, idx) => (
-                  <div
-                    key={idx}
-                    className="group rounded-xl border border-border-primary bg-primary-bg p-4 transition-all duration-300 hover:border-brand-primary/50 hover:shadow-md hover:shadow-brand-primary/5"
-                  >
-                    <p className="mb-3 text-sm font-semibold text-primary-text">
-                      {doc.label}
-                    </p>
-                    {doc.url ? (
-                      <>
-                        <div className="overflow-hidden rounded-lg border border-border-primary bg-secondary-bg/50 relative group-hover:border-brand-primary/30 transition-colors">
-                          {isImageUrl(doc.url) ? (
-                            <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <Image
-                                src={doc.url}
-                                alt={doc.label}
-                                onError={handleImageError}
-                                className="h-48 w-full object-contain bg-secondary-bg"
-                              />
-                            </>
-                          ) : isPdfUrl(doc.url) ? (
-                            <div className="flex h-48 flex-col items-center justify-center bg-secondary-bg text-muted-text">
-                              <FilePdfOutlined className="text-6xl text-red-500/80 group-hover:scale-110 transition-transform duration-300" />
-                              <span className="mt-3 font-medium text-secondary-text">
-                                PDF Document
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex h-48 items-center justify-center px-4 text-center text-sm text-muted-text bg-secondary-bg">
-                              Preview not available for this file type.
-                            </div>
-                          )}
+              {documents.filter(d => d.url).length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {documents.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      className="group rounded-xl border border-border-primary bg-primary-bg p-4 transition-all duration-300 hover:border-brand-primary/50 hover:shadow-md hover:shadow-brand-primary/5"
+                    >
+                      <p className="mb-3 text-sm font-semibold text-primary-text">
+                        {doc.label}
+                      </p>
+                      {doc.url ? (
+                        <>
+                          <div className="overflow-hidden rounded-lg border border-border-primary bg-secondary-bg/50 relative group-hover:border-brand-primary/30 transition-colors">
+                            {isImageUrl(doc.url) ? (
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <Image
+                                  src={doc.url}
+                                  alt={doc.label}
+                                  onError={handleImageError}
+                                  className="h-48 w-full object-contain bg-secondary-bg"
+                                />
+                              </>
+                            ) : isPdfUrl(doc.url) ? (
+                              <div className="flex h-48 flex-col items-center justify-center bg-secondary-bg text-muted-text">
+                                <FilePdfOutlined className="text-6xl text-red-500/80 group-hover:scale-110 transition-transform duration-300" />
+                                <span className="mt-3 font-medium text-secondary-text">
+                                  PDF Document
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex h-48 items-center justify-center px-4 text-center text-sm text-muted-text bg-secondary-bg">
+                                Preview not available for this file type.
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-4 flex items-center justify-between gap-3">
+                            <p className="truncate text-xs text-muted-text max-w-[180px]">
+                              {getFileName(doc.url)}
+                            </p>
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-primary hover:text-brand-primary/80 transition-colors bg-brand-primary/10 px-3 py-1.5 rounded-md"
+                            >
+                              Open
+                              <ArrowTopRightOnSquareIcon className="h-4 w-4 stroke-2" />
+                            </a>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex h-[240px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-primary/60 text-sm text-muted-text bg-secondary-bg/30">
+                          <span className="w-10 h-10 rounded-full bg-primary-bg flex items-center justify-center mb-3">
+                            <svg className="w-5 h-5 text-muted-text/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </span>
+                          Not Uploaded
                         </div>
-                        <div className="mt-4 flex items-center justify-between gap-3">
-                          <p className="truncate text-xs text-muted-text max-w-[180px]">
-                            {getFileName(doc.url)}
-                          </p>
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-primary hover:text-brand-primary/80 transition-colors bg-brand-primary/10 px-3 py-1.5 rounded-md"
-                          >
-                            Open
-                            <ArrowTopRightOnSquareIcon className="h-4 w-4 stroke-2" />
-                          </a>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex h-[240px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-primary/60 text-sm text-muted-text bg-secondary-bg/30">
-                        <span className="w-10 h-10 rounded-full bg-primary-bg flex items-center justify-center mb-3">
-                          <svg className="w-5 h-5 text-muted-text/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </span>
-                        Not Uploaded
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-[240px] flex-col items-center justify-center rounded-lg border border-border-primary bg-primary-bg text-center p-6">
+                  <p className="text-base font-semibold text-primary-text mb-2">Verification handled via Sumsub</p>
+                  <p className="text-sm text-secondary-text">No manual documents were uploaded for this request. Please refer to the Sumsub history below for verification details.</p>
+                </div>
+              )}
             </div>
 
             {/* Sumsub History Section */}
