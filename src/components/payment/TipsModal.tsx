@@ -99,9 +99,9 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								body: {
 									contentId,
 									amount,
-									phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
-									country: fullCountryName || "kenya",
-									currency: (user as any)?.currency || "KES",
+									// phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
+									// country: fullCountryName || "kenya",
+									// currency: (user as any)?.currency || "KES",
 								},
 								idempotencyKey: currentKey,
 							}).unwrap();
@@ -110,9 +110,9 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 								body: {
 									contentId,
 									amount,
-									phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
-									country: fullCountryName || "zimbabwe",
-									currency: (user as any)?.currency || "USD",
+									// phoneNumber: (user?.phoneNumber || "").replace(/\+/g, ""),
+									// country: fullCountryName || "zimbabwe",
+									// currency: (user as any)?.currency || "USD",
 								},
 								idempotencyKey: currentKey,
 							}).unwrap();

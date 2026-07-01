@@ -8,9 +8,9 @@ export interface ITipCheckoutStripe {
 export interface ITipCheckoutPawaPay {
   contentId: string;
   amount: number;
-  phoneNumber: string;
-  country: string;
-  currency: string;
+  phoneNumber?: string;
+  country?: string;
+  currency?: string;
 }
 
 export interface ITipCheckoutPaynow {
