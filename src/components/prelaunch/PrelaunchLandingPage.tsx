@@ -141,7 +141,7 @@ export default function PrelaunchLandingPage() {
       </div>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 flex-none border-t border-white/5 px-6 py-3 flex items-center justify-start gap-4">
+      <footer className="relative z-10 flex-none border-t border-white/5 px-6 py-3 flex items-center justify-center gap-4">
         <p className="text-xs text-muted-text font-normal hidden sm:block">
           © {new Date().getFullYear()} +2Fans · Africa&apos;s creator economy, reimagined.
         </p>
