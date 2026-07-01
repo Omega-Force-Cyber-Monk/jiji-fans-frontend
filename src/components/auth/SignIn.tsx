@@ -127,29 +127,8 @@ const SignIn = ({ redirect }: { redirect?: string }) => {
         })
       );
 
-      if (redirect?.startsWith("channelId:")) {
-        const cId = redirect.split(":")[1];
-        if (user?.role?.toLowerCase() === "admin") {
-          router.replace(`/admin/creators/${cId}`);
-        } else {
-          router.replace(`/overview/channels/${cId}`);
-        }
-        return;
-      }
-
-      if (redirect) {
-        router.replace(redirect);
-        return;
-      }
-
-      // Handle redirect based on role (as per user's previous preference)
-      if (user?.role?.toLowerCase() === "admin") {
-        router.replace("/admin/home");
-      } else if (user?.role?.toLowerCase() === "creator") {
-        router.replace("/overview");
-      } else {
-        router.replace("/overview");
-      }
+      // Redirection is now handled automatically by GuestGuard and useRequireGuest
+      // based on the Redux state update above.
     } catch (error) {
       const { errorSources } = getApiErrorDetails(error);
       const newErrors = { email: "", password: "" };

@@ -1,5 +1,5 @@
 import { useAppSelector } from "@/redux/hook";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 export const useAuth = () => {
@@ -36,10 +36,28 @@ export const useRequireAuth = (redirectTo: string = "/sign-in") => {
 
 export const useRequireGuest = (redirectTo: string = "/overview") => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading, isAdmin, isCreator } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
+      const redirect = searchParams.get("redirect");
+
+      if (redirect?.startsWith("channelId:")) {
+        const cId = redirect.split(":")[1];
+        if (isAdmin) {
+          router.replace(`/admin/creators/${cId}`);
+        } else {
+          router.replace(`/overview/channels/${cId}`);
+        }
+        return;
+      }
+
+      if (redirect) {
+        router.replace(redirect);
+        return;
+      }
+
       // Redirect based on role
       if (isAdmin) {
         router.replace("/admin/home");
@@ -49,7 +67,7 @@ export const useRequireGuest = (redirectTo: string = "/overview") => {
         router.replace(redirectTo);
       }
     }
-  }, [isAuthenticated, isLoading, router, redirectTo, isAdmin, isCreator]);
+  }, [isAuthenticated, isLoading, router, redirectTo, isAdmin, isCreator, searchParams]);
 
   return { isAuthenticated, isLoading };
 };
