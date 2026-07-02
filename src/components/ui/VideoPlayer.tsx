@@ -219,14 +219,17 @@ const VideoPlayer = ({
       return false;
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("selectstart", handleSelectStart);
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener("keydown", handleKeyDown);
+    container.addEventListener("contextmenu", handleContextMenu);
+    container.addEventListener("selectstart", handleSelectStart);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("selectstart", handleSelectStart);
+      container.removeEventListener("keydown", handleKeyDown);
+      container.removeEventListener("contextmenu", handleContextMenu);
+      container.removeEventListener("selectstart", handleSelectStart);
     };
   }, []);
 
@@ -430,13 +433,13 @@ const VideoPlayer = ({
           .ytp-chrome-top-buttons,
           .ytp-sharebutton,
           .ytp-overflow-panel,
-          button[aria-label*="Share"],
-          button[aria-label*="share"],
-          button[aria-label*="Copy"],
-          button[aria-label*="copy"],
-          .ytp-menuitem[aria-label*="Copy"],
-          a[href*="youtube.com"],
-          a[href*="youtu.be"] {
+          .video-container button[aria-label*="Share"],
+          .video-container button[aria-label*="share"],
+          .video-container button[aria-label*="Copy"],
+          .video-container button[aria-label*="copy"],
+          .video-container .ytp-menuitem[aria-label*="Copy"],
+          .video-container a[href*="youtube.com"],
+          .video-container a[href*="youtu.be"] {
             display: none !important;
             pointer-events: none !important;
             visibility: hidden !important;
@@ -461,7 +464,7 @@ const VideoPlayer = ({
             -webkit-touch-callout: none !important;
           }
 
-          iframe {
+          .video-container iframe {
             pointer-events: none !important;
           }
 

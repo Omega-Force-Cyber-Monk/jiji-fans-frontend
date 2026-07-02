@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import PageHeading from "@/components/ui/PageHeading";
 import { TUniObject } from "@/types";
 import { cn } from "@/utils/cn";
@@ -45,14 +45,34 @@ const Page = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Watched form values
+  // Watched form values (only title, tier, url — NOT description to avoid Editor loop)
   const videoUrl = Form.useWatch("url", form);
   const title = Form.useWatch("title", form);
   const subscriptionTier = Form.useWatch("subscriptionTier", form);
-  const description = Form.useWatch("description", form);
 
   const [isFetchingMetadata, setIsFetchingMetadata] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [editorContent, setEditorContent] = React.useState("");
+  const [editorKey, setEditorKey] = React.useState(0);
+
+  // Debounced preview state — only update after 500ms pause in typing
+  const [previewTitle, setPreviewTitle] = React.useState("");
+  const [previewDescription, setPreviewDescription] = React.useState("");
+  const [previewTier, setPreviewTier] = React.useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPreviewTitle(title || ""), 500);
+    return () => clearTimeout(t);
+  }, [title]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPreviewDescription(editorContent || ""), 500);
+    return () => clearTimeout(t);
+  }, [editorContent]);
+
+  useEffect(() => {
+    setPreviewTier(subscriptionTier);
+  }, [subscriptionTier]);
 
   // API Hooks
   const [uploadContent, { isLoading: isSubmitting }] = useUploadContentMutation();
@@ -100,6 +120,7 @@ const Page = () => {
             }
             if (!form.getFieldValue("description")) {
               form.setFieldsValue({ description: `<p>${data.title}</p>` });
+              setEditorContent(`<p>${data.title}</p>`);
             }
           }
         }
@@ -282,6 +303,8 @@ const Page = () => {
 
       form.resetFields();
       setVideoFile(null);
+      setEditorContent("");
+      setEditorKey((k) => k + 1); // force Editor remount so Quill is fresh
 
       setTimeout(() => {
         router.push("/mychannel");
@@ -295,10 +318,18 @@ const Page = () => {
     }
   };
 
-  // Preview content helper
+  // Memoized stable blob URL — only regenerates when videoFile actually changes
+  const nativeVideoUrl = useMemo(() => {
+    if (!videoFile) return "";
+    const url = URL.createObjectURL(videoFile);
+    return url;
+  }, [videoFile]);
+
+  // Stable preview content: video URL never changes unless the actual source changes
+  const previewVideoUrl = uploadType === "youtube_link" ? videoUrl : nativeVideoUrl;
   const previewContent = {
-    url: uploadType === "youtube_link" ? videoUrl : (videoFile ? URL.createObjectURL(videoFile) : ""),
-    title: title || "Video Preview",
+    url: previewVideoUrl,
+    title: previewTitle || "Video Preview",
   };
 
   return (
@@ -659,12 +690,28 @@ const Page = () => {
                       },
                     ]}
                   >
-                    <div className="w-full max-w-full overflow-hidden">
+                    <div className="w-full max-w-full overflow-hidden rounded-md border border-border-primary">
                       <Editor
-                        value={description}
-                        onTextChange={(e) => form.setFieldsValue({ description: e.htmlValue })}
+                        key={editorKey}
+                        value={editorContent}
+                        onTextChange={(e) => {
+                          const html = e.htmlValue || "";
+                          setEditorContent(html);
+                          form.setFieldsValue({ description: html });
+                        }}
                         style={{ height: "320px" }}
                       />
+                      <style>{`
+										.ql-toolbar { background: var(--secondary-bg) !important; border-color: var(--border-primary) !important; }
+										.ql-toolbar .ql-stroke { stroke: var(--primary-text) !important; }
+										.ql-toolbar .ql-fill { fill: var(--primary-text) !important; }
+										.ql-toolbar .ql-picker { color: var(--primary-text) !important; }
+										.ql-toolbar .ql-picker-options { background: var(--secondary-bg) !important; border-color: var(--border-primary) !important; }
+										.ql-container { border-color: var(--border-primary) !important; }
+										.ql-editor { background: var(--secondary-bg) !important; color: var(--primary-text) !important; min-height: 320px; }
+										.ql-editor.ql-blank::before { color: var(--muted-text) !important; }
+										.p-editor-container .p-editor-content { border-color: var(--border-primary) !important; }
+									`}</style>
                     </div>
                   </Form.Item>
 
@@ -730,13 +777,13 @@ const Page = () => {
                       {/* Video Metadata Preview */}
                       <div className="space-y-3">
                         <h3 className="text-2xl font-semibold text-primary-text break-words">
-                          {title || "Untitled Video"}
+                          {previewTitle || "Untitled Video"}
                         </h3>
 
-                        {subscriptionTier && (
+                        {previewTier && (
                           <div className="flex">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-brand-primary/20 text-brand-primary border border-brand-primary/30">
-                              {subscriptionPlans?.data?.find((p: any) => p._id === subscriptionTier)?.name || "Premium Plan"}
+                              {subscriptionPlans?.data?.find((p: any) => p._id === previewTier)?.name || "Premium Plan"}
                             </span>
                           </div>
                         )}
@@ -744,7 +791,7 @@ const Page = () => {
                         <div
                           className="no-tailwind text-base font-normal text-secondary-text break-words"
                           dangerouslySetInnerHTML={{
-                            __html: description || "No description provided yet.",
+                            __html: previewDescription || "No description provided yet.",
                           }}
                         />
                       </div>
