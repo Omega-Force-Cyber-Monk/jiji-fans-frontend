@@ -224,7 +224,7 @@ const Page = () => {
                   </div>
                 </div>
 
-                {data?.status === "PENDING" && (
+                {data?.status === "PENDING" && documents.filter(d => d.url).length > 0 && (
                   <div className="mt-5 flex flex-wrap items-center gap-3">
                     <button
                       disabled={updating}

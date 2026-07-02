@@ -153,6 +153,19 @@ const VideoComponent = () => {
   const isLiked = contentData?.data?.userReaction === "LIKE";
   const likeCount = contentData?.data?.likeCount ?? 0;
 
+  // Local state for optimistic updates
+  const [optimisticIsLiked, setOptimisticIsLiked] = useState<boolean | null>(null);
+  const [optimisticLikeCount, setOptimisticLikeCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Reset optimistic state when actual data changes (to sync with server)
+    setOptimisticIsLiked(null);
+    setOptimisticLikeCount(null);
+  }, [contentData?.data?.userReaction, contentData?.data?.likeCount]);
+
+  const displayIsLiked = optimisticIsLiked !== null ? optimisticIsLiked : isLiked;
+  const displayLikeCount = optimisticLikeCount !== null ? optimisticLikeCount : likeCount;
+
   // Description expand state
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
@@ -165,10 +178,16 @@ const VideoComponent = () => {
 
   const handleLikeToggle = async () => {
     if (isOwner) return; // Creators can't like own video
+    
+    const nextReaction = displayIsLiked ? "NONE" : "LIKE";
+    setOptimisticIsLiked(!displayIsLiked);
+    setOptimisticLikeCount(displayIsLiked ? Math.max(0, displayLikeCount - 1) : displayLikeCount + 1);
+
     try {
-      const nextReaction = isLiked ? "NONE" : "LIKE";
       await reactToContent({ contentId: slug, reactionType: nextReaction }).unwrap();
     } catch (err) {
+      setOptimisticIsLiked(null);
+      setOptimisticLikeCount(null);
       errorAlert({ error: err as TResError, messageApi });
     }
   };
@@ -1062,18 +1081,18 @@ const VideoComponent = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all border border-border-primary/50 ${isOwner
                 ? "opacity-50 cursor-not-allowed bg-secondary-bg/40 text-muted-text"
                 : "cursor-pointer"
-                } ${isLiked && !isOwner
-                  ? "bg-brand-primary text-black border-transparent"
+                } ${displayIsLiked && !isOwner
+                  ? "text-brand-primary bg-secondary-bg/80 border-brand-primary/50"
                   : "bg-secondary-bg/80 text-primary-text hover:bg-secondary-bg"
                 }`}
               title={isOwner ? "You cannot like your own video" : ""}
             >
-              {isLiked && !isOwner ? (
-                <HandThumbUpSolid className="w-5 h-5" />
+              {displayIsLiked && !isOwner ? (
+                <HandThumbUpSolid className="w-5 h-5 text-brand-primary" />
               ) : (
                 <HandThumbUpOutline className="w-5 h-5" />
               )}
-              <span>{likeCount}</span>
+              <span>{displayLikeCount}</span>
             </button>
 
             {/* Tip Option */}
