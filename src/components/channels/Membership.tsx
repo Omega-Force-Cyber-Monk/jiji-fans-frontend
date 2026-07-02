@@ -202,12 +202,12 @@ const Membership = ({ channelId }: MembershipProps) => {
 			const url = res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 
-			if (paymentProvider === "PAWAPAY" && url) {
+			if ((paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW") && url) {
 				window.open(url, "_blank");
 			}
 
 			// Handle different flows based on paymentProvider
-			if (paymentProvider === "STRIPE" || (paymentProvider === "PAYNOW" && !user?.phoneNumber)) {
+			if (paymentProvider === "STRIPE") {
 				if (url) {
 					window.location.href = url;
 					return;
@@ -218,7 +218,7 @@ const Membership = ({ channelId }: MembershipProps) => {
 					setIsProcessingMobile(true);
 					setCountdown(60);
 					setMobileStatusMsg(
-						paymentProvider === "PAWAPAY"
+						(paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW")
 							? "Please complete the payment in the newly opened tab..."
 							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
 					);
@@ -455,8 +455,9 @@ const Membership = ({ channelId }: MembershipProps) => {
 			>
 				<div className="p-6 text-center space-y-6 bg-secondary-bg rounded-lg">
 					<div className="flex justify-center">
-						<div className="w-16 h-16 border-4 border-brand-primary border-t-transparent rounded-full animate-spin flex items-center justify-center">
-							<span className="text-xs font-bold text-brand-primary">{countdown}s</span>
+						<div className="relative w-16 h-16 flex items-center justify-center">
+							<div className="absolute inset-0 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+							<span className="text-xs font-bold text-brand-primary z-10">{countdown}s</span>
 						</div>
 					</div>
 					<h3 className="text-xl font-semibold text-primary-text">Mobile Money Prompt</h3>

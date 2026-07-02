@@ -156,12 +156,12 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			const url = res?.data?.sessionUrl || res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 
-			if (provider === "PAWAPAY" && url) {
+			if ((provider === "PAWAPAY" || provider === "PAYNOW") && url) {
 				window.open(url, "_blank");
 			}
 
 			// Stripe and normal Card Redirect flows
-			if (provider === "STRIPE" || (provider === "PAYNOW" && !user?.phoneNumber)) {
+			if (provider === "STRIPE") {
 				if (url) {
 					window.location.href = url;
 					return;
@@ -172,7 +172,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 					setIsProcessingMobile(true);
 					setCountdown(60);
 					setMobileStatusMsg(
-						provider === "PAWAPAY"
+						(provider === "PAWAPAY" || provider === "PAYNOW")
 							? "Please complete the payment in the newly opened tab..."
 							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
 					);
@@ -375,8 +375,9 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			>
 				<div className="p-6 text-center space-y-6 bg-secondary-bg rounded-lg">
 					<div className="flex justify-center">
-						<div className="w-16 h-16 border-4 border-brand-primary border-t-transparent rounded-full animate-spin flex items-center justify-center">
-							<span className="text-xs font-bold text-brand-primary">{countdown}s</span>
+						<div className="relative w-16 h-16 flex items-center justify-center">
+							<div className="absolute inset-0 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+							<span className="text-xs font-bold text-brand-primary z-10">{countdown}s</span>
 						</div>
 					</div>
 					<h3 className="text-xl font-semibold text-primary-text">Mobile Money Prompt</h3>
