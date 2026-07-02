@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ExclamationCircleFilled } from "@ant-design/icons";
 import { countries } from "countries-list";
 import { useRouter } from "next/navigation";
 import { Button, Empty, message } from "antd";
@@ -20,6 +19,7 @@ import { useVerifyTransactionMutation } from "@/redux/features/payment/payment.a
 import { useIdempotency, generateUUID } from "@/hooks/useIdempotency";
 import { useAppSelector } from "@/redux/hook";
 import { errorAlert } from "@/lib/alerts";
+import { getPawaPayCurrency } from "@/lib/pawapayCurrencies";
 
 interface MembershipProps {
 	channelId?: string;
@@ -179,8 +179,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 								paymentProvider,
 								phoneNumber: user?.phoneNumber?.replace(/\D/g, "") || "",
 								country: fullCountryName,
-								currency: "USD",
-								language: "en",
+								currency: paymentProvider === "STRIPE" ? "USD" : getPawaPayCurrency(userIso3),
+								language: "EN",
 							},
 							idempotencyKey: currentKey,
 						}).unwrap();
@@ -208,8 +208,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 			};
 
 			const res = await executeSessionRequest(idempotencyKey);
-			const url = res?.data?.url;
-			const providerReferenceId = res?.data?.providerReferenceId;
+			const url = res?.data?.url || res?.data?.redirectUrl;
+			const providerReferenceId = res?.data?.providerReferenceId || res?.data?.pawapayId || res?.data?.paynowReference;
 
 			if ((paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW") && url) {
 				window.open(url, "_blank");
