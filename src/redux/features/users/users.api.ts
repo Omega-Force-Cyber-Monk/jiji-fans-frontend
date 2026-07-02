@@ -44,6 +44,34 @@ const usersApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["user", "auth"],
     }),
+    updateStripeConnect: builder.mutation({
+      query: (body) => {
+        return {
+          url: `users/profile/stripe-connect`,
+          method: "PATCH",
+          body,
+        };
+      },
+      invalidatesTags: ["user", "auth", "stripeConnect"],
+    }),
+    getStripeConnect: builder.query({
+      query: () => {
+        return {
+          url: `users/profile/stripe-connect`,
+          method: "GET",
+        };
+      },
+      providesTags: ["stripeConnect"],
+    }),
+    deleteStripeConnect: builder.mutation({
+      query: () => {
+        return {
+          url: `users/profile/stripe-connect`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["user", "auth", "stripeConnect"],
+    }),
 
     // Recently viewed endpoints
     addRecentlyViewed: builder.mutation({
@@ -128,6 +156,9 @@ export const {
   useGetProfileQuery,
   useUpdateProfileMutation,
   useUpdateAvatarMutation,
+  useUpdateStripeConnectMutation,
+  useGetStripeConnectQuery,
+  useDeleteStripeConnectMutation,
   useAddRecentlyViewedMutation,
   useGetRecentlyViewedQuery,
   useAllUsersQuery,

@@ -231,6 +231,17 @@ const walletApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["wallet", "withdraw"],
     }),
+    requestWithdrawStripe: builder.mutation({
+      query: ({ body, idempotencyKey }: { body: any; idempotencyKey?: string }) => {
+        return {
+          url: `withdrawal-requests/stripe`,
+          method: "POST",
+          body,
+          headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+        };
+      },
+      invalidatesTags: ["wallet", "withdraw"],
+    }),
     myWithdrawalRequests: builder.query<
       TWithdrawalRequestsResponse,
       TArgs | undefined
@@ -362,6 +373,7 @@ export const {
   useGetWalletTransactionsQuery,
   useGetMonthlyEarningsQuery,
   useRequestWithdrawMutation,
+  useRequestWithdrawStripeMutation,
   useMyWithdrawalRequestsQuery,
   useGetAdminTotalTransitionsQuery,
   useAdminWithdrawalsQuery,

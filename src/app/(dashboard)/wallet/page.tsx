@@ -27,6 +27,7 @@ import {
   TWithdrawalRequest,
   useMyWithdrawalRequestsQuery,
   useRequestWithdrawMutation,
+  useRequestWithdrawStripeMutation,
   useUpdatePayoutSettingsMutation,
   useGetPayoutSettingsQuery,
   useCreatePayoutSettingsMutation,
@@ -63,6 +64,12 @@ import {
 import { cn } from "@/utils/cn";
 import AppBreadcrumb from "@/components/ui/AppBreadcrumb";
 
+import {
+  useUpdateStripeConnectMutation,
+  useGetStripeConnectQuery,
+  useDeleteStripeConnectMutation,
+} from "@/redux/features/users/users.api";
+
 const Page = () => {
   const router = useRouter();
   const [form] = Form.useForm();
@@ -82,12 +89,16 @@ const Page = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { idempotencyKey, regenerateKey } = useIdempotency();
   const [submitRequest, { isLoading: requLoading }] = useRequestWithdrawMutation();
+  const [submitRequestStripe, { isLoading: requStripeLoading }] = useRequestWithdrawStripeMutation();
   const [updatePayoutSettings, { isLoading: isSavingPayoutSettings }] = useUpdatePayoutSettingsMutation();
   const [payoutForm] = Form.useForm();
   const [isEditingPayout, setIsEditingPayout] = useState(false);
   const [createPayoutSettings, { isLoading: isCreatingPayout }] = useCreatePayoutSettingsMutation();
   const [deletePayoutSettings, { isLoading: isDeletingPayout }] = useDeletePayoutSettingsMutation();
+  const [updateStripeConnect, { isLoading: isUpdatingStripe }] = useUpdateStripeConnectMutation();
+  const [deleteStripeConnect] = useDeleteStripeConnectMutation();
   const { data: payoutSettingsPayload, isLoading: isLoadingPayoutSettings } = useGetPayoutSettingsQuery();
+  const { data: stripeConnectPayload } = useGetStripeConnectQuery(undefined);
   const currentPayoutSettings = payoutSettingsPayload?.data || null;
   const payoutMethod = Form.useWatch("payoutMethod", payoutForm) || "MOBILE_MONEY";
   const limit = 10;
@@ -96,6 +107,7 @@ const Page = () => {
   const { data: payoutStats } = useGetPayoutForClientQuery(undefined);
   const { data: kycStatusPayload, isLoading: isKycStatusLoading } = useGetMyKycStatusQuery(undefined);
   const { data: profileData } = useGetProfileQuery(undefined);
+  const stripeConnectedAccountId = stripeConnectPayload?.data?.stripeConnectedAccountId || profileData?.data?.stripeConnectedAccountId || "";
   const isZimbabwe = profileData?.data?.country?.toUpperCase() === "ZW" ||
     profileData?.data?.country?.toLowerCase() === "zimbabwe" ||
     profileData?.data?.phoneNumber?.startsWith("+263");
@@ -167,12 +179,20 @@ const Page = () => {
   const onFinish: FormProps<TUniObject>["onFinish"] = async (values) => {
     try {
       setWithdrawalSubmitError("");
+      
+      // Ensure the amount is always submitted as a number
+      if (values.amount) {
+        values.amount = Number(values.amount);
+      }
 
       const executeWithdrawal = async (currentKey: string) => {
         let attempts = 0;
+        const isStripeActive = currentPayoutSettings?.payoutMethod === "BANK";
         while (attempts < 5) {
           try {
-            const res = await submitRequest({ body: values, idempotencyKey: currentKey }).unwrap();
+            const res = isStripeActive 
+              ? await submitRequestStripe({ body: values, idempotencyKey: currentKey }).unwrap()
+              : await submitRequest({ body: values, idempotencyKey: currentKey }).unwrap();
             return res;
           } catch (error: any) {
             if (error?.status === 202) {
@@ -677,35 +697,19 @@ const Page = () => {
                           ) : (
                             <FiSmartphone className="w-5 h-5" />
                           )}
-                          <span>{currentPayoutSettings.payoutMethod === "BANK" ? "Bank Transfer" : "Mobile Money"}</span>
+                          <span>{currentPayoutSettings.payoutMethod === "BANK" ? "Stripe Connect" : "Mobile Money"}</span>
                         </div>
 
                         {currentPayoutSettings.payoutMethod === "BANK" ? (
                           <div className="space-y-2 text-sm">
                             <div>
-                              <span className="text-muted-text block text-xs uppercase font-semibold">Bank Name</span>
-                              <span className="text-primary-text font-medium">{currentPayoutSettings.bankName || "N/A"}</span>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Stripe Connected Account ID</span>
+                              <span className="text-primary-text font-mono font-medium">{stripeConnectedAccountId || "Not Linked"}</span>
                             </div>
                             <div>
-                              <span className="text-muted-text block text-xs uppercase font-semibold">Account Holder Name</span>
-                              <span className="text-primary-text font-medium">{currentPayoutSettings.accountHolderName || "N/A"}</span>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Status</span>
+                              <span className="text-brand-primary font-medium">Linked & Active</span>
                             </div>
-                            <div>
-                              <span className="text-muted-text block text-xs uppercase font-semibold">Account Number</span>
-                              <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.accountNumber || "N/A"}</span>
-                            </div>
-                            {currentPayoutSettings.swiftCode && (
-                              <div>
-                                <span className="text-muted-text block text-xs uppercase font-semibold">SWIFT Code</span>
-                                <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.swiftCode}</span>
-                              </div>
-                            )}
-                            {currentPayoutSettings.routingNumber && (
-                              <div>
-                                <span className="text-muted-text block text-xs uppercase font-semibold">Routing Number</span>
-                                <span className="text-primary-text font-mono font-medium">{currentPayoutSettings.routingNumber}</span>
-                              </div>
-                            )}
                           </div>
                         ) : (
                           <div className="space-y-2 text-sm">
@@ -731,12 +735,8 @@ const Page = () => {
                     <button
                       onClick={() => {
                         payoutForm.setFieldsValue({
-                          payoutMethod: currentPayoutSettings.payoutMethod,
-                          bankName: currentPayoutSettings.bankName,
-                          accountNumber: "", // don't fill masked values to force re-input if editing
-                          accountHolderName: currentPayoutSettings.accountHolderName,
-                          swiftCode: "",
-                          routingNumber: "",
+                          payoutMethod: currentPayoutSettings.payoutMethod === "BANK" ? "STRIPE" : currentPayoutSettings.payoutMethod,
+                          stripeConnectedAccountId: stripeConnectedAccountId || "",
                           mobileProvider: currentPayoutSettings.mobileProvider,
                           mobilePhoneNumber: "",
                           mobileAccountHolderName: currentPayoutSettings.mobileAccountHolderName,
@@ -756,6 +756,9 @@ const Page = () => {
                           content: "Are you sure you want to delete your configured payout settings? Automated withdrawals will be suspended until a new method is defined.",
                           onOk: async () => {
                             try {
+                              if (currentPayoutSettings?.payoutMethod === "BANK") {
+                                await deleteStripeConnect(undefined).unwrap();
+                              }
                               await deletePayoutSettings(undefined).unwrap();
                               messageApi.success("Payout settings removed successfully.");
                             } catch (err) {
@@ -793,39 +796,50 @@ const Page = () => {
                     <p className="text-sm text-secondary-text">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
                   </div>
 
-                  <Form
-                    form={payoutForm}
-                    layout="vertical" initialValues={{
-                      payoutMethod: "MOBILE_MONEY",
-                      mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || (isZimbabwe ? "PayNow" : "PawaPay"),
-                      mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
-                      mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
-                    }}
-                    onFinish={async (values) => {
-                      try {
-                        if (currentPayoutSettings) {
-                          await updatePayoutSettings(values).unwrap();
-                          messageApi.success("Payout settings updated successfully!");
-                        } else {
-                          await createPayoutSettings(values).unwrap();
-                          messageApi.success("Payout settings saved successfully!");
+                    <Form
+                      form={payoutForm}
+                      layout="vertical" initialValues={{
+                        payoutMethod: (profileData?.data?.payoutSettings?.payoutMethod === "BANK" ? "STRIPE" : profileData?.data?.payoutSettings?.payoutMethod) || "MOBILE_MONEY",
+                        mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || (isZimbabwe ? "PayNow" : "PawaPay"),
+                        mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
+                        mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
+                        stripeConnectedAccountId: stripeConnectedAccountId || "",
+                      }}
+                      onFinish={async (values) => {
+                        try {
+                          // Handle Stripe Connect linkage first
+                          if (values.payoutMethod === "STRIPE" && values.stripeConnectedAccountId) {
+                            await updateStripeConnect({ stripeConnectedAccountId: values.stripeConnectedAccountId }).unwrap();
+                          }
+                          
+                          // The backend still expects "BANK" as the enum value for bank/stripe transfers
+                          // We also remove stripeConnectedAccountId because it's only meant for the profile API
+                          const { stripeConnectedAccountId, ...payoutPayload } = values;
+                          const mappedMethod = values.payoutMethod === "STRIPE" ? "BANK" : values.payoutMethod;
+                          
+                          if (currentPayoutSettings) {
+                            await updatePayoutSettings({ ...payoutPayload, payoutMethod: mappedMethod }).unwrap();
+                            messageApi.success("Payout settings updated successfully!");
+                          } else {
+                            await createPayoutSettings({ ...payoutPayload, payoutMethod: mappedMethod }).unwrap();
+                            messageApi.success("Payout settings saved successfully!");
+                          }
+                          setIsEditingPayout(false);
+                        } catch (error) {
+                          errorAlert({ error: error as TResError, messageApi });
                         }
-                        setIsEditingPayout(false);
-                      } catch (error) {
-                        errorAlert({ error: error as TResError, messageApi });
-                      }
-                    }}
-                  >
-                    <Form.Item
-                      label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
-                      name="payoutMethod"
-                      rules={[{ required: true, message: "Please select a payout method." }]}
+                      }}
                     >
-                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
-                        <option value="MOBILE_MONEY">Mobile Money</option>
-                        <option value="BANK">Bank Account</option>
-                      </select>
-                    </Form.Item>
+                      <Form.Item
+                        label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
+                        name="payoutMethod"
+                        rules={[{ required: true, message: "Please select a payout method." }]}
+                      >
+                        <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
+                          <option value="MOBILE_MONEY">Mobile Money</option>
+                          <option value="STRIPE">Stripe Connect</option>
+                        </select>
+                      </Form.Item>
 
                     {payoutMethod === "MOBILE_MONEY" && (
                       <>
@@ -867,58 +881,26 @@ const Page = () => {
                       </>
                     )}
 
-                    {payoutMethod === "BANK" && (
+                    {payoutMethod === "STRIPE" && (
                       <>
                         <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">Bank Name</span>}
-                          name="bankName"
-                          rules={[{ required: true, message: "Please input bank name." }]}
+                          label={<span className="text-sm font-semibold text-secondary-text">Stripe Connected Account ID</span>}
+                          name="stripeConnectedAccountId"
+                          rules={[
+                            { required: true, message: "Please input your Stripe Connected Account ID." },
+                            {
+                              validator: async (_, value) => {
+                                if (value && !value.startsWith("acct_")) {
+                                  throw new Error("Stripe Account ID must start with 'acct_'");
+                                }
+                              },
+                            }
+                          ]}
+                          help={<span className="text-xs text-muted-text">Example: acct_1HjK2dL9mXYZ5678</span>}
                         >
                           <Input
                             className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="Example Bank"
-                          />
-                        </Form.Item>
-
-                        <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">Account Holder Name</span>}
-                          name="accountHolderName"
-                          rules={[{ required: true, message: "Please input account holder name." }]}
-                        >
-                          <Input
-                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="Sample Creator"
-                          />
-                        </Form.Item>
-
-                        <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">Account Number</span>}
-                          name="accountNumber"
-                          rules={[{ required: true, message: "Please input account number." }]}
-                        >
-                          <Input
-                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="9876543210"
-                          />
-                        </Form.Item>
-
-                        <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">SWIFT Code (Optional)</span>}
-                          name="swiftCode"
-                        >
-                          <Input
-                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="EXAMPWDX"
-                          />
-                        </Form.Item>
-
-                        <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">Routing Number (Optional)</span>}
-                          name="routingNumber"
-                        >
-                          <Input
-                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="021000021"
+                            placeholder="acct_..."
                           />
                         </Form.Item>
                       </>
@@ -928,8 +910,8 @@ const Page = () => {
                       <Button
                         type="primary"
                         htmlType="submit"
-                        loading={isSavingPayoutSettings || isCreatingPayout}
-                        className="bg-brand-primary text-black font-semibold h-11 px-6 rounded-md hover:bg-brand-primary/90 border-none"
+                        loading={isSavingPayoutSettings || isCreatingPayout || isUpdatingStripe}
+                        className="bg-brand-primary text-black font-semibold h-11! px-6 rounded-md hover:bg-brand-primary/90 border-none"
                       >
                         Save Settings
                       </Button>
@@ -1101,13 +1083,17 @@ const Page = () => {
             requiredMark={false}
           >
             {withdrawalSubmitError && (
-              <Alert
-                type="error"
-                showIcon
-                message="Disbursal Rejection Fault"
-                description={withdrawalSubmitError}
-                className="mb-5 rounded-md bg-red-500/5 border-red-500/10 text-sm"
-              />
+              <div className="mb-5 flex items-start gap-3 rounded-md bg-red-500/10 border border-red-500/20 p-4">
+                <div className="mt-0.5 text-red-500">
+                  <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 512 512" height="1.25em" width="1.25em" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M256 48C141.31 48 48 141.31 48 256s93.31 208 208 208 208-93.31 208-208S370.69 48 256 48zm86.63 272L320 342.63l-64-64-64 64L169.37 320l64-64-64-64L192 169.37l64 64 64-64L342.63 192l-64 64 64 64z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-red-400">Disbursal Rejection Fault</h4>
+                  <p className="text-sm text-red-400/80 mt-1">{withdrawalSubmitError}</p>
+                </div>
+              </div>
             )}
 
             <Form.Item
@@ -1129,16 +1115,43 @@ const Page = () => {
                 },
               ]}
             >
-              <InputNumber
-                prefix={<FiDollarSign className="text-muted-text mr-1 text-sm" />}
-                placeholder="0.00"
-                style={{ width: "100%" }}
-                size="large"
-                className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11 pt-1.5"
-                precision={2}
-                step={1}
-                min={minimumWithdrawalAmount > 0 ? minimumWithdrawalAmount : 1}
-              />
+              <div className="flex items-center w-full bg-primary-bg border border-border-primary hover:border-brand-primary/60 focus-within:border-brand-primary rounded-lg overflow-hidden px-3 h-11 transition-colors">
+                <FiDollarSign className="text-brand-primary font-bold mr-1 text-lg" />
+                <InputNumber
+                  placeholder="0.00"
+                  style={{ width: "100%", background: "transparent" }}
+                  className="withdrawal-input-number border-none shadow-none text-lg"
+                  precision={2}
+                  step={1}
+                  min={minimumWithdrawalAmount > 0 ? minimumWithdrawalAmount : 1}
+                  controls={false}
+                  onKeyPress={(event) => {
+                    if (!/[0-9.]/.test(event.key)) {
+                      event.preventDefault();
+                    }
+                  }}
+                />
+                <style>{`
+                  .withdrawal-input-number,
+                  .withdrawal-input-number .ant-input-number-input-wrap,
+                  .withdrawal-input-number .ant-input-number-handler-wrap,
+                  .withdrawal-input-number .ant-input-number-input {
+                    background: transparent !important;
+                    background-color: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                  }
+                  .withdrawal-input-number .ant-input-number-input {
+                    color: var(--primary-text) !important;
+                    padding: 0 !important;
+                    line-height: normal !important;
+                  }
+                  .withdrawal-input-number.ant-input-number-focused {
+                    box-shadow: none !important;
+                    border: none !important;
+                  }
+                `}</style>
+              </div>
             </Form.Item>
 
             <Form.Item
@@ -1157,10 +1170,10 @@ const Page = () => {
 
             <button
               type="submit"
-              disabled={requLoading}
+              disabled={requLoading || requStripeLoading}
               className="w-full mt-6 inline-flex items-center justify-center bg-brand-primary hover:bg-brand-primary/90 text-black font-semibold h-11 rounded-md transition-all shadow-sm shadow-brand-primary/5 cursor-pointer disabled:opacity-40"
             >
-              {requLoading ? (
+              {requLoading || requStripeLoading ? (
                 <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
                 "Deploy Request Pipeline"
