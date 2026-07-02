@@ -85,7 +85,8 @@ export const baseApi = createApi({
     "react",
     'comment',
     "conversation",
-    "message"
+    "message",
+    "stripeConnect"
   ],
   endpoints: () => ({}),
 });
