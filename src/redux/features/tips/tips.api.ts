@@ -3,6 +3,7 @@ import { baseApi } from "../../api/baseApi";
 export interface ITipCheckoutStripe {
   contentId: string;
   amount: number;
+  currency?: string;
 }
 
 export interface ITipCheckoutPawaPay {
@@ -49,6 +50,7 @@ const tipsApi = baseApi.injectEndpoints({
       }),
     }),
   }),
+  overrideExisting: true,
 });
 
 export const {

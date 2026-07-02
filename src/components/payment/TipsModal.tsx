@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { countries } from "countries-list";
-import { Button, InputNumber, message } from "antd";
+import { Button, InputNumber, Modal, message } from "antd";
 import GlobalModal from "@/components/GlobalModal";
 import { CreditCardIcon, WalletIcon, GiftIcon } from "@heroicons/react/24/outline";
 import {
@@ -39,15 +39,19 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
 			if (event.data?.type === "PAYMENT_SUCCESS") {
-				setMobileStatusMsg("Tip payment completed successfully! Thank you for supporting the creator!");
-				messageApi.success("Tip sent successfully!");
 				setIsProcessingMobile(false);
 				setIsOpen(false);
+				Modal.success({
+					title: 'Thank you for your support!',
+					content: 'Your tip has been sent successfully to the creator.',
+					okText: 'Back to Video',
+					centered: true,
+				});
 			}
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [messageApi, setIsOpen]);
+	}, [setIsOpen]);
 
 	const pawapayEligibleIso3 = new Set([
 		"BEN", "BFA", "CMR", "CIV", "COD", "ETH", "GAB", "GHA", "KEN", "LSO",
@@ -104,7 +108,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 						let res;
 						if (provider === "STRIPE") {
 							res = await createStripeSession({
-								body: { contentId, amount },
+								body: { contentId, amount, currency: "USD" },
 								idempotencyKey: currentKey,
 							}).unwrap();
 						} else if (provider === "PAWAPAY") {
@@ -156,72 +160,70 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			const url = res?.data?.sessionUrl || res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 
-			if ((provider === "PAWAPAY" || provider === "PAYNOW") && url) {
+			const isWebFlow = (provider === "PAWAPAY" || provider === "PAYNOW" || provider === "STRIPE") && !!url;
+
+			if (isWebFlow) {
 				window.open(url, "_blank");
 			}
 
-			// Stripe and normal Card Redirect flows
-			if (provider === "STRIPE") {
-				if (url) {
-					window.location.href = url;
-					return;
-				}
-			} else {
-				// Mobile Money PIN Entry Countdown and polling flow
-				if (providerReferenceId) {
-					setIsProcessingMobile(true);
-					setCountdown(60);
-					setMobileStatusMsg(
-						(provider === "PAWAPAY" || provider === "PAYNOW")
-							? "Please complete the payment in the newly opened tab..."
-							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
-					);
+			if (isWebFlow || providerReferenceId) {
+				setIsProcessingMobile(true);
+				setCountdown(60);
+				setMobileStatusMsg(
+					isWebFlow
+						? "Please complete the payment in the newly opened tab..."
+						: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
+				);
 
-					const intervalId = setInterval(() => {
-						setCountdown((prev) => {
-							if (prev <= 1) {
-								clearInterval(intervalId);
-								return 0;
+				const intervalId = setInterval(() => {
+					setCountdown((prev) => {
+						if (prev <= 1) {
+							clearInterval(intervalId);
+							if (!providerReferenceId) {
+								setIsProcessingMobile(false);
 							}
-							return prev - 1;
-						});
-					}, 1000);
+							return 0;
+						}
+						return prev - 1;
+					});
+				}, 1000);
 
+				if (providerReferenceId) {
 					// poll every 3 seconds up to 20 times (60 seconds total)
-					for (let i = 0; i < 20; i++) {
-						await new Promise((resolve) => setTimeout(resolve, 3000));
-						try {
-							const verifyKey = generateUUID();
-							const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
-							if (verifyRes?.data?.status === "COMPLETED") {
-								setMobileStatusMsg("Tip payment completed successfully! Thank you for supporting the creator!");
-								messageApi.success("Tip sent successfully!");
-								clearInterval(intervalId);
-								setTimeout(() => {
+					(async () => {
+						for (let i = 0; i < 20; i++) {
+							await new Promise((resolve) => setTimeout(resolve, 3000));
+							try {
+								const verifyKey = generateUUID();
+								const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
+								if (verifyRes?.data?.status === "COMPLETED") {
+									clearInterval(intervalId);
 									setIsProcessingMobile(false);
 									setIsOpen(false);
-								}, 2000);
-								return;
-							} else if (verifyRes?.data?.status === "FAILED") {
-								setMobileStatusMsg("Transaction failed on mobile device.");
-								messageApi.error("Tip payment failed.");
-								clearInterval(intervalId);
-								setTimeout(() => setIsProcessingMobile(false), 3000);
-								return;
+									Modal.success({
+										title: 'Thank you for your support!',
+										content: 'Your tip has been sent successfully to the creator.',
+										okText: 'Back to Video',
+										centered: true,
+									});
+									return;
+								} else if (verifyRes?.data?.status === "FAILED") {
+									setMobileStatusMsg("Transaction failed.");
+									messageApi.error("Tip payment failed.");
+									clearInterval(intervalId);
+									setTimeout(() => setIsProcessingMobile(false), 3000);
+									return;
+								}
+							} catch (e) {
+								console.error("Polling verify error:", e);
 							}
-						} catch (e) {
-							console.error("Polling verify error:", e);
 						}
-					}
-
-					setMobileStatusMsg("Transaction confirmation took too long. Please check your transaction history.");
-					clearInterval(intervalId);
-					setTimeout(() => setIsProcessingMobile(false), 4000);
-					return;
-				} else if (url) {
-					window.location.href = url;
-					return;
+						setMobileStatusMsg("Transaction confirmation took too long. Please check your transaction history.");
+						clearInterval(intervalId);
+						setTimeout(() => setIsProcessingMobile(false), 4000);
+					})();
 				}
+				return;
 			}
 
 			// Pawapay might return depositId directly in custom responses
@@ -244,6 +246,25 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			{contextHolder}
 			<GlobalModal isModalOpen={isOpen} setIsModalOpen={setIsOpen} maxWidth="500px">
 				<div className="space-y-6 relative overflow-hidden rounded-xl bg-secondary-bg border border-border-primary text-primary-text">
+					<style>{`
+						.ant-input-number-affix-wrapper {
+							background-color: var(--primary-bg) !important;
+							border-color: var(--border-primary) !important;
+						}
+						.ant-input-number-affix-wrapper:hover {
+							border-color: var(--brand-primary) !important;
+						}
+						.ant-input-number-affix-wrapper-focused {
+							border-color: var(--brand-primary) !important;
+							box-shadow: 0 0 0 2px rgba(0, 176, 90, 0.1) !important;
+						}
+						.ant-input-number {
+							background-color: transparent !important;
+						}
+						.ant-input-number-input {
+							color: var(--primary-text) !important;
+						}
+					`}</style>
 					{/* Glowing top gradient header */}
 					<div className="p-6 pb-4 border-b border-border-primary/60 bg-gradient-to-r from-brand-primary/10 via-transparent to-brand-primary/5 flex items-start gap-4">
 						<div className="p-3 bg-brand-primary/20 rounded-xl text-brand-primary border border-brand-primary/30 shrink-0">
