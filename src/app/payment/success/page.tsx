@@ -14,6 +14,17 @@ function SuccessContent() {
 	const [showSummary, setShowSummary] = useState(false);
 	const sessionId = searchParams.get("session_id");
 
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			if (window.opener) {
+				window.opener.postMessage({ type: "PAYMENT_SUCCESS", sessionId }, "*");
+				window.close();
+			} else if (window.parent && window.parent !== window) {
+				window.parent.postMessage({ type: "PAYMENT_SUCCESS", sessionId }, "*");
+			}
+		}
+	}, [sessionId]);
+
 	const handleAnimationComplete = () => {
 		setShowSummary(true);
 	};

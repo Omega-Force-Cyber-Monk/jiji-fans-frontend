@@ -121,6 +121,10 @@ const nextConfig: NextConfig = {
         source: "/mychannel/videos/:slug", // Dynamic slug
         destination: "/overview/videos/:slug", // Redirect to the overview page with the same slug
       },
+      {
+        source: "/overview/payment/success",
+        destination: "/payment/success",
+      },
     ];
   },
 };

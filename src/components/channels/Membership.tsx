@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { countries } from "countries-list";
 import { useRouter } from "next/navigation";
@@ -40,10 +40,26 @@ const Membership = ({ channelId }: MembershipProps) => {
 		useCreateCheckoutSessionMutation();
 	const [verifyTransaction] = useVerifyTransactionMutation();
 
+	const [messageApi, contextHolder] = message.useMessage();
 	const { idempotencyKey, regenerateKey } = useIdempotency();
 	const [isProcessingMobile, setIsProcessingMobile] = useState(false);
 	const [mobileStatusMsg, setMobileStatusMsg] = useState("");
 	const [countdown, setCountdown] = useState(60);
+
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			if (event.data?.type === "PAYMENT_SUCCESS") {
+				setMobileStatusMsg("Payment completed successfully!");
+				messageApi.success("Subscription completed successfully!");
+				setIsProcessingMobile(false);
+				setTimeout(() => {
+					window.location.reload();
+				}, 1500);
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [messageApi]);
 
 	const currentSubscription = currentSubscriptionData?.data as
 		| ISubscription
@@ -56,7 +72,6 @@ const Membership = ({ channelId }: MembershipProps) => {
 				plan._id === (currentSubscription.subscriptionPlanId as any)?._id
 		)
 		: undefined;
-	const [messageApi, contextHolder] = message.useMessage();
 	const [isProviderModalOpen, setIsProviderModalOpen] = React.useState(false);
 	const [selectedPlan, setSelectedPlan] = React.useState<any>(null);
 
@@ -109,8 +124,10 @@ const Membership = ({ channelId }: MembershipProps) => {
 	};
 
 	const userIso3 = getUserIso3(user?.country);
-	const isPawaPayEligible = pawapayEligibleIso3.has(userIso3 || "") && userIso3 !== "ZWE"; // Disable Pawapay in Zimbabwe
-	const isPaynowEligible = userIso3 === "ZWE";
+	const isPawaPayEligible = true; // pawapayEligibleIso3.has(userIso3 || "") && userIso3 !== "ZWE"; // Disable Pawapay in Zimbabwe
+	const isPaynowEligible = true; // userIso3 === "ZWE";
+	// const isPawaPayEligible = pawapayEligibleIso3.has(userIso3 || "") && userIso3 !== "ZWE"; // Disable Pawapay in Zimbabwe
+	// const isPaynowEligible = userIso3 === "ZWE";
 
 	if (isLoadingSubscription || isLoadingPlans) {
 		return <MembershipSkeleton />;
@@ -185,6 +202,10 @@ const Membership = ({ channelId }: MembershipProps) => {
 			const url = res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 
+			if (paymentProvider === "PAWAPAY" && url) {
+				window.open(url, "_blank");
+			}
+
 			// Handle different flows based on paymentProvider
 			if (paymentProvider === "STRIPE" || (paymentProvider === "PAYNOW" && !user?.phoneNumber)) {
 				if (url) {
@@ -196,7 +217,11 @@ const Membership = ({ channelId }: MembershipProps) => {
 				if (providerReferenceId) {
 					setIsProcessingMobile(true);
 					setCountdown(60);
-					setMobileStatusMsg("Initiating payment prompt on your phone... Please enter your PIN on your mobile device.");
+					setMobileStatusMsg(
+						paymentProvider === "PAWAPAY"
+							? "Please complete the payment in the newly opened tab..."
+							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
+					);
 
 					const intervalId = setInterval(() => {
 						setCountdown((prev) => {

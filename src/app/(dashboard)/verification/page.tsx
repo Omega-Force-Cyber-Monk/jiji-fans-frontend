@@ -60,7 +60,7 @@ const VerificationForm: React.FC = () => {
   const [uploadMu, { isLoading: isStartingRequest }] = useVerifyKycMutation();
   const [startKyc, { isLoading: isFetchingToken }] = useStartKycMutation();
   const [syncKyc, { isLoading: isSyncing }] = useSyncKycStatusMutation();
-  
+
   const { data: kycStatusPayload, isLoading: isLoadingKycStatus } = useGetMyKycStatusQuery(undefined);
   const { data: profileData, isLoading: isLoadingProfile } = useGetProfileQuery(undefined);
 
@@ -79,7 +79,7 @@ const VerificationForm: React.FC = () => {
 
   useEffect(() => {
     if (currentKycStatus === "PENDING") {
-      syncKyc().unwrap().catch(() => {});
+      syncKyc().unwrap().catch(() => { });
     }
   }, [currentKycStatus, syncKyc]);
 
@@ -110,7 +110,7 @@ const VerificationForm: React.FC = () => {
       if (isRestart || currentKycStatus === "NOT_SUBMITTED" || currentKycStatus === "REJECTED") {
         await uploadMu({ type, note: `Starting ${type === "KYC" ? "individual" : "business"} verification` }).unwrap();
       }
-      
+
       // Fetch token and open the SDK widget
       await fetchTokenAndOpenModal(type);
     } catch (error) {
@@ -128,7 +128,7 @@ const VerificationForm: React.FC = () => {
     messageApi.success("Verification completed successfully!");
     setIsKycModalOpen(false);
     setIsKybModalOpen(false);
-    syncKyc().unwrap().catch(() => {});
+    syncKyc().unwrap().catch(() => { });
   };
 
   const handleSyncKycStatus = async () => {
@@ -223,7 +223,7 @@ const VerificationForm: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {currentKycStatus === "PENDING" && (
                   <div className="bg-warning/5 border border-warning/25 p-5 rounded-lg flex items-center justify-between gap-4 mb-6 flex-wrap">
                     <div className="flex items-start gap-4">
@@ -257,7 +257,7 @@ const VerificationForm: React.FC = () => {
 
                 <div className="space-y-6">
                   <p className="text-sm font-medium uppercase tracking-wider text-muted-text">Step 1 — Select Verification Type</p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {([
                       {
@@ -269,7 +269,7 @@ const VerificationForm: React.FC = () => {
                         tagColor: "bg-brand-primary/10 text-brand-primary border-brand-primary/20",
                         iconBg: "bg-brand-primary/10 text-brand-primary",
                       },
-                      {
+                      /* {
                         value: "KYB" as VerificationType,
                         icon: <FiBriefcase className="w-5 h-5" />,
                         label: "Corporate Business Verification (KYB)",
@@ -277,7 +277,7 @@ const VerificationForm: React.FC = () => {
                         tag: "For Agencies & Companies",
                         tagColor: "bg-brand-primary/10 text-brand-primary border-brand-primary/20",
                         iconBg: "bg-brand-primary/10 text-brand-primary",
-                      },
+                      }, */
                     ] as const).map((opt) => (
                       <div
                         key={opt.value}

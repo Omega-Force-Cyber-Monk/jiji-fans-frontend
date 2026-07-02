@@ -150,7 +150,8 @@ const VideoComponent = () => {
     user?._id === contentData?.data?.ownerId ||
     user?._id === (contentData?.data?.ownerId as any)?._id ||
     user?._id === channel?.owner;
-  const isLiked = contentData?.data?.userReaction === "LIKE";
+  const likedPersonsIds = contentData?.data?.likedPersonsIds || [];
+  const isLiked = contentData?.data?.userReaction === "LIKE" || (user?._id && likedPersonsIds.includes(user._id));
   const likeCount = contentData?.data?.likeCount ?? 0;
 
   // Local state for optimistic updates
@@ -161,7 +162,7 @@ const VideoComponent = () => {
     // Reset optimistic state when actual data changes (to sync with server)
     setOptimisticIsLiked(null);
     setOptimisticLikeCount(null);
-  }, [contentData?.data?.userReaction, contentData?.data?.likeCount]);
+  }, [contentData?.data?.userReaction, contentData?.data?.likeCount, contentData?.data?.likedPersonsIds]);
 
   const displayIsLiked = optimisticIsLiked !== null ? optimisticIsLiked : isLiked;
   const displayLikeCount = optimisticLikeCount !== null ? optimisticLikeCount : likeCount;
@@ -178,8 +179,8 @@ const VideoComponent = () => {
 
   const handleLikeToggle = async () => {
     if (isOwner) return; // Creators can't like own video
-    
-    const nextReaction = displayIsLiked ? "NONE" : "LIKE";
+
+    const nextReaction = displayIsLiked ? "DISLIKE" : "LIKE";
     setOptimisticIsLiked(!displayIsLiked);
     setOptimisticLikeCount(displayIsLiked ? Math.max(0, displayLikeCount - 1) : displayLikeCount + 1);
 

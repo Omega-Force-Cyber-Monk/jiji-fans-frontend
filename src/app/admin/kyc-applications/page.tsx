@@ -20,7 +20,7 @@ const Page = () => {
 
       <div className="space-y-10">
         <KycTable title="KYC Applications" type={KYC_TYPES.KYC} />
-        <KycTable title="KYB Applications" type={KYC_TYPES.KYB} />
+        {/* <KycTable title="KYB Applications" type={KYC_TYPES.KYB} /> */}
       </div>
     </div>
   );

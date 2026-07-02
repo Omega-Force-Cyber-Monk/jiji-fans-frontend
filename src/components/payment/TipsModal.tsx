@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { countries } from "countries-list";
 import { Button, InputNumber, message } from "antd";
 import GlobalModal from "@/components/GlobalModal";
@@ -35,6 +35,19 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 	const [countdown, setCountdown] = useState(60);
 
 	const isCreatingSession = isStripeLoading || isPawaLoading || isPaynowLoading || isProcessingMobile;
+
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			if (event.data?.type === "PAYMENT_SUCCESS") {
+				setMobileStatusMsg("Tip payment completed successfully! Thank you for supporting the creator!");
+				messageApi.success("Tip sent successfully!");
+				setIsProcessingMobile(false);
+				setIsOpen(false);
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [messageApi, setIsOpen]);
 
 	const pawapayEligibleIso3 = new Set([
 		"BEN", "BFA", "CMR", "CIV", "COD", "ETH", "GAB", "GHA", "KEN", "LSO",
@@ -143,6 +156,10 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			const url = res?.data?.sessionUrl || res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 
+			if (provider === "PAWAPAY" && url) {
+				window.open(url, "_blank");
+			}
+
 			// Stripe and normal Card Redirect flows
 			if (provider === "STRIPE" || (provider === "PAYNOW" && !user?.phoneNumber)) {
 				if (url) {
@@ -154,7 +171,11 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 				if (providerReferenceId) {
 					setIsProcessingMobile(true);
 					setCountdown(60);
-					setMobileStatusMsg("Initiating payment prompt on your phone... Please enter your PIN on your mobile device.");
+					setMobileStatusMsg(
+						provider === "PAWAPAY"
+							? "Please complete the payment in the newly opened tab..."
+							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
+					);
 
 					const intervalId = setInterval(() => {
 						setCountdown((prev) => {

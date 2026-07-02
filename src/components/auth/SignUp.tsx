@@ -17,6 +17,7 @@ import { useAppContext } from "@/lib/providers/ContextProvider";
 import { cn } from "@/utils/cn";
 import { AtSymbolIcon, KeyIcon, MapPinIcon, UserIcon } from "@heroicons/react/24/outline";
 import { countries } from "countries-list";
+import { ALLOWED_COUNTRY_CODES } from "@/constants/countries.const";
 import { useRegistrationMutation } from "@/redux/features/auth/authApi";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -234,10 +235,12 @@ const SignUp = () => {
                       .toLowerCase()
                       .includes(input.toLowerCase())
                   }
-                  options={Object.entries(countries).map((country) => ({
-                    label: country[1].name,
-                    value: country[1].name,
-                  }))}
+                  options={Object.entries(countries)
+                    .filter(([code]) => ALLOWED_COUNTRY_CODES.has(code.toUpperCase()))
+                    .map((country) => ({
+                      label: country[1].name,
+                      value: country[1].name,
+                    }))}
                 />
               </Form.Item>
             </Col>

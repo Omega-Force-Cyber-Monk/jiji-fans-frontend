@@ -26,6 +26,7 @@ import {
 import { useEffect, useState } from "react";
 import { countries } from "countries-list";
 import { COUNTRY_CODES } from "@/components/prelaunch/countries";
+import { ALLOWED_COUNTRY_CODES } from "@/constants/countries.const";
 import PhoneNumberInput from "@/components/ui/PhoneNumberInput";
 import { sweetAlertConfirmation } from "@/lib/alerts/sweetAlertConfirmation";
 import {
@@ -579,10 +580,12 @@ const Settings = () => {
                             .toLowerCase()
                             .includes(input.toLowerCase())
                         }
-                        options={Object.entries(countries).map((country) => ({
-                          label: country[1].name,
-                          value: country[1].name,
-                        }))}
+                        options={Object.entries(countries)
+                          .filter(([code]) => ALLOWED_COUNTRY_CODES.has(code.toUpperCase()))
+                          .map((country) => ({
+                            label: country[1].name,
+                            value: country[1].name,
+                          }))}
                       />
                     </Form.Item>
 

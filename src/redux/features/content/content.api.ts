@@ -88,7 +88,7 @@ const contentApi = baseApi.injectEndpoints({
       },
     }),
     reactToContent: builder.mutation({
-      query: ({ contentId, reactionType }: { contentId: string; reactionType: "LIKE" | "DISLIKE" | "NONE" }) => ({
+      query: ({ contentId, reactionType }: { contentId: string; reactionType: "LIKE" | "DISLIKE" | "" }) => ({
         url: `contents/${contentId}/reaction`,
         method: "PATCH",
         body: { reactionType },
