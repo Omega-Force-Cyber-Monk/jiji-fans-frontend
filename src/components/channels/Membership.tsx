@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ExclamationCircleFilled } from "@ant-design/icons";
 import { countries } from "countries-list";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,9 @@ const Membership = ({ channelId }: MembershipProps) => {
 	const [mobileStatusMsg, setMobileStatusMsg] = useState("");
 	const [countdown, setCountdown] = useState(60);
 
+	const isProcessingRef = useRef(false);
+	isProcessingRef.current = isProcessingMobile;
+
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
 			if (event.data?.type === "PAYMENT_SUCCESS") {
@@ -60,6 +63,12 @@ const Membership = ({ channelId }: MembershipProps) => {
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
 	}, [messageApi]);
+
+	useEffect(() => {
+		if (!isProcessingMobile) {
+			regenerateKey();
+		}
+	}, [isProcessingMobile, regenerateKey]);
 
 	const currentSubscription = currentSubscriptionData?.data as
 		| ISubscription
@@ -236,6 +245,9 @@ const Membership = ({ channelId }: MembershipProps) => {
 					// poll every 3 seconds up to 20 times (60 seconds total)
 					for (let i = 0; i < 20; i++) {
 						await new Promise((resolve) => setTimeout(resolve, 3000));
+						if (!isProcessingRef.current) {
+							return;
+						}
 						try {
 							const verifyKey = generateUUID();
 							const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();

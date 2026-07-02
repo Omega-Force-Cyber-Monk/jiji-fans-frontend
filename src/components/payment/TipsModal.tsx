@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { countries } from "countries-list";
 import { Button, InputNumber, Modal, message } from "antd";
 import GlobalModal from "@/components/GlobalModal";
@@ -32,6 +32,9 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 	const { idempotencyKey, regenerateKey } = useIdempotency();
 	const [isProcessingMobile, setIsProcessingMobile] = useState(false);
 	const [mobileStatusMsg, setMobileStatusMsg] = useState("");
+
+	const isProcessingRef = useRef(false);
+	isProcessingRef.current = isProcessingMobile;
 	const [countdown, setCountdown] = useState(60);
 
 	const isCreatingSession = isStripeLoading || isPawaLoading || isPaynowLoading || isProcessingMobile;
@@ -52,6 +55,12 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
 	}, [setIsOpen]);
+
+	useEffect(() => {
+		if (!isProcessingMobile) {
+			regenerateKey();
+		}
+	}, [isProcessingMobile, regenerateKey]);
 
 	const pawapayEligibleIso3 = new Set([
 		"BEN", "BFA", "CMR", "CIV", "COD", "ETH", "GAB", "GHA", "KEN", "LSO",
@@ -193,6 +202,9 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 					(async () => {
 						for (let i = 0; i < 20; i++) {
 							await new Promise((resolve) => setTimeout(resolve, 3000));
+							if (!isProcessingRef.current) {
+								return;
+							}
 							try {
 								const verifyKey = generateUUID();
 								const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
