@@ -15,7 +15,9 @@ const NotificationPopover = ({ viewAllHref = "/notifications" }: { viewAllHref?:
     <div className="w-80 sm:w-96 flex flex-col h-[500px] bg-primary-bg rounded-lg overflow-hidden shadow-2xl  transition-colors duration-300">
       <div className="px-3 py-3 border-b border-border-primary flex items-center justify-between bg-primary-bg">
         <h6 className="text-lg font-semibold text-primary-text">Notifications</h6>
-        <Badge count={notifications.length} showZero color="var(--color-brand-primary)" size="small" />
+        {notifications.length > 0 && (
+          <span className="w-2 h-2 rounded-full bg-brand-primary inline-block" />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -84,14 +86,10 @@ const NotificationPopover = ({ viewAllHref = "/notifications" }: { viewAllHref?:
       overlayClassName="notification-popover"
     >
       <div className="relative size-11 flex items-center justify-center rounded-full bg-primary-bg hover:bg-brand-primary/10 transition-all active:scale-95 group shadow-sm border border-border-primary cursor-pointer">
-        <Badge
-          count={notifications.length}
-          size="small"
-          offset={[-2, 2]}
-          color="var(--color-brand-secondary)"
-        >
-          <BellIcon className="size-6 text-brand-primary group-hover:text-primary-bg transition-colors" />
-        </Badge>
+        <BellIcon className="size-6 text-brand-primary group-hover:text-primary-bg transition-colors" />
+        {notifications.length > 0 && (
+          <span className="absolute top-2 right-2 size-2 rounded-full bg-brand-primary ring-2 ring-primary-bg" />
+        )}
       </div>
     </Popover>
   );

@@ -38,6 +38,7 @@ import { queryFormat } from "@/lib/helpers/queryFormat";
 import GlobalModal from "@/components/GlobalModal";
 import TextArea from "antd/es/input/TextArea";
 import { errorAlert, TResError } from "@/lib/alerts";
+import { sweetAlertConfirmation } from "@/lib/alerts/sweetAlertConfirmation";
 import { TQuery, TUniObject } from "@/types";
 import { useAppContext } from "@/lib/providers/ContextProvider";
 import { useGetPayoutForClientQuery } from "@/redux/features/transaction/transaction.api";
@@ -761,13 +762,19 @@ const Page = () => {
                     <button
                       disabled={isDeletingPayout}
                       onClick={() => {
-                        Modal.confirm({
+                        sweetAlertConfirmation({
                           title: "Remove Payout Method",
-                          content: "Are you sure you want to delete your configured payout settings? Automated withdrawals will be suspended until a new method is defined.",
-                          onOk: async () => {
+                          object: "delete your configured payout settings (automated withdrawals will be suspended)",
+                          okay: "Remove",
+                          icon: "warning",
+                          func: async () => {
                             try {
                               if (currentPayoutSettings?.payoutMethod === "BANK") {
-                                await deleteStripeConnect(undefined).unwrap();
+                                try {
+                                  await deleteStripeConnect(undefined).unwrap();
+                                } catch (stripeErr) {
+                                  console.warn("Failed to delete Stripe Connect account from server:", stripeErr);
+                                }
                               }
                               await deletePayoutSettings(undefined).unwrap();
                               messageApi.success("Payout settings removed successfully.");
