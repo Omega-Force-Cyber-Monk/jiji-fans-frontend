@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { Tabs, TabsProps, Select, Breadcrumb } from "antd";
-import { UserGroupIcon, VideoCameraIcon, StarIcon } from "@heroicons/react/24/outline";
+import { UserGroupIcon, VideoCameraIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import ChannelInfo from "@/components/channels/ChannelInfo";
 import Videos from "@/components/channels/Videos";
 import Membership from "@/components/channels/Membership";
@@ -50,6 +50,12 @@ const Page = () => {
     }
     return list.filter((c) => c.status?.toUpperCase() === status.toUpperCase());
   }, [ownerContentsData, status]);
+
+  const approvedVideosCount = useMemo(() => {
+    return (ownerContentsData?.data || []).filter(
+      (c) => c.status?.toUpperCase() === "APPROVED"
+    ).length;
+  }, [ownerContentsData]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -167,13 +173,13 @@ const Page = () => {
             />
             <StatCard
               label="Uploaded Videos"
-              value={channelData?.data?.totalVideos || 0}
+              value={(ownerContentsData?.data || []).length || channelData?.data?.totalVideos || 0}
               icon={<VideoCameraIcon className="w-6 h-6" />}
             />
             <StatCard
-              label="Channel Points"
-              value="Coming Soon"
-              icon={<StarIcon className="w-6 h-6" />}
+              label="Approved Videos"
+              value={approvedVideosCount}
+              icon={<CheckCircleIcon className="w-6 h-6" />}
             />
           </div>
 

@@ -16,6 +16,13 @@ const StatCard = ({ label, value, icon }: StatCardProps) => {
         iconBg: "bg-blue-500/10 text-blue-500 group-hover:bg-gradient-to-br group-hover:from-blue-500 group-hover:to-indigo-500 group-hover:text-white",
       };
     }
+    if (l.includes("approved")) {
+      return {
+        bg: "from-green-500/10 to-lime-500/10 hover:from-green-500/20 hover:to-lime-500/20",
+        border: "hover:border-green-500/30 ",
+        iconBg: "bg-green-500/10 text-green-500 group-hover:bg-gradient-to-br group-hover:from-green-500 group-hover:to-lime-500 group-hover:text-white",
+      };
+    }
     if (l.includes("video") || l.includes("upload") || l.includes("content")) {
       return {
         bg: "from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20",
