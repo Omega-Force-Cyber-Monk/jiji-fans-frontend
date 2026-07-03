@@ -27,10 +27,10 @@ import {
   TWithdrawalRequest,
   useMyWithdrawalRequestsQuery,
   useRequestWithdrawMutation,
-  useRequestWithdrawStripeMutation,
   useUpdatePayoutSettingsMutation,
   useGetPayoutSettingsQuery,
   useCreatePayoutSettingsMutation,
+  useCreateStripeOnboardingLinkMutation,
   useDeletePayoutSettingsMutation,
 } from "@/redux/features/wallet/wallet.api";
 import { useIdempotency } from "@/hooks/useIdempotency";
@@ -89,12 +89,12 @@ const Page = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { idempotencyKey, regenerateKey } = useIdempotency();
   const [submitRequest, { isLoading: requLoading }] = useRequestWithdrawMutation();
-  const [submitRequestStripe, { isLoading: requStripeLoading }] = useRequestWithdrawStripeMutation();
   const [updatePayoutSettings, { isLoading: isSavingPayoutSettings }] = useUpdatePayoutSettingsMutation();
   const [payoutForm] = Form.useForm();
   const [isEditingPayout, setIsEditingPayout] = useState(false);
   const [createPayoutSettings, { isLoading: isCreatingPayout }] = useCreatePayoutSettingsMutation();
   const [deletePayoutSettings, { isLoading: isDeletingPayout }] = useDeletePayoutSettingsMutation();
+  const [createStripeOnboardingLink, { isLoading: isCreatingStripe }] = useCreateStripeOnboardingLinkMutation();
   const [updateStripeConnect, { isLoading: isUpdatingStripe }] = useUpdateStripeConnectMutation();
   const [deleteStripeConnect] = useDeleteStripeConnectMutation();
   const { data: payoutSettingsPayload, isLoading: isLoadingPayoutSettings } = useGetPayoutSettingsQuery();
@@ -156,7 +156,8 @@ const Page = () => {
   const withdrawalRequests = withdrawalData?.results || (withdrawalData as any)?.withdrawals || [];
 
   const hasPendingWithdrawal = withdrawalRequests.some((req: any) => ["PENDING", "PROCESSING"].includes(req.status?.toUpperCase()));
-  const disableWithdraw = !isKycCompleted || !canWithdrawByPayout || isBelowMinimumThreshold || hasPendingWithdrawal;
+  const isPayoutSettingsValid = currentPayoutSettings && currentPayoutSettings.status !== "ACTION_REQUIRED" && currentPayoutSettings.status !== "UNSUPPORTED";
+  const disableWithdraw = !isKycCompleted || !canWithdrawByPayout || isBelowMinimumThreshold || hasPendingWithdrawal || !isPayoutSettingsValid;
 
   const transactionSkeletons = Array.from({ length: 5 });
   const withdrawalSkeletons = Array.from({ length: 5 });
@@ -179,7 +180,7 @@ const Page = () => {
   const onFinish: FormProps<TUniObject>["onFinish"] = async (values) => {
     try {
       setWithdrawalSubmitError("");
-      
+
       // Ensure the amount is always submitted as a number
       if (values.amount) {
         values.amount = Number(values.amount);
@@ -187,12 +188,9 @@ const Page = () => {
 
       const executeWithdrawal = async (currentKey: string) => {
         let attempts = 0;
-        const isStripeActive = currentPayoutSettings?.payoutMethod === "BANK";
         while (attempts < 5) {
           try {
-            const res = isStripeActive 
-              ? await submitRequestStripe({ body: values, idempotencyKey: currentKey }).unwrap()
-              : await submitRequest({ body: values, idempotencyKey: currentKey }).unwrap();
+            const res = await submitRequest({ body: values, idempotencyKey: currentKey }).unwrap();
             return res;
           } catch (error: any) {
             if (error?.status === 202) {
@@ -708,11 +706,23 @@ const Page = () => {
                             </div>
                             <div>
                               <span className="text-muted-text block text-xs uppercase font-semibold">Status</span>
-                              <span className="text-brand-primary font-medium">Linked & Active</span>
+                              {currentPayoutSettings.status === "ACTION_REQUIRED" ? (
+                                <span className="text-amber-500 font-medium">Action Required (Onboarding Incomplete)</span>
+                              ) : (
+                                <span className="text-brand-primary font-medium">Linked & Active</span>
+                              )}
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-muted-text block text-xs uppercase font-semibold">Status</span>
+                              {currentPayoutSettings.status === "UNSUPPORTED" ? (
+                                <span className="text-red-400 font-medium">{currentPayoutSettings.unsupportedReason || "Unsupported in your region"}</span>
+                              ) : (
+                                <span className="text-brand-primary font-medium">Linked & Active</span>
+                              )}
+                            </div>
                             <div>
                               <span className="text-muted-text block text-xs uppercase font-semibold">Mobile Money Provider</span>
                               <span className="text-primary-text font-medium">{currentPayoutSettings.mobileProvider || "N/A"}</span>
@@ -796,50 +806,67 @@ const Page = () => {
                     <p className="text-sm text-secondary-text">Select and save your preferred destination to process automated and manual earnings withdrawals.</p>
                   </div>
 
-                    <Form
-                      form={payoutForm}
-                      layout="vertical" initialValues={{
-                        payoutMethod: (profileData?.data?.payoutSettings?.payoutMethod === "BANK" ? "STRIPE" : profileData?.data?.payoutSettings?.payoutMethod) || "MOBILE_MONEY",
-                        mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || (isZimbabwe ? "PayNow" : "PawaPay"),
-                        mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
-                        mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
-                        stripeConnectedAccountId: stripeConnectedAccountId || "",
-                      }}
-                      onFinish={async (values) => {
-                        try {
-                          // Handle Stripe Connect linkage first
-                          if (values.payoutMethod === "STRIPE" && values.stripeConnectedAccountId) {
-                            await updateStripeConnect({ stripeConnectedAccountId: values.stripeConnectedAccountId }).unwrap();
+                  <Form
+                    form={payoutForm}
+                    layout="vertical" initialValues={{
+                      payoutMethod: (profileData?.data?.payoutSettings?.payoutMethod === "BANK" ? "STRIPE" : profileData?.data?.payoutSettings?.payoutMethod) || "MOBILE_MONEY",
+                      mobileProvider: profileData?.data?.payoutSettings?.mobileProvider || (isZimbabwe ? "EcoCash" : "MTN"),
+                      mobilePhoneNumber: profileData?.data?.payoutSettings?.mobilePhoneNumber || profileData?.data?.phoneNumber || "",
+                      mobileAccountHolderName: profileData?.data?.payoutSettings?.mobileAccountHolderName || profileData?.data?.username || "",
+                    }}
+                    onFinish={async (values) => {
+                      try {
+                        const mappedMethod = values.payoutMethod === "STRIPE" ? "BANK" : values.payoutMethod;
+
+                        const basePayload = mappedMethod === "BANK"
+                          ? {
+                            payoutMethod: "BANK",
+
                           }
-                          
-                          // The backend still expects "BANK" as the enum value for bank/stripe transfers
-                          // We also remove stripeConnectedAccountId because it's only meant for the profile API
-                          const { stripeConnectedAccountId, ...payoutPayload } = values;
-                          const mappedMethod = values.payoutMethod === "STRIPE" ? "BANK" : values.payoutMethod;
-                          
-                          if (currentPayoutSettings) {
-                            await updatePayoutSettings({ ...payoutPayload, payoutMethod: mappedMethod }).unwrap();
-                            messageApi.success("Payout settings updated successfully!");
-                          } else {
-                            await createPayoutSettings({ ...payoutPayload, payoutMethod: mappedMethod }).unwrap();
-                            messageApi.success("Payout settings saved successfully!");
-                          }
-                          setIsEditingPayout(false);
-                        } catch (error) {
-                          errorAlert({ error: error as TResError, messageApi });
+                          : {
+                            type: "MOBILE_MONEY",
+                            providerName: values.mobileProvider,
+                            country: profileData?.data?.country || "UG",
+                            phoneNumber: values.mobilePhoneNumber,
+                            accountHolderName: values.mobileAccountHolderName,
+                          };
+
+                        if (currentPayoutSettings) {
+                          await updatePayoutSettings(basePayload).unwrap();
+                          messageApi.success("Payout settings updated successfully!");
+                        } else {
+                          await createPayoutSettings(basePayload).unwrap();
+                          messageApi.success("Payout settings saved successfully!");
                         }
-                      }}
+
+                        if (mappedMethod === "BANK") {
+                          const onboardingRes = await createStripeOnboardingLink({
+                            returnUrl: `${window.location.origin}/wallet`,
+                            refreshUrl: `${window.location.origin}/wallet`,
+                          }).unwrap();
+
+                          if (onboardingRes?.data?.onboardingUrl) {
+                            window.location.href = onboardingRes.data.onboardingUrl;
+                            return;
+                          }
+                        }
+
+                        setIsEditingPayout(false);
+                      } catch (error) {
+                        errorAlert({ error: error as TResError, messageApi });
+                      }
+                    }}
+                  >
+                    <Form.Item
+                      label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
+                      name="payoutMethod"
+                      rules={[{ required: true, message: "Please select a payout method." }]}
                     >
-                      <Form.Item
-                        label={<span className="text-sm font-semibold text-secondary-text">Payout Method</span>}
-                        name="payoutMethod"
-                        rules={[{ required: true, message: "Please select a payout method." }]}
-                      >
-                        <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
-                          <option value="MOBILE_MONEY">Mobile Money</option>
-                          <option value="STRIPE">Stripe Connect</option>
-                        </select>
-                      </Form.Item>
+                      <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
+                        <option value="MOBILE_MONEY">Mobile Money</option>
+                        <option value="STRIPE">Stripe Connect</option>
+                      </select>
+                    </Form.Item>
 
                     {payoutMethod === "MOBILE_MONEY" && (
                       <>
@@ -849,11 +876,11 @@ const Page = () => {
                           rules={[{ required: true, message: "Please select a provider." }]}
                         >
                           <select className="w-full bg-primary-bg/50 border border-border-primary text-primary-text rounded-md h-11 px-3 focus:outline-none focus:border-brand-primary">
-                            {isZimbabwe ? (
-                              <option value="PayNow">PayNow</option>
-                            ) : (
-                              <option value="PawaPay">PawaPay</option>
-                            )}
+                            <option value="MTN">MTN</option>
+                            <option value="Airtel">Airtel</option>
+                            <option value="EcoCash">EcoCash</option>
+                            <option value="Vodafone">Vodafone</option>
+                            <option value="Safaricom">Safaricom</option>
                           </select>
                         </Form.Item>
 
@@ -882,35 +909,16 @@ const Page = () => {
                     )}
 
                     {payoutMethod === "STRIPE" && (
-                      <>
-                        <Form.Item
-                          label={<span className="text-sm font-semibold text-secondary-text">Stripe Connected Account ID</span>}
-                          name="stripeConnectedAccountId"
-                          rules={[
-                            { required: true, message: "Please input your Stripe Connected Account ID." },
-                            {
-                              validator: async (_, value) => {
-                                if (value && !value.startsWith("acct_")) {
-                                  throw new Error("Stripe Account ID must start with 'acct_'");
-                                }
-                              },
-                            }
-                          ]}
-                          help={<span className="text-xs text-muted-text">Example: acct_1HjK2dL9mXYZ5678</span>}
-                        >
-                          <Input
-                            className="rounded-md bg-primary-bg/50 border-border-primary text-primary-text text-sm h-11"
-                            placeholder="acct_..."
-                          />
-                        </Form.Item>
-                      </>
+                      <div className="py-2 text-sm text-secondary-text mb-4">
+                        You will be securely redirected to Stripe to connect your bank account.
+                      </div>
                     )}
 
                     <div className="flex gap-3 pt-2">
                       <Button
                         type="primary"
                         htmlType="submit"
-                        loading={isSavingPayoutSettings || isCreatingPayout || isUpdatingStripe}
+                        loading={isSavingPayoutSettings || isCreatingPayout || isCreatingStripe}
                         className="bg-brand-primary text-black font-semibold h-11! px-6 rounded-md hover:bg-brand-primary/90 border-none"
                       >
                         Save Settings
@@ -1170,10 +1178,10 @@ const Page = () => {
 
             <button
               type="submit"
-              disabled={requLoading || requStripeLoading}
+              disabled={requLoading}
               className="w-full mt-6 inline-flex items-center justify-center bg-brand-primary hover:bg-brand-primary/90 text-black font-semibold h-11 rounded-md transition-all shadow-sm shadow-brand-primary/5 cursor-pointer disabled:opacity-40"
             >
-              {requLoading || requStripeLoading ? (
+              {requLoading ? (
                 <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
               ) : (
                 "Deploy Request Pipeline"

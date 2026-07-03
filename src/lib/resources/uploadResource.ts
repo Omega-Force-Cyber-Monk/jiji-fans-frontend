@@ -69,6 +69,7 @@ type TUploadResourceOptions = {
   pollIntervalMs?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  onProgress?: (percent: number) => void;
 };
 
 const RESOURCE_READY_STATUSES = new Set(["PENDING", "VERIFIED", "ACTIVE"]);
@@ -324,25 +325,67 @@ export const uploadResource = async (
     },
   );
 
-  const uploadResponse = await fetch(initiated.uploadUrl, {
-    method: initiated.method || "PUT",
-    headers: initiated.headers,
-    body: file,
-    signal: options.signal,
+  const uploadPromise = new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(initiated.method || "PUT", initiated.uploadUrl);
+
+    if (initiated.headers) {
+      Object.entries(initiated.headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+    }
+
+    if (options.signal) {
+      options.signal.addEventListener("abort", () => {
+        xhr.abort();
+        reject(createUploadError("Upload cancelled"));
+      }, { once: true });
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && options.onProgress) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        options.onProgress(percent);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(
+          createUploadError(
+            "Failed to upload the file to storage",
+            [
+              {
+                path: "file",
+                message: "Failed to upload the file to storage",
+              },
+            ],
+            xhr.status,
+          ),
+        );
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(
+        createUploadError(
+          "Network error during file upload",
+          [
+            {
+              path: "file",
+              message: "Network error during file upload",
+            },
+          ],
+        ),
+      );
+    };
+
+    xhr.send(file);
   });
 
-  if (!uploadResponse.ok) {
-    throw createUploadError(
-      "Failed to upload the file to storage",
-      [
-        {
-          path: "file",
-          message: "Failed to upload the file to storage",
-        },
-      ],
-      uploadResponse.status,
-    );
-  }
+  await uploadPromise;
 
   return waitForResourceVerification(initiated.resourceId, options);
 };

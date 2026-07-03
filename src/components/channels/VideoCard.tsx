@@ -1,13 +1,16 @@
 "use client";
 
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "@/components/ui/CImage";
 import { PlayCircleIcon } from "@heroicons/react/16/solid";
 import { LockClosedIcon } from "@heroicons/react/24/solid";
 import { HandThumbUpIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
-import { getYouTubeThumbnailUrl } from "@/lib/helpers/youtube";
+import { getYouTubeThumbnailUrl, getYouTubeVideoId } from "@/lib/helpers/youtube";
 import Link from "next/link";
 import { Tooltip } from "antd";
 import { TContent } from "@/redux/features/channel/channel.api";
+import { getAccessToken } from "@/lib/auth/tokenUtils";
+import { useAppSelector } from "@/redux/hook";
 
 interface VideoCardProps {
   video: TContent;
@@ -27,19 +30,57 @@ const VideoCardContent = ({
 }: Pick<VideoCardProps, "video" | "imageError" | "onImageError">) => {
   const isLocked = video.hasAccess === false;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const reduxToken = useAppSelector((state) => state.auth.token);
+  const token = getAccessToken() || reduxToken;
+
+  const isYouTube = useMemo(() => !!getYouTubeVideoId(video.url), [video.url]);
+
+  const videoUrl = useMemo(() => {
+    if (!video.url) return "";
+    if (isYouTube) return video.url;
+
+    if (mounted && token && video.url.includes("/resources/") && !video.url.includes("token=")) {
+      const separator = video.url.includes("?") ? "&" : "?";
+      return `${video.url}${separator}token=${token}`;
+    }
+    return video.url;
+  }, [video.url, isYouTube, token, mounted]);
+
   return (
     <>
       {/* Thumbnail */}
       <div className="relative overflow-hidden rounded-lg aspect-[4/2.6] bg-secondary-bg">
-        <Image
-          src={imageError ? FALLBACK_IMAGE : getYouTubeThumbnailUrl(video.url)}
-          alt={video.title}
-          fill
-          className={`object-cover transition-transform duration-500 group-hover:scale-105 ${isLocked ? "grayscale-[0.35] brightness-75" : ""
-            }`}
-          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          onError={() => onImageError(video._id)}
-        />
+        {!isLocked && !isYouTube ? (
+          <video
+            src={videoUrl}
+            preload="metadata"
+            muted
+            playsInline
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onMouseEnter={(e) => {
+              e.currentTarget.play().catch(() => {});
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.pause();
+              e.currentTarget.currentTime = 0;
+            }}
+          />
+        ) : (
+          <Image
+            src={imageError ? FALLBACK_IMAGE : getYouTubeThumbnailUrl(video.url)}
+            alt={video.title}
+            fill
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${isLocked ? "grayscale-[0.35] brightness-75" : ""
+              }`}
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            onError={() => onImageError(video._id)}
+          />
+        )}
         {isLocked ? (
           <>
             <div className="absolute inset-0 bg-black/55 backdrop-blur-[1px] flex items-center justify-center">

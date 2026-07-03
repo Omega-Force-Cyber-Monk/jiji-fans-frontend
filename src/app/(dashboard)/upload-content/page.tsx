@@ -23,6 +23,7 @@ import dynamic from "next/dynamic";
 import VideoPlayer from "@/components/ui/VideoPlayer";
 import { getYouTubeVideoId, getYouTubeThumbnailUrl } from "@/lib/helpers/youtube";
 import { FiUploadCloud, FiYoutube, FiLink, FiCheckCircle, FiVideo, FiX } from "react-icons/fi";
+import { apiUrl } from "@/config";
 
 const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Editor), {
   ssr: false,
@@ -140,7 +141,7 @@ const Page = () => {
       const res = await triggerGetYouTubeAuthUrl().unwrap();
       const url = res?.data?.url || res?.data?.authUrl;
       if (url) {
-        window.open(url, "_blank");
+        window.location.href = url;
       } else {
         message.error("Could not generate OAuth URL.");
       }
@@ -205,17 +206,28 @@ const Page = () => {
                 videoId,
               });
             } else {
+              console.error("Video ID not found in YouTube response JSON:", responseData);
               reject(new Error("Video ID not found in YouTube response."));
             }
-          } catch (err) {
-            reject(new Error("Failed to parse YouTube upload response."));
+          } catch (err: any) {
+            console.error("Failed to parse YouTube upload response JSON:", xhr.responseText, err);
+            reject(new Error(`Failed to parse YouTube response: ${err?.message || "JSON parsing error"}. Raw: ${xhr.responseText || "Empty"}`));
           }
         } else {
-          reject(new Error(`YouTube upload failed with status ${xhr.status}`));
+          console.error("YouTube Upload Server Error Status:", xhr.status, "Response:", xhr.responseText);
+          reject(new Error(`YouTube upload failed with status ${xhr.status}. Response: ${xhr.responseText || "No details"}`));
         }
       };
 
-      xhr.onerror = () => reject(new Error("Network error during YouTube upload."));
+      xhr.onerror = (e) => {
+        console.error("YouTube Upload XHR Network/CORS Error:", {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          readyState: xhr.readyState,
+          errorEvent: e
+        });
+        reject(new Error(`Network/CORS error during YouTube upload (Status: ${xhr.status}, ReadyState: ${xhr.readyState}). Please check browser console for details.`));
+      };
       xhr.send(file);
     });
   };
@@ -234,20 +246,21 @@ const Page = () => {
         }
 
         setUploadStatus("uploading");
-        setUploadProgress(30); // Indeterminate start
+        setUploadProgress(0);
         setStatusMessage("Uploading video to secure storage...");
 
         const resource = await uploadResource(videoFile, {
           purpose: RESOURCE_PURPOSE.VIDEO,
+          onProgress: (percent) => {
+            setUploadProgress(percent);
+          },
         });
 
         setUploadStatus("verifying");
         setStatusMessage("Verifying video on server...");
 
-        // Get S3 delivery URL from resource response
-        // Usually, the backend saves the resource and we can pass the resource ID or URL.
-        // We'll pass the resourceId or fileKey, or check if resource has a specific URL.
-        finalVideoUrl = (resource as any).fileKey || (resource as any).url || (resource as any).resourceId;
+        const normalizedBase = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
+        finalVideoUrl = `${normalizedBase}resources/${resource.resourceId}/content`;
       }
 
       // 2. YouTube API Resumable Upload Flow
@@ -263,7 +276,8 @@ const Page = () => {
         const sessionRes = await createYouTubeUploadSession({
           title: values.title,
           description: values.description?.replace(/<[^>]*>/g, ""), // strip HTML for YouTube
-          privacyStatus: "public",
+          privacyStatus: "unlisted",
+          origin: window.location.origin,
         }).unwrap();
 
         const uploadUrl = sessionRes.data.uploadUrl;
@@ -275,6 +289,16 @@ const Page = () => {
       }
 
       // 3. Finalize Content Creation
+      if (uploadType === "native" && videoFile) {
+        const fileSizeMB = videoFile.size / (1024 * 1024);
+        // Base delay of 2.5 seconds, plus 1 second per 50MB (capped at 12 seconds max)
+        const delayMs = Math.min(12000, 2500 + Math.floor(fileSizeMB / 50) * 1000);
+
+        setUploadStatus("verifying");
+        setStatusMessage(`Finalizing video sync with server (delaying ${delayMs / 1000}s for backend verification)...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+
       setUploadStatus("verifying");
       setStatusMessage("Registering video content...");
 
@@ -365,7 +389,7 @@ const Page = () => {
               type="button"
               onClick={() => setUploadType("youtube_api")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border-none hidden",
+                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border-none",
                 uploadType === "youtube_api"
                   ? "bg-brand-primary text-black font-semibold shadow-sm"
                   : "text-muted-text hover:text-primary-text"

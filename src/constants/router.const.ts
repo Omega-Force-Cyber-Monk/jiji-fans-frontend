@@ -136,12 +136,6 @@ export const dashboardItems: DashboardItem[] = [
     role: [ROLE.ADMIN],
   },
   {
-    name: "Conversations",
-    path: "/admin/conversations",
-    icon: ChatBubbleLeftRightIcon,
-    role: [ROLE.ADMIN],
-  },
-  {
     name: "Earnings",
     path: "/admin/earnings",
     icon: BanknotesIcon,

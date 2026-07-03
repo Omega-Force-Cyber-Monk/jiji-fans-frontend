@@ -6,6 +6,8 @@ import {
   SpeakerXMarkIcon,
 } from "@heroicons/react/24/solid";
 import Image from "@/components/ui/CImage";
+import { getAccessToken } from "@/lib/auth/tokenUtils";
+import { useAppSelector } from "@/redux/hook";
 
 // Helper function to extract YouTube video ID from URL
 const getYouTubeVideoId = (url: string): string | null => {
@@ -66,6 +68,24 @@ const VideoPlayer = ({
 
   const videoId = content?.url ? getYouTubeVideoId(content.url) : null;
   const isYouTube = !!videoId;
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const reduxToken = useAppSelector((state) => state.auth.token);
+  const token = getAccessToken() || reduxToken;
+  const videoUrl = React.useMemo(() => {
+    if (!content?.url) return "";
+    if (isYouTube) return content.url;
+
+    if (mounted && token && content.url.includes("/resources/") && !content.url.includes("token=")) {
+      const separator = content.url.includes("?") ? "&" : "?";
+      return `${content.url}${separator}token=${token}`;
+    }
+    return content.url;
+  }, [content?.url, isYouTube, token, mounted]);
 
   // Unique player element ID to avoid conflicts
   const playerElementId = React.useMemo(
@@ -611,7 +631,7 @@ const VideoPlayer = ({
 
       <div
         ref={containerRef}
-        className="relative w-full pb-[56.25%] bg-black rounded-lg overflow-hidden shadow-xl"
+        className="relative w-full pb-[56.25%] bg-black rounded-lg overflow-hidden shadow-xl z-0"
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => isPlaying && setShowControls(false)}
@@ -646,7 +666,7 @@ const VideoPlayer = ({
           /* Native HTML5 Video Element */
           <video
             ref={nativeVideoRef}
-            src={content.url}
+            src={videoUrl}
             className="absolute top-0 left-0 w-full h-full object-contain bg-black"
             onTimeUpdate={handleNativeTimeUpdate}
             onLoadedMetadata={handleNativeLoadedMetadata}

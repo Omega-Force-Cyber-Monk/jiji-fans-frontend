@@ -273,6 +273,14 @@ const walletApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["wallet", "payout"],
     }),
+    createStripeOnboardingLink: builder.mutation({
+      query: (body) => ({
+        url: `payout-settings/stripe/onboarding`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["wallet", "payout"],
+    }),
     updatePayoutSettings: builder.mutation({
       query: (body) => ({
         url: `payout-settings`,
@@ -383,6 +391,7 @@ export const {
   useOverrideFailedPayoutMutation,
   useGetPayoutSettingsQuery,
   useCreatePayoutSettingsMutation,
+  useCreateStripeOnboardingLinkMutation,
   useDeletePayoutSettingsMutation,
   useGetFailedTransactionsQuery,
 } = walletApi;
