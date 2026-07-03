@@ -24,6 +24,8 @@ import VideoPlayer from "@/components/ui/VideoPlayer";
 import { getYouTubeVideoId, getYouTubeThumbnailUrl } from "@/lib/helpers/youtube";
 import { FiUploadCloud, FiYoutube, FiLink, FiCheckCircle, FiVideo, FiX } from "react-icons/fi";
 import { apiUrl } from "@/config";
+import { getAccessToken } from "@/lib/auth/tokenUtils";
+import { useAppSelector } from "@/redux/hook";
 
 const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Editor), {
   ssr: false,
@@ -36,6 +38,9 @@ const Page = () => {
   const [form] = Form.useForm();
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
+
+  const reduxToken = useAppSelector((state) => state.auth.token);
+  const token = getAccessToken() || reduxToken;
 
   // Tab state: native, youtube_api, youtube_link
   const [uploadType, setUploadType] = useState<"native" | "youtube_api" | "youtube_link">("native");
@@ -187,6 +192,11 @@ const Page = () => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadUrl);
       xhr.setRequestHeader("Content-Type", file.type);
+      // Backend resumable upload requires Content-Range header
+      xhr.setRequestHeader("Content-Range", `bytes 0-${file.size - 1}/${file.size}`);
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      }
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -199,7 +209,8 @@ const Page = () => {
         if (xhr.status === 200 || xhr.status === 201) {
           try {
             const responseData = JSON.parse(xhr.responseText);
-            const videoId = responseData.id;
+            // Handle both flat and nested responses (e.g. responseData.id or responseData.data?.id or responseData.data?.youtubeVideoId)
+            const videoId = responseData.youtubeVideoId || responseData.data?.youtubeVideoId || responseData.id || responseData.data?.id || responseData.data?._id;
             if (videoId) {
               resolve({
                 url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -278,6 +289,8 @@ const Page = () => {
           description: values.description?.replace(/<[^>]*>/g, ""), // strip HTML for YouTube
           privacyStatus: "unlisted",
           origin: window.location.origin,
+          fileSize: videoFile.size,
+          mimeType: videoFile.type,
         }).unwrap();
 
         const uploadUrl = sessionRes.data.uploadUrl;

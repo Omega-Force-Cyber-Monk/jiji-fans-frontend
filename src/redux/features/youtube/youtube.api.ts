@@ -48,7 +48,14 @@ const youtubeApi = baseApi.injectEndpoints({
     }),
     createYouTubeUploadSession: builder.mutation<
       YouTubeUploadSessionResponse,
-      { title: string; description?: string; privacyStatus?: string; origin?: string }
+      {
+        title: string;
+        description?: string;
+        privacyStatus?: string;
+        origin?: string;
+        fileSize?: number;
+        mimeType?: string;
+      }
     >({
       query: (body) => ({
         url: "youtube/upload-session",
