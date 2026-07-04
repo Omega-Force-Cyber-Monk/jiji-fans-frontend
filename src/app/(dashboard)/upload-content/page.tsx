@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import PageHeading from "@/components/ui/PageHeading";
+// import PageHeading from "@/components/ui/PageHeading";
 import { TUniObject } from "@/types";
 import { cn } from "@/utils/cn";
 import { Button, ConfigProvider, Form, FormProps, Input, Select, Progress, Spin, Alert, message } from "antd";
@@ -43,7 +43,7 @@ const Page = () => {
   const token = getAccessToken() || reduxToken;
 
   // Tab state: native, youtube_api, youtube_link
-  const [uploadType, setUploadType] = useState<"native" | "youtube_api" | "youtube_link">("native");
+  const [uploadType, setUploadType] = useState<"native" | "youtube_api" | "youtube_link">("youtube_api");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "verifying" | "success" | "error">("idle");
@@ -384,7 +384,7 @@ const Page = () => {
         <div className="w-full mt-6 bg-secondary-bg p-6 md:p-8 rounded-xl border border-border-primary">
           {/* Custom Segmented Tabs */}
           <div className="flex flex-wrap items-center gap-2 mb-8 bg-primary-bg/40 p-1.5 rounded-lg border border-border-primary max-w-2xl">
-            <button
+            {/* <button
               type="button"
               onClick={() => setUploadType("native")}
               className={cn(
@@ -396,7 +396,7 @@ const Page = () => {
             >
               <FiVideo className="w-4 h-4" />
               <span>Video Upload</span>
-            </button>
+            </button> */}
 
             <button
               type="button"
@@ -559,9 +559,9 @@ const Page = () => {
                                 <p className="text-sm font-medium text-primary-text">
                                   YouTube Connected
                                 </p>
-                                <p className="text-xs text-muted-text mt-0.5">
+                                {/* <p className="text-xs text-muted-text mt-0.5">
                                   Channel: {youtubeChannelTitle || "Unknown"}
-                                </p>
+                                </p> */}
                               </div>
                             </div>
                             <Button

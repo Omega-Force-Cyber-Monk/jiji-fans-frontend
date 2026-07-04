@@ -27,7 +27,7 @@ const ChannelCard = ({ channel }: ChannelCardProps) => {
         </div>
 
         {/* 2. Top-Right: Glassmorphic Quick-Action Arrow Badge */}
-        <div className="absolute top-4 right-4 w-8 h-8 rounded-md bg-secondary-bg/30 backdrop-blur-md border border-white/10 text-white flex items-center justify-center opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
+        <div className="absolute top-4 right-4 w-8 h-8 rounded-md bg-secondary-bg/10 backdrop-blur-md border border-white/10 text-white flex items-center justify-center opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-20">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-brand-primary">
             <path fillRule="evenodd" d="M8.25 3.75H19.5a.75.75 0 0 1 .75.75v11.25a.75.75 0 0 1-1.5 0V6.81L5.03 20.53a.75.75 0 0 1-1.06-1.06L17.69 5.25H8.25a.75.75 0 0 1 0-1.5Z" clipRule="evenodd" />
           </svg>
