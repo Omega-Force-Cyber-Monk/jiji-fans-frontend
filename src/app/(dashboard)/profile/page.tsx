@@ -94,6 +94,27 @@ const Settings = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
+  // Show any cross-page toast notice stored by a redirecting page (e.g. Membership).
+  // Uses the static message API (no contextHolder dependency) so it works even
+  // during the loading/error early-return states when contextHolder isn't mounted.
+  useEffect(() => {
+    const raw = sessionStorage.getItem("redirect_notice");
+    if (raw) {
+      sessionStorage.removeItem("redirect_notice");
+      try {
+        const notice = JSON.parse(raw) as { type: string; message: string };
+        const timer = setTimeout(() => {
+          if (notice.type === "warning") message.warning(notice.message, 5);
+          else if (notice.type === "error") message.error(notice.message, 5);
+          else message.info(notice.message, 5);
+        }, 100);
+        return () => clearTimeout(timer);
+      } catch {
+        // ignore malformed entries
+      }
+    }
+  }, []);
+
   const props: UploadProps = {
     onRemove: (file) => {
       const index = fileList.indexOf(file);

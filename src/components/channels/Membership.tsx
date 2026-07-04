@@ -298,8 +298,30 @@ const Membership = ({ channelId }: MembershipProps) => {
 
 	const handleSelectPlan = (plan: any) => {
 		if (!user?.phoneNumber || !user?.country) {
-			messageApi.warning("Please complete your profile (Phone Number and Country) before subscribing.");
-			router.push("/profile");
+			messageApi.open({
+				type: "warning",
+				duration: 8,
+				content: (
+					<span>
+						Please complete your{" "}
+						<strong>Phone Number</strong> and <strong>Country</strong> in your profile before subscribing.{" "}
+						<button
+							onClick={() => router.push("/profile")}
+							style={{
+								color: "#f59e0b",
+								fontWeight: 600,
+								textDecoration: "underline",
+								background: "none",
+								border: "none",
+								cursor: "pointer",
+								padding: 0,
+							}}
+						>
+							Go to Profile →
+						</button>
+					</span>
+				),
+			});
 			return;
 		}
 		setSelectedPlan(plan);
