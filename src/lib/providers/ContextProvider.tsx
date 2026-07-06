@@ -18,6 +18,7 @@ import { baseApi } from "@/redux/api/baseApi";
 type AppContextType = {
   socket: Socket | null;
   messageApi: MessageInstance;
+  reconnect: () => void;
 };
 
 type ContextProviderProps = {
@@ -29,31 +30,35 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const ContextProvider = ({ children }: ContextProviderProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [reconnectCount, setReconnectCount] = useState(0);
   const dispatch = useDispatch();
+
+  const reconnect = () => {
+    setReconnectCount((prev) => prev + 1);
+  };
+
   useEffect(() => {
-    const token = Cookies.get("accessToken") || null;
-    if (!token || socket) return;
+    const token = Cookies.get("accessToken");
+    if (!token) {
+      setSocket(null);
+      return;
+    }
 
     const socketData = io(socketUrl, {
       transports: ["websocket"],
       auth: { token: token },
-      // extraHeaders:{
-      //   Authorization: `Bearer ${token}`,
-      // }
-      // query: { token: token },
     });
     socketData.on("connect", () => {
       setSocket(socketData);
     });
     socketData.on("connect_error", (error) => {
       console.error("Socket connection error:", error);
-      // messageApi.error("Failed to connect to the server!");
     });
 
     return () => {
       socketData.disconnect();
     };
-  }, []);
+  }, [reconnectCount]);
   useEffect(() => {
     if (!socket) return;
     const handler = (res: any) => {
@@ -80,7 +85,7 @@ const ContextProvider = ({ children }: ContextProviderProps) => {
   }, [socket, messageApi, dispatch]);
   // console.log(socket)
   return (
-    <AppContext.Provider value={{ socket, messageApi }}>
+    <AppContext.Provider value={{ socket, messageApi, reconnect }}>
       {contextHolder}
       {children}
     </AppContext.Provider>

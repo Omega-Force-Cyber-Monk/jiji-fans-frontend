@@ -15,7 +15,7 @@ import { errorAlert } from "@/lib/alerts";
 import { useLazyGetMessagesQuery, useMarkAsReadMutation, useGetConversationDetailsQuery } from "@/redux/features/messages/messages.api";
 
 const Conversation = () => {
-  const { socket, messageApi } = useAppContext();
+  const { socket, messageApi, reconnect } = useAppContext();
   const searchParams = useSearchParams();
   const params = useParams();
   const conversationId = Array.isArray(params.conversation)
@@ -79,11 +79,7 @@ const Conversation = () => {
 
   const handleReconnect = () => {
     setIsConnectionTimeout(false);
-    if (socket) {
-      socket.connect();
-    } else {
-      window.location.reload();
-    }
+    reconnect();
   };
 
   const { data: conversationDetails } = useGetConversationDetailsQuery(conversationId || "", {
@@ -373,7 +369,7 @@ const Conversation = () => {
             <div className="h-full w-full flex justify-center items-center">
               <Empty
                 image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
-                styles={{ image: { height: 60 } }}
+                styles={{ image: { height: 60 }, description: { color: "var(--primary-text)" } }}
                 description="No messages yet."
               />
             </div>
