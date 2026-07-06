@@ -7,7 +7,7 @@ import DevAccessGate from "@/components/prelaunch/DevAccessGate";
 const MainLayout = ({ children }: TLayoutProps) => {
   return (
     <DevAccessGate>
-      <div className="relative overflow-x-hidden">
+      <div className="relative overflow-x-clip">
         <HomeNav />
         {children}
         <Footer />

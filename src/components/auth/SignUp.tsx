@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Checkbox,
@@ -41,8 +41,23 @@ const SignUp = () => {
   const { messageApi } = useAppContext();
   const [mutation, { isLoading }] = useRegistrationMutation();
 
-  // Modal visibility state
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  // Load signup form data if exists in sessionStorage
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("signup_form_data");
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        form.setFieldsValue(parsed);
+      } catch (e) {
+        console.error("Failed to parse saved signup form data", e);
+      }
+    }
+
+    const termsAccepted = sessionStorage.getItem("signup_terms_accepted");
+    if (termsAccepted === "true") {
+      form.setFieldsValue({ terms: true });
+    }
+  }, [form]);
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     try {
@@ -68,6 +83,11 @@ const SignUp = () => {
         languagePreference: values.language,
         password: values.password,
       }).unwrap();
+
+      // Clear the temporary signup draft storage upon successful registration
+      sessionStorage.removeItem("signup_form_data");
+      sessionStorage.removeItem("signup_terms_accepted");
+
       messageApi.open({
         key: "registration",
         type: "success",
@@ -89,15 +109,14 @@ const SignUp = () => {
     }
   };
 
-  // Open modal for Terms of use
-  const showModal = () => {
-    setIsModalVisible(true);
+  // Redirect to Terms and Conditions page saving the form state
+  const handleTermsRedirect = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const currentValues = form.getFieldsValue();
+    sessionStorage.setItem("signup_form_data", JSON.stringify(currentValues));
+    router.push("/terms?from=signup");
   };
 
-  // Close modal
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   return (
     <ConfigProvider
@@ -388,7 +407,7 @@ const SignUp = () => {
               <span className="text-primary-text">I&#39;ve read and agree with your </span>
               <a
                 href="#"
-                onClick={showModal} // Show modal on link click
+                onClick={handleTermsRedirect} // Redirect to terms page on link click
                 className="text-brand-primary underline"
               >
                 Terms of use
@@ -417,57 +436,6 @@ const SignUp = () => {
           </Link>
         </p>
       </div>
-
-      {/* Modal for Terms of Use */}
-      <Modal
-        title="Terms and Conditions"
-        visible={isModalVisible}
-        onCancel={handleCancel}
-        footer={[
-          <Button key="back" onClick={handleCancel}>
-            Close
-          </Button>,
-        ]}
-      >
-        <p>
-          "By using this website, you agree to comply with our terms and
-          conditions. These include respecting intellectual property rights,
-          maintaining confidentiality, and adhering to appropriate usage. We
-          reserve the right to modify these terms at any time. Users must ensure
-          compliance with all applicable laws while accessing the site.By using
-          this website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site.By using this
-          website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site.By using this
-          website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site.By using this
-          website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site.By using this
-          website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site.By using this
-          website, you agree to comply with our terms and conditions. These
-          include respecting intellectual property rights, maintaining
-          confidentiality, and adhering to appropriate usage. We reserve the
-          right to modify these terms at any time. Users must ensure compliance
-          with all applicable laws while accessing the site."
-        </p>
-        {/* Add more terms content here if needed */}
-      </Modal>
     </ConfigProvider>
   );
 };
