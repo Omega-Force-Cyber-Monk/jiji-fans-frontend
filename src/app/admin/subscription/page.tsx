@@ -3,17 +3,19 @@
 import { useDeleteSubscriptionPlanNewMutation, useGetAllSubscriptionPlansNewQuery } from "@/redux/features/subscription/subscription.api";
 import { TUniObject } from "@/types";
 import { CheckCircleIcon, PencilSquareIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { message, Popconfirm } from "antd";
+import { message } from "antd";
 import AppBreadcrumb from "@/components/ui/AppBreadcrumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
+import GlobalModal from "@/components/GlobalModal";
 
 const Page = () => {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
   const { data, isLoading, isError, error } = useGetAllSubscriptionPlansNewQuery(undefined);
   const [dMutation, { isLoading: dLoading }] = useDeleteSubscriptionPlanNewMutation();
+  const [deletingPlan, setDeletingPlan] = useState<TUniObject | null>(null);
 
   const plans: TUniObject[] = data?.data || [];
 
@@ -22,8 +24,9 @@ const Page = () => {
       messageApi.open({ key: "sub-delete", type: "loading", content: "Deleting plan..." });
       await dMutation(planId).unwrap();
       messageApi.open({ key: "sub-delete", type: "success", content: "Plan deleted successfully!", duration: 3 });
-    } catch {
-      messageApi.open({ key: "sub-delete", type: "error", content: "Failed to delete plan.", duration: 3 });
+    } catch (error: any) {
+      const errMsg = error?.data?.message || error?.message || "Failed to delete plan.";
+      messageApi.open({ key: "sub-delete", type: "error", content: errMsg, duration: 4 });
     }
   };
 
@@ -140,22 +143,14 @@ const Page = () => {
                     <PencilSquareIcon className="w-4 h-4" />
                     Edit
                   </button>
-                  <Popconfirm
-                    title="Delete Plan"
-                    description="This action is permanent and cannot be undone."
-                    okText="Delete"
-                    cancelText="Cancel"
-                    okButtonProps={{ danger: true, loading: dLoading }}
-                    onConfirm={() => handleDelete(plan._id)}
+                  <button
+                    id={`subscription-delete-${plan._id}`}
+                    onClick={() => setDeletingPlan(plan)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-error bg-error/10 hover:bg-error/20 rounded-md transition-colors cursor-pointer"
                   >
-                    <button
-                      id={`subscription-delete-${plan._id}`}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-error bg-error/10 hover:bg-error/20 rounded-md transition-colors"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </Popconfirm>
+                    <TrashIcon className="w-4 h-4" />
+                    Delete
+                  </button>
                 </div>
               </div>
             );
@@ -176,6 +171,48 @@ const Page = () => {
           </Link>
         </div>
       )}
+
+      <GlobalModal
+        isModalOpen={!!deletingPlan}
+        setIsModalOpen={(open) => {
+          if (!open) setDeletingPlan(null);
+        }}
+        maxWidth="400px"
+      >
+        <div className="p-6 text-center space-y-5 ">
+          <div className="w-12 h-12 mx-auto bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-primary-text">Delete Plan</h3>
+            <p className="text-sm text-secondary-text leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-primary-text">{deletingPlan?.name}</span>? This action is permanent and cannot be undone.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full pt-2">
+            <button
+              onClick={() => setDeletingPlan(null)}
+              className="flex-1 px-5 py-2.5 rounded-md border border-border-primary text-secondary-text text-sm font-medium hover:bg-primary-bg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (deletingPlan) {
+                  handleDelete(deletingPlan._id);
+                  setDeletingPlan(null);
+                }
+              }}
+              disabled={dLoading}
+              className="flex-1 px-5 py-2.5 rounded-md bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              {dLoading ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </div>
+      </GlobalModal>
     </div>
   );
 };
