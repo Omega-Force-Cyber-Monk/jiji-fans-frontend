@@ -7,7 +7,7 @@ import { Button, Empty, message } from "antd";
 import PlanCard from "../subcription/PlanCard";
 import GlobalModal from "@/components/GlobalModal";
 import MembershipSkeleton from "@/Common/Skeleton/Channels/MembershipSkeleton";
-import { CreditCardIcon, SparklesIcon, WalletIcon } from "@heroicons/react/24/outline";
+import { CreditCardIcon, WalletIcon } from "@heroicons/react/24/outline";
 import {
 	useGetCurrentChannelSubscriptionQuery,
 	useGetAllSubscriptionPlansNewQuery,
@@ -211,75 +211,72 @@ const Membership = ({ channelId }: MembershipProps) => {
 			const url = res?.data?.url || res?.data?.redirectUrl;
 			const providerReferenceId = res?.data?.providerReferenceId || res?.data?.pawapayId || res?.data?.paynowReference;
 
-			if ((paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW") && url) {
+			const isWebFlow = (paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW" || paymentProvider === "STRIPE") && !!url;
+
+			if (isWebFlow) {
 				window.open(url, "_blank");
 			}
 
-			// Handle different flows based on paymentProvider
-			if (paymentProvider === "STRIPE") {
-				if (url) {
-					window.location.href = url;
-					return;
-				}
-			} else {
-				// Paynow Mobile Money / PawaPay Mobile Money Flow
+			if (isWebFlow || providerReferenceId) {
+				setIsProcessingMobile(true);
+				setCountdown(60);
+				setMobileStatusMsg(
+					isWebFlow
+						? "Please complete the payment in the newly opened tab..."
+						: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
+				);
+
+				const intervalId = setInterval(() => {
+					setCountdown((prev) => {
+						if (prev <= 1) {
+							clearInterval(intervalId);
+							if (!providerReferenceId) {
+								setIsProcessingMobile(false);
+							}
+							return 0;
+						}
+						return prev - 1;
+					});
+				}, 1000);
+
 				if (providerReferenceId) {
-					setIsProcessingMobile(true);
-					setCountdown(60);
-					setMobileStatusMsg(
-						(paymentProvider === "PAWAPAY" || paymentProvider === "PAYNOW")
-							? "Please complete the payment in the newly opened tab..."
-							: "Initiating payment prompt on your phone... Please enter your PIN on your mobile device."
-					);
-
-					const intervalId = setInterval(() => {
-						setCountdown((prev) => {
-							if (prev <= 1) {
-								clearInterval(intervalId);
-								return 0;
-							}
-							return prev - 1;
-						});
-					}, 1000);
-
 					// poll every 3 seconds up to 20 times (60 seconds total)
-					for (let i = 0; i < 20; i++) {
-						await new Promise((resolve) => setTimeout(resolve, 3000));
-						if (!isProcessingRef.current) {
-							return;
-						}
-						try {
-							const verifyKey = generateUUID();
-							const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
-							if (verifyRes?.data?.status === "COMPLETED") {
-								setMobileStatusMsg("Payment completed and settled successfully!");
-								messageApi.success("Subscription completed successfully!");
-								clearInterval(intervalId);
-								setTimeout(() => {
-									setIsProcessingMobile(false);
-									window.location.reload();
-								}, 2000);
-								return;
-							} else if (verifyRes?.data?.status === "FAILED") {
-								setMobileStatusMsg("Transaction failed on mobile device.");
-								messageApi.error("Payment transaction failed.");
-								clearInterval(intervalId);
-								setTimeout(() => setIsProcessingMobile(false), 3000);
+					(async () => {
+						for (let i = 0; i < 20; i++) {
+							await new Promise((resolve) => setTimeout(resolve, 3000));
+							if (!isProcessingRef.current) {
 								return;
 							}
-						} catch (e) {
-							console.error("Polling verify error:", e);
+							try {
+								const verifyKey = generateUUID();
+								const verifyRes = await verifyTransaction({ providerReferenceId, idempotencyKey: verifyKey }).unwrap();
+								if (verifyRes?.data?.status === "COMPLETED") {
+									setMobileStatusMsg("Payment completed and settled successfully!");
+									messageApi.success("Subscription completed successfully!");
+									clearInterval(intervalId);
+									setTimeout(() => {
+										setIsProcessingMobile(false);
+										window.location.reload();
+									}, 2000);
+									return;
+								} else if (verifyRes?.data?.status === "FAILED") {
+									setMobileStatusMsg("Transaction failed on mobile device.");
+									messageApi.error("Payment transaction failed.");
+									clearInterval(intervalId);
+									setTimeout(() => setIsProcessingMobile(false), 3000);
+									return;
+								}
+							} catch (e) {
+								console.error("Polling verify error:", e);
+							}
 						}
-					}
 
-					setMobileStatusMsg("Transaction confirmation took too long. Please check your transaction history.");
-					clearInterval(intervalId);
-					setTimeout(() => setIsProcessingMobile(false), 4000);
-					return;
-				} else if (url) {
-					window.location.href = url;
-					return;
+						setMobileStatusMsg("Transaction confirmation took too long. Please check your transaction history.");
+						clearInterval(intervalId);
+						setTimeout(() => setIsProcessingMobile(false), 4000);
+					})();
 				}
+				return;
 			}
 
 			messageApi.open({
@@ -335,8 +332,8 @@ const Membership = ({ channelId }: MembershipProps) => {
 			{currentSubscription && (
 				<div className="space-y-4">
 					<h3 className="text-xl font-semibold text-primary-text flex items-center gap-2">
-						<SparklesIcon className="w-5 h-5 text-brand-primary" />
-						My Current Memberships
+						{/* <SparklesIcon className="w-5 h-5 text-brand-primary" /> */}
+						Current Memberships
 					</h3>
 					<div className="bg-brand-primary/5 rounded-lg px-6 py-5 space-y-4 border border-brand-primary/15 transition-all hover:bg-brand-primary/10">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

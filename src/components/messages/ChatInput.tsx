@@ -17,8 +17,7 @@ import { useAppSelector } from "@/redux/hook";
 // };
 
 type ChatInputProps = {
-  //   onSend?: (payload: SendPayload) => void;
-  //   conversationId: string;
+  disabled?: boolean;
   className?: string;
   receiver?: string | null;
   conversationId?: string | null;
@@ -26,8 +25,8 @@ type ChatInputProps = {
   onMessageAck?: (localId: string, serverMessage?: any) => void;
 };
 
-// const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
 const ChatInput: React.FC<ChatInputProps> = ({
+  disabled,
   className,
   conversationId,
   onLocalMessage,
@@ -155,17 +154,23 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <div className="flex gap-2 items-end bg-secondary-bg/85 p-2 rounded-2xl border border-border-primary/80 focus-within:border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500/5 transition-all duration-300 shadow-inner">
         <Popover
           content={
-            <EmojiPicker
-              onEmojiClick={(emojiData: EmojiClickData) =>
-                setText((t) => t + emojiData.emoji)
-              }
-              lazyLoadEmojis
-            />
+            !disabled && (
+              <EmojiPicker
+                onEmojiClick={(emojiData: EmojiClickData) =>
+                  setText((t) => t + emojiData.emoji)
+                }
+                lazyLoadEmojis
+              />
+            )
           }
-          trigger="click"
+          trigger={disabled ? undefined : "click"}
           placement="topLeft"
         >
-          <button className="p-2 rounded-xl hover:bg-primary-bg text-muted-text transition-all duration-200 hover:scale-105 active:scale-95 shrink-0" aria-label="Add emoji">
+          <button
+            disabled={disabled}
+            className="p-2 rounded-xl hover:bg-primary-bg text-muted-text transition-all duration-200 hover:scale-105 active:scale-95 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Add emoji"
+          >
             <FaceSmileIcon className="size-5" />
           </button>
         </Popover>
@@ -174,6 +179,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           ref={fileRef}
           type="file"
           multiple
+          disabled={disabled}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             addFiles(e.target.files);
             e.target.value = "";
@@ -184,23 +190,24 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <textarea
           ref={inputRef}
           value={text}
+          disabled={disabled}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             setText(e.target.value)
           }
           onKeyDown={onKeyDown}
           onPaste={handlePaste}
-          placeholder="Type a message..."
+          placeholder={disabled ? "Connecting to chat..." : "Type a message..."}
           rows={1}
-          className="flex-1 bg-transparent border-none shadow-none focus:ring-0 py-2 px-1 text-sm lg:text-base text-primary-text outline-none resize-none placeholder:text-muted-text/80 max-h-32 min-h-[36px]"
+          className="flex-1 bg-transparent border-none shadow-none focus:ring-0 py-2 px-1 text-sm lg:text-base text-primary-text outline-none resize-none placeholder:text-muted-text/80 max-h-32 min-h-[36px] disabled:opacity-50 disabled:cursor-not-allowed"
         />
 
         <button
           onClick={send}
-          disabled={isSending || (!text.trim() && files.length === 0)}
+          disabled={disabled || isSending || (!text.trim() && files.length === 0)}
           aria-label="Send message"
           className={cn(
             "size-10 rounded-full flex items-center justify-center p-0 transition-all duration-300 shrink-0 border-none outline-none",
-            text.trim() || files.length > 0
+            (text.trim() || files.length > 0) && !disabled
               ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:opacity-95 shadow-sm hover:scale-[1.05] active:scale-[0.95] cursor-pointer"
               : "bg-primary-bg dark:bg-primary-bg/50 text-muted-text/40 cursor-not-allowed"
           )}

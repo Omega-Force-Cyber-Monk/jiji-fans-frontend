@@ -63,7 +63,7 @@ const VideoCardContent = ({
             playsInline
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onMouseEnter={(e) => {
-              e.currentTarget.play().catch(() => {});
+              e.currentTarget.play().catch(() => { });
             }}
             onMouseLeave={(e) => {
               e.currentTarget.pause();

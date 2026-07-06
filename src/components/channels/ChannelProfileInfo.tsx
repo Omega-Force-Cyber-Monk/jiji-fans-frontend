@@ -121,7 +121,7 @@ const ChannelProfileInfo = ({
             </Button>
           )}
 
-          {isUser && isNotOwner && (
+          {isNotOwner && (
             <Button
               onClick={onChatWithUs}
               loading={isCreatingConversation}

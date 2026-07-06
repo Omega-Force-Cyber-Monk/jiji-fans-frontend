@@ -32,6 +32,59 @@ const Conversation = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [messages, setMessages] = useState<TUniObject[]>([]);
   const [participantsById, setParticipantsById] = useState<Record<string, string>>({});
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnectionTimeout, setIsConnectionTimeout] = useState(false);
+
+  useEffect(() => {
+    setIsConnectionTimeout(false);
+
+    if (socket) {
+      setIsConnected(socket.connected);
+      if (socket.connected) {
+        return;
+      }
+    } else {
+      setIsConnected(false);
+    }
+
+    const timer = setTimeout(() => {
+      if (!socket || !socket.connected) {
+        setIsConnectionTimeout(true);
+      }
+    }, 4000);
+
+    const handleConnect = () => {
+      setIsConnected(true);
+      setIsConnectionTimeout(false);
+      clearTimeout(timer);
+    };
+
+    const handleDisconnect = () => {
+      setIsConnected(false);
+    };
+
+    if (socket) {
+      socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (socket) {
+        socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
+      }
+    };
+  }, [socket]);
+
+  const handleReconnect = () => {
+    setIsConnectionTimeout(false);
+    if (socket) {
+      socket.connect();
+    } else {
+      window.location.reload();
+    }
+  };
 
   const { data: conversationDetails } = useGetConversationDetailsQuery(conversationId || "", {
     skip: !conversationId,
@@ -235,8 +288,31 @@ const Conversation = () => {
         data={{ receiver: searchParams.get("receiver") }}
         className="sticky top-0 z-20"
       />
-
       <div className="flex-1 relative overflow-hidden flex flex-col">
+        {!isConnected && isConnectionTimeout && (
+          <div className="absolute inset-0 bg-primary-bg/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+            <div className="max-w-md space-y-6">
+              <div className="w-14 h-14 mx-auto bg-red-500/10 border border-red-500/20 text-red-500 rounded-full flex items-center justify-center shadow-lg shadow-red-500/5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-primary-text">Chat Disconnected</h3>
+                <p className="text-sm text-secondary-text">
+                  We're having trouble connecting to the chat server. This could be due to a brief network interruption.
+                </p>
+              </div>
+              <button
+                onClick={handleReconnect}
+                className="inline-flex items-center justify-center px-6 py-2 bg-brand-primary hover:bg-brand-primary/95 text-black font-semibold text-sm rounded-full transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+              >
+                Try Reconnecting
+              </button>
+            </div>
+          </div>
+        )}
+
         <div
           ref={chatRef}
           onWheel={(e) => {
@@ -261,36 +337,37 @@ const Conversation = () => {
               }
             )}
           >
-            <Skeleton.Input active style={{ width: 120, height: 18 }} />
+            <div className="w-24 h-4 bg-zinc-200/30 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/25 rounded-full animate-pulse" />
           </div>
-          {isLoading ? (
-            <div className="space-y-4">
-              {messageSkeletons.map((_, index) => (
-                <div
-                  key={index}
-                  className={cn("w-full flex", {
-                    "justify-end": index % 2 === 0,
-                    "justify-start": index % 2 !== 0,
-                  })}
-                >
+          {isLoading || (!isConnected && !isConnectionTimeout) ? (
+            <div className="space-y-6">
+              {messageSkeletons.map((_, index) => {
+                const isOwn = index % 2 === 0;
+                const width = index % 3 === 0 ? "w-[260px]" : index % 3 === 1 ? "w-[180px]" : "w-[220px]";
+                return (
                   <div
-                    className={cn("flex flex-col gap-2", {
-                      "items-end": index % 2 === 0,
-                      "items-start": index % 2 !== 0,
+                    key={index}
+                    className={cn("w-full flex flex-col", {
+                      "items-end": isOwn,
+                      "items-start": !isOwn,
                     })}
                   >
-                    <Skeleton.Input
-                      active
-                      style={{
-                        width: index % 3 === 0 ? 260 : 180,
-                        height: 44,
-                        borderRadius: 18,
-                      }}
+                    {!isOwn && (
+                      <div className="w-16 h-3 bg-slate-200/40 dark:bg-zinc-800/50 rounded-md animate-pulse mb-1.5" />
+                    )}
+                    <div
+                      className={cn(
+                        "h-11 rounded-2xl animate-pulse border",
+                        width,
+                        isOwn
+                          ? "rounded-tr-none bg-emerald-200/50 dark:bg-emerald-900/40 border-emerald-300/20 dark:border-emerald-800/20"
+                          : "rounded-tl-none bg-slate-200/30 dark:bg-zinc-800/65 border-zinc-200/50 dark:border-zinc-700/25"
+                      )}
                     />
-                    <Skeleton.Input active style={{ width: 64, height: 12 }} />
+                    <div className="w-10 h-2.5 bg-slate-200/30 dark:bg-zinc-800/40 rounded-md animate-pulse mt-1.5 px-1" />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : Object.keys(groupedMessages)?.length < 1 ? (
             <div className="h-full w-full flex justify-center items-center">
@@ -370,6 +447,7 @@ const Conversation = () => {
       </div>
 
       <ChatInput
+        disabled={!isConnected}
         className="p-3 lg:p-4 bg-primary-bg border-t border-border-primary"
         receiver={searchParams.get("receiver")}
         conversationId={conversationId}

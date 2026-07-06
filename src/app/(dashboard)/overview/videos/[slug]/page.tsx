@@ -1109,7 +1109,6 @@ const VideoComponent = () => {
               <SparklesIcon className="w-5 h-5 text-black" />
               <span>Tip Creator</span>
             </button>
-
             {/* Report Option (Popover) */}
             <Popover
               trigger={"click"}
