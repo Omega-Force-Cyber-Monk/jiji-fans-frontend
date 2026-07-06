@@ -98,6 +98,30 @@ const CreatePlanPage = () => {
   return (
     <div className="space-y-6">
       {contextHolder}
+      <style>{`
+        /* Ant Design InputNumber dark mode overrides */
+        .ant-input-number-affix-wrapper {
+          background-color: var(--primary-bg) !important;
+          border-color: var(--border-primary) !important;
+        }
+        .ant-input-number-affix-wrapper:hover {
+          border-color: var(--brand-primary) !important;
+        }
+        .ant-input-number-affix-wrapper-focused {
+          border-color: var(--brand-primary) !important;
+          box-shadow: 0 0 0 2px rgba(0, 176, 90, 0.1) !important;
+        }
+        .ant-input-number {
+          background-color: transparent !important;
+        }
+        .ant-input-number-input {
+          color: var(--primary-text) !important;
+        }
+        .ant-input-number-prefix {
+          background-color: transparent !important;
+          color: var(--muted-text) !important;
+        }
+      `}</style>
 
       <AppBreadcrumb
         items={[
