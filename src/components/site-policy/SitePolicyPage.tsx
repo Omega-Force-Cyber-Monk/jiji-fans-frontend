@@ -425,31 +425,224 @@ const DEFAULT_POLICIES: Record<TSitePolicyType, string> = {
   `,
   terms: ``,
   privacy: `
-    <div class="space-y-6 text-primary-text">
+    <div class="space-y-8 text-primary-text">
+      <div class="bg-secondary-bg/30 border border-border-primary rounded-2xl p-5 space-y-2">
+        <p class="text-xs font-semibold text-brand-primary uppercase tracking-wider">Effective Date: 06/2026 | Last Updated: 06/2026</p>
+        <p class="text-secondary-text leading-relaxed text-base">
+          At <strong>+2Fans</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, store, disclose, and protect your information when you use the +2Fans website, mobile application, and related services (collectively, the &quot;Platform&quot;).
+        </p>
+        <p class="text-secondary-text leading-relaxed text-base font-medium">
+          By creating an account or using +2Fans, you agree to this Privacy Policy.
+        </p>
+      </div>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">1. Information We Collect</h2>
+        <p class="text-secondary-text leading-relaxed">We may collect the following categories of information.</p>
+        
+        <div class="space-y-4 pl-4 border-l-2 border-brand-primary/20">
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Account Information</h3>
+            <p class="text-sm text-secondary-text">When you create an account, we may collect:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>Full name</li>
+              <li>Username</li>
+              <li>Email address</li>
+              <li>Password (encrypted)</li>
+              <li>Profile picture</li>
+              <li>Date of birth (where required)</li>
+              <li>Country or region</li>
+              <li>Preferred language</li>
+            </ul>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Creator Information</h3>
+            <p class="text-sm text-secondary-text">If you are a creator, we may also collect:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>Display name</li>
+              <li>Creator biography</li>
+              <li>Social media links</li>
+              <li>Payment and payout information</li>
+              <li>Tax information where required by law</li>
+              <li>Identity verification information (if required)</li>
+            </ul>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Supporter Information</h3>
+            <p class="text-sm text-secondary-text">If you subscribe to creators or make purchases, we may collect:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>Subscription history</li>
+              <li>Purchase history</li>
+              <li>Payment confirmation</li>
+              <li>Billing information</li>
+            </ul>
+            <p class="text-xs text-brand-primary mt-1"><strong>Note:</strong> Payment card information is processed securely by our payment service providers. +2Fans does not store your full payment card details.</p>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Content You Upload</h3>
+            <p class="text-sm text-secondary-text">We collect content you voluntarily upload, including:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>Videos, Images, Audio</li>
+              <li>Posts, Comments</li>
+              <li>Messages (where messaging features are available)</li>
+            </ul>
+            <p class="text-xs text-muted-text mt-1">You remain the owner of your content.</p>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Automatically Collected Information</h3>
+            <p class="text-sm text-secondary-text">When you use the Platform, we may automatically collect:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>IP address, Browser type, Device information, Operating system, App version</li>
+              <li>Session activity, Login history, Pages viewed, Referral source, Time spent on the Platform</li>
+            </ul>
+          </div>
+
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Cookies and Similar Technologies</h3>
+            <p class="text-sm text-secondary-text">We use cookies and similar technologies to:</p>
+            <ul class="list-disc pl-5 space-y-1 text-secondary-text text-sm">
+              <li>Keep you signed in and remember your preferences</li>
+              <li>Improve website performance, analyze usage, and enhance security</li>
+              <li>Personalize your experience</li>
+            </ul>
+            <p class="text-xs text-muted-text mt-1">You may manage cookie preferences through your browser settings.</p>
+          </div>
+        </div>
+      </section>
+
       <section class="space-y-3">
-        <h2 class="text-xl font-bold">1. Information We Collect</h2>
+        <h2 class="text-xl font-bold text-primary-text font-semibold">2. How We Use Your Information</h2>
+        <p class="text-secondary-text leading-relaxed">We use your information to:</p>
+        <ul class="list-disc pl-6 space-y-1 text-secondary-text">
+          <li>Create and manage your account</li>
+          <li>Process subscriptions and payments, and facilitate creator payouts</li>
+          <li>Provide customer support and verify your identity</li>
+          <li>Improve our Platform, detect fraud, and prevent unauthorized activity</li>
+          <li>Communicate updates, service announcements, and recommend relevant creators or content</li>
+          <li>Comply with legal obligations</li>
+        </ul>
+        <p class="text-xs text-muted-text mt-2 font-medium">Where permitted by law, we may also send marketing communications. You can opt out at any time.</p>
+      </section>
+
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">3. How We Share Your Information</h2>
+        <p class="text-secondary-text leading-relaxed">We do not sell your personal information. We may share information with:</p>
+        
+        <div class="space-y-4 pl-4 border-l-2 border-brand-primary/20">
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Service Providers</h3>
+            <p class="text-sm text-secondary-text">Including providers that assist with payment processing, cloud hosting, email delivery, analytics, customer support, identity verification, and fraud prevention.</p>
+            <p class="text-xs text-muted-text">These providers may only use your information to provide services on our behalf.</p>
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Legal Requirements</h3>
+            <p class="text-sm text-secondary-text">We may disclose information if required to comply with applicable laws, respond to lawful government requests, protect our legal rights, prevent fraud or illegal activity, and protect users or the public.</p>
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-base font-semibold text-primary-text font-semibold">Business Transfers</h3>
+            <p class="text-sm text-secondary-text">If +2Fans is involved in a merger, acquisition, restructuring, financing, or sale of assets, your information may be transferred as part of that transaction.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">4. International Data Transfers</h2>
         <p class="text-secondary-text leading-relaxed">
-          We collect account information (email, username, password), payment reference details, and location data to route checkout options. For creators, we collect verification documents through Sumsub Web SDK.
+          Because +2Fans serves users globally, your information may be processed or stored in countries other than your own. Where required by law, we implement appropriate safeguards to protect your personal information during international transfers.
         </p>
       </section>
+
       <section class="space-y-3">
-        <h2 class="text-xl font-bold">2. How We Use Information</h2>
+        <h2 class="text-xl font-bold text-primary-text font-semibold">5. Data Security</h2>
         <p class="text-secondary-text leading-relaxed">
-          We use your data to configure secure sessions, process mobile money and card transactions, verify creator authenticity, maintain web-socket connections, and personalize the user experience.
+          We use reasonable administrative, technical, and physical safeguards to protect your information, including encryption of sensitive data in transit, password hashing, secure servers, access controls, and regular security monitoring. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.
         </p>
       </section>
+
       <section class="space-y-3">
-        <h2 class="text-xl font-bold">3. Data Sharing & Security</h2>
+        <h2 class="text-xl font-bold text-primary-text font-semibold">6. Data Retention</h2>
         <p class="text-secondary-text leading-relaxed">
-          We do not sell personal data. Data is shared only with certified third-party processors (Stripe, PawaPay, PayNow, and Sumsub) to perform payment checkouts and identity compliance.
+          We retain personal information only as long as necessary to provide our services, meet legal obligations, resolve disputes, enforce our agreements, and prevent fraud. When information is no longer required, we securely delete or anonymize it where appropriate.
         </p>
       </section>
+
       <section class="space-y-3">
-        <h2 class="text-xl font-bold">4. Cookies and Session Tokens</h2>
+        <h2 class="text-xl font-bold text-primary-text font-semibold">7. Your Rights</h2>
         <p class="text-secondary-text leading-relaxed">
-          Strictly necessary authentication tokens are stored in secure cookies (<code>accessToken</code>, <code>refreshToken</code>, <code>userRole</code>, <code>userStatus</code>) to safeguard profile access and prevent cross-site request forgery (CSRF).
+          Depending on your location, you may have the right to access, correct, delete, or restrict the processing of your personal information, object to certain processing, withdraw consent where applicable, or receive a copy of your information in a portable format. Requests may be subject to identity verification and applicable legal requirements.
         </p>
       </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">8. Account Deletion</h2>
+        <p class="text-secondary-text leading-relaxed">
+          You may request deletion of your account at any time. Certain information may be retained where necessary to comply with legal obligations, complete financial transactions, resolve disputes, prevent fraud, or enforce our Terms of Use.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">9. Children's Privacy</h2>
+        <p class="text-secondary-text leading-relaxed">
+          +2Fans is intended only for individuals who are at least 18 years old. We do not knowingly collect personal information from anyone under 18. If we become aware that such information has been collected, we will take reasonable steps to delete it.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">10. Third-Party Services</h2>
+        <p class="text-secondary-text leading-relaxed">
+          The Platform may contain links to third-party websites, social media platforms, payment providers, or other services. We are not responsible for the privacy practices or content of third-party services. We encourage you to review their privacy policies before sharing personal information.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">11. Creator Content</h2>
+        <p class="text-secondary-text leading-relaxed">
+          Content uploaded by creators may be visible to subscribers or the public depending on the creator's settings. Users are responsible for the information they choose to share publicly through the Platform.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">12. Marketing Communications</h2>
+        <p class="text-secondary-text leading-relaxed">
+          We may send you account notifications, platform updates, creator-related announcements, promotional emails, or product news. You can unsubscribe from marketing emails at any time using the unsubscribe link or by adjusting your account settings. We may still send essential service-related communications.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">13. Cookies</h2>
+        <p class="text-secondary-text leading-relaxed">
+          We use cookies and similar technologies for authentication, security, performance monitoring, analytics, remembering preferences, and improving user experience. Most browsers allow you to disable cookies, although doing so may affect Platform functionality.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">14. Changes to This Privacy Policy</h2>
+        <p class="text-secondary-text leading-relaxed">
+          We may update this Privacy Policy periodically. Material changes will become effective when posted on the Platform or otherwise communicated to users. Continued use of +2Fans after changes take effect constitutes acceptance of the updated Privacy Policy.
+        </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2 class="text-xl font-bold text-primary-text font-semibold">15. Contact Us</h2>
+        <p class="text-secondary-text leading-relaxed">
+          If you have questions, concerns, or requests regarding this Privacy Policy, please contact us:
+        </p>
+        <div class="bg-secondary-bg rounded-2xl p-4 space-y-1.5 text-base border border-border-primary max-w-md">
+          <p class="text-secondary-text"><strong>Email:</strong> <a href="mailto:support@plus2fans.com" class="text-brand-primary hover:underline font-medium">support@plus2fans.com</a></p>
+          <p class="text-secondary-text"><strong>Website:</strong> <a href="https://www.plus2fans.com" target="_blank" rel="noopener noreferrer" class="text-brand-primary hover:underline font-medium">https://www.plus2fans.com</a></p>
+        </div>
+      </section>
+
+      <div class="bg-brand-primary/5 border border-brand-primary/10 rounded-2xl p-5 text-center mt-6">
+        <h3 class="text-base font-semibold text-primary-text font-semibold">Your Consent</h3>
+        <p class="text-secondary-text text-sm leading-relaxed max-w-xl mx-auto mt-2">
+          By creating an account, checking the &quot;I agree&quot; box, or using +2Fans, you acknowledge that you have read and understood this Privacy Policy and consent to the collection, use, storage, and disclosure of your information as described herein.
+        </p>
+      </div>
     </div>
   `,
 };
