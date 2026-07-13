@@ -1,6 +1,5 @@
 node_modules/
 .next/
-.vscode/
 .idea/
 ACCOUNT_SUSPENSION_GUIDE.md
 BUG_FIXES_SUMMARY.md
