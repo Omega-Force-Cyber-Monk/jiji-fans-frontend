@@ -17,6 +17,7 @@ const Page = () => {
   const [visibleCount, setVisibleCount] = useState<number>(12);
   const [hasMore, setHasMore] = useState(true);
   const loadedCursorsRef = useRef<Set<string>>(new Set());
+  const [featuredChannels, setFeaturedChannels] = useState<TChannel[]>([]);
 
   const searchPams = useSearchParams();
   const channelName = searchPams.get("search");
@@ -33,7 +34,7 @@ const Page = () => {
     ? { limit: 5, channelLimit: currentLimit, cursor, query: channelName ?? undefined }
     : { category: selectedCategory, channelLimit: currentLimit, channelCursor: cursor, query: channelName ?? undefined };
 
-  const { data, isLoading, isFetching } = useGetChannelsByCategoryQuery(queryArgs, {
+  const { data, isLoading, isFetching, currentData } = useGetChannelsByCategoryQuery(queryArgs, {
     skip: !hasMore && cursor !== undefined,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
@@ -48,8 +49,8 @@ const Page = () => {
   }, [channelName, selectedCategory]);
 
   useEffect(() => {
-    if (data?.data) {
-      const { categories, pagination } = data.data;
+    if (currentData?.data) {
+      const { categories, pagination } = currentData.data;
       const currentCursor = cursor || "initial";
       if (!loadedCursorsRef.current.has(currentCursor)) {
         loadedCursorsRef.current.add(currentCursor);
@@ -95,22 +96,26 @@ const Page = () => {
         setHasMore(categoryData?.channelPagination?.hasNextPage ?? false);
       }
     }
-  }, [data, cursor, selectedCategory]);
+  }, [currentData, cursor, selectedCategory]);
 
+  // Flatten channels to display in grids
+  const displayChannels = allCategories.flatMap(cat => cat.channels);
 
+  useEffect(() => {
+    if (featuredChannels.length === 0 && displayChannels.length > 0) {
+      setFeaturedChannels(displayChannels.slice(0, 8));
+    }
+  }, [displayChannels, featuredChannels]);
 
   if ((isLoading && allCategories.length === 0) || isLoadingCategories) {
     return <OverviewGroupSkeleton />;
   }
 
-  // Flatten channels to display in grids
-  const displayChannels = allCategories.flatMap(cat => cat.channels);
   const firstTwenty = displayChannels.slice(0, 20);
   const remaining = displayChannels.slice(20);
   const visibleRemaining = remaining.slice(0, visibleCount);
 
   const fetchedCategories = categoriesData?.data?.categories || [];
-  const featuredChannels = displayChannels.slice(0, 8);
 
   const handleShowMore = () => {
     // Determine the next visible count
@@ -118,13 +123,13 @@ const Page = () => {
     setVisibleCount(nextVisibleCount);
 
     // If we've run out of channels in memory and the API has more, fetch them
-    if (remaining.length <= visibleCount && hasMore && !isFetching && data?.data) {
+    if (remaining.length <= visibleCount && hasMore && !isFetching && currentData?.data) {
       let nextCursor: string | undefined = undefined;
 
       if (selectedCategory === "all") {
-        nextCursor = data.data.pagination?.nextCursor;
+        nextCursor = currentData.data.pagination?.nextCursor;
       } else {
-        const categoryData = data.data.categories[0];
+        const categoryData = currentData.data.categories[0];
         nextCursor = categoryData?.channelPagination?.nextCursor;
       }
 
@@ -150,12 +155,24 @@ const Page = () => {
             <ChannelCard key={channel._id} channel={channel} />
           ))}
         </div>
-      ) : (
-        !isFetching && (
-          <div className="flex h-40 items-center justify-center text-primary-text">
-            No channels found.
+      ) : isFetching ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+          <ChannelCardSkeleton />
+          <ChannelCardSkeleton />
+          <div className="hidden md:block">
+            <ChannelCardSkeleton />
           </div>
-        )
+          <div className="hidden xl:block">
+            <ChannelCardSkeleton />
+          </div>
+          <div className="hidden 2xl:block">
+            <ChannelCardSkeleton />
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-40 items-center justify-center text-primary-text">
+          No channels found.
+        </div>
       )}
 
       {/* Recently visited — powered by API, renders null when empty */}
@@ -172,11 +189,19 @@ const Page = () => {
       )}
 
       {/* Loading Skeletons */}
-      {isFetching && (
+      {isFetching && firstTwenty.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <ChannelCardSkeleton key={`skeleton-${i}`} />
-          ))}
+          <ChannelCardSkeleton />
+          <ChannelCardSkeleton />
+          <div className="hidden md:block">
+            <ChannelCardSkeleton />
+          </div>
+          <div className="hidden xl:block">
+            <ChannelCardSkeleton />
+          </div>
+          <div className="hidden 2xl:block">
+            <ChannelCardSkeleton />
+          </div>
         </div>
       )}
 

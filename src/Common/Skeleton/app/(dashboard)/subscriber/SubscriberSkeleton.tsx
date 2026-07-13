@@ -24,7 +24,7 @@ export default function SubscriberSkeleton() {
       </div>
 
       {/* Table Skeleton */}
-      <div className="space-y-4 rounded-lg bg-primary-bg border border-border-primary p-6">
+      <div className="space-y-4 rounded-lg bg-primary-bg border border-border-primary p-6 mt-6">
         {skeletonRows.map((_, index) => (
           <div
             key={index}

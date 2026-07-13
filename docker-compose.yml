@@ -1,0 +1,15 @@
+services:
+  jiji-fans-frontend:
+    image: mdkazinaim/jiji-fans-frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL:-https://api.plus2fans.com/api/v1}
+        - NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL:-https://api.plus2fans.com/}
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    restart: always

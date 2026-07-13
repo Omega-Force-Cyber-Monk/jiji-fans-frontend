@@ -153,7 +153,7 @@ const Page = () => {
 
         {/* Status Notification - Centered */}
         {channelStatus && (
-          <div className="pt-2 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className=" animate-in fade-in slide-in-from-top-4 duration-500">
             <StatusBanner status={channelStatus} />
           </div>
         )}
