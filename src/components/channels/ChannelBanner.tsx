@@ -6,6 +6,9 @@ import { DocumentDuplicateIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { TMyChannel } from "@/redux/features/channel/channel.api";
 import ChannelBannerSkeleton from "@/Common/Skeleton/Channels/ChannelBannerSkeleton";
 
+import { preload } from "react-dom";
+import { getImageUrl } from "@/lib/helpers/getImageUrl";
+
 interface ChannelBannerProps {
   channelData?: TMyChannel;
   isLoading?: boolean;
@@ -21,12 +24,15 @@ const ChannelBanner = ({
   onCopyLink,
   onEditClick,
 }: ChannelBannerProps) => {
+  // Try to preload the banner image as early as possible (when component function runs)
+
+
   if (isLoading || !channelData) {
     return <ChannelBannerSkeleton />;
   }
 
   return (
-    <div className="relative overflow-hidden w-full h-[250px] sm:h-[350px] lg:h-[300px] bg-secondary-bg rounded-t-lg rounded-b-md">
+    <div className="relative overflow-hidden w-full h-[250px] sm:h-[350px] lg:h-[400px] bg-secondary-bg rounded-t-lg rounded-b-md">
       <Image
         src={channelData.banner || "/static/2Fans-01.svg"}
         alt="channel cover"
