@@ -26,7 +26,6 @@ const ChannelBanner = ({
 }: ChannelBannerProps) => {
   // Try to preload the banner image as early as possible (when component function runs)
 
-
   if (isLoading || !channelData) {
     return <ChannelBannerSkeleton />;
   }
