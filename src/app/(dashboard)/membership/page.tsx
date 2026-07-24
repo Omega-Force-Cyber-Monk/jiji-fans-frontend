@@ -7,6 +7,7 @@ import {
 import { useGetUserStatsQuery } from "@/redux/features/dashboard/dashboard.api";
 import { Breadcrumb } from "antd";
 import Image from "@/components/ui/CImage";
+import Link from "next/link";
 import React from "react";
 import { TMySubscription } from "@/types/subscription.type";
 import MembershipSkeleton from "@/Common/Skeleton/app/(dashboard)/membership/MembershipSkeleton";
@@ -160,11 +161,17 @@ const Page = () => {
                     <p className="text-sm font-normal text-secondary-text line-clamp-3 leading-relaxed">
                       {subscription.channelId?.description || "No description available."}
                     </p>
+                    <Link
+                      href={`/overview/channels/${subscription.channelId?._id}`}
+                      className="inline-flex items-center justify-center h-8 px-4 text-sm font-medium text-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white border border-brand-primary/20 rounded-md transition-all duration-200"
+                    >
+                      View Channel
+                    </Link>
                   </div>
                 </div>
 
                 {/* Action Row Footer */}
-                <div className="p-4 sm:p-6 border-t border-border-primary/50 bg-primary-bg/50 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 sm:gap-6 mt-auto">
+                <div className="p-4 sm:p-6 border-t border-border-primary/50 bg-primary-bg/50 flex flex-col gap-3 mt-auto">
                   {subscription.cancelAtPeriodEnd ? (
                     <>
                       <div className="flex flex-col gap-1 min-w-0">
@@ -183,13 +190,13 @@ const Page = () => {
                           </div>
                         )}
                       </div>
-                      <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-warning bg-warning/10 border border-warning/20 rounded-md whitespace-nowrap shrink-0">
+                      <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-warning bg-warning/10 border border-warning/20 rounded-md whitespace-nowrap">
                         Scheduled to Cancel
                       </span>
                     </>
                   ) : (
-                    <>
-                      <div className="text-xs text-muted-text min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-muted-text">
                         Renews: <span className="font-medium text-secondary-text">
                           {subscription.endDate
                             ? new Date(subscription.endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -199,11 +206,11 @@ const Page = () => {
                       <button
                         onClick={() => handleCancelSubscription(subscription._id, subscription.channelId?.name || "Channel")}
                         disabled={isCancelling}
-                        className="inline-flex items-center justify-center h-8 px-4 sm:px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
+                        className="inline-flex items-center justify-center h-8 px-4 sm:px-6 text-sm font-medium text-error bg-error/10 hover:bg-error hover:text-white border border-error/20 rounded-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0 w-fit"
                       >
                         Cancel Membership
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
