@@ -107,7 +107,9 @@ export async function middleware(request: NextRequest) {
     "/forget-pass",
     "/reset-pass",
     "/payment/success",
-    "/payment/cancel"
+    "/payment/cancel",
+    "/overview/payment/success",
+    "/overview/payment/cancel"
   ];
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
   // If no token and not a public path, redirect to login
