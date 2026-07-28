@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   PlayCircleIcon,
   SpeakerWaveIcon,
@@ -1050,7 +1051,7 @@ const VideoComponent = () => {
         {/* Brand New Premium Channel Information, Like, Comments Action Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-secondary-bg/50 backdrop-blur-md rounded-lg border border-border-primary/50">
           {/* Left: Channel Info */}
-          <div className="flex items-center gap-3">
+          <Link href={`/overview/channels/${targetChannelId}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="relative h-12 w-12 rounded-md overflow-hidden shrink-0 border border-brand-primary/20 bg-primary-bg">
               <Image
                 src={channel?.avatar || "/static/avatar-placeholder.png"}
@@ -1071,7 +1072,7 @@ const VideoComponent = () => {
                 )}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Right: Actions (Like, Share, Report) */}
           <div className="flex items-center gap-3">
