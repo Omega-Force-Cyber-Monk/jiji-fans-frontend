@@ -91,7 +91,7 @@ const Page = () => {
       handleHashChange();
       window.addEventListener("hashchange", handleHashChange);
     }
-    
+
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("hashchange", handleHashChange);
@@ -139,7 +139,7 @@ const Page = () => {
   }
 
   return (
-    <div className="container mx-auto space-y-6 xl:space-y-8">
+    <div className="space-y-6 xl:space-y-8">
       <ChannelInfo
         channelData={channelData}
         isLoading={isLoading}

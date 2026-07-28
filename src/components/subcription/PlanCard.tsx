@@ -25,17 +25,17 @@ const PlanCard = ({
 	const displayInterval = billingCycle === "year" ? "year" : "month";
 	const hasUnlockableContent = data.hasUnlockableContent !== false;
 	const isActionDisabled =
-		isCurrentPlan || (viewType !== "admin" && !hasUnlockableContent);
+		isCurrentPlan ||
+		(viewType !== "admin" && !hasUnlockableContent) ||
+		(viewType !== "admin" && !!hasSubscription && !isCurrentPlan);
 	const actionLabel =
 		viewType === "admin"
 			? "Manage Plan"
 			: isCurrentPlan
 				? "Active Plan"
-				: !hasUnlockableContent
-					? "Nothing to unlock"
-					: hasSubscription
-						? "Upgrade Plan"
-						: "Subscribe Now";
+				: hasSubscription
+					? "Not Available"
+					: "Subscribe Now";
 
 	return (
 		<div className={cn(
@@ -98,9 +98,9 @@ const PlanCard = ({
 				>
 					{actionLabel}
 				</button>
-				{!hasUnlockableContent && viewType !== "admin" && !isCurrentPlan && (
-					<p className="text-xs font-medium text-warning text-center">
-						This plan doesn't unlock any content.
+				{hasUnlockableContent && viewType !== "admin" && !isCurrentPlan && !hasSubscription && (
+					<p className="text-xs font-medium text-brand-primary text-center">
+						Unlocks all channel content
 					</p>
 				)}
 			</div>

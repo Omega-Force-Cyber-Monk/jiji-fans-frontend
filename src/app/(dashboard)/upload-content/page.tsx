@@ -3,13 +3,12 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 // import PageHeading from "@/components/ui/PageHeading";
 import { TUniObject } from "@/types";
 import { cn } from "@/utils/cn";
-import { Button, ConfigProvider, Form, FormProps, Input, Select, Progress, Spin, Alert, message } from "antd";
+import { Button, ConfigProvider, Form, FormProps, Input, Progress, Spin, Alert, message } from "antd";
 
 import { RoleGuard } from "@/components/guards";
 import { useRouter } from "next/navigation";
 import { useUploadContentMutation } from "@/redux/features/content/content.api";
 import { applyApiErrorToForm, errorAlert, successAlert, TResError } from "@/lib/alerts";
-import { useGetAllSubscriptionPlansQuery } from "@/redux/features/subscription/subscription.api";
 import { useGetProfileQuery } from "@/redux/features/users/users.api";
 import {
   useLazyGetYouTubeAuthUrlQuery,
@@ -51,20 +50,17 @@ const Page = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Watched form values (only title, tier, url — NOT description to avoid Editor loop)
+  // Watched form values (only title and url — NOT description to avoid Editor loop)
   const videoUrl = Form.useWatch("url", form);
   const title = Form.useWatch("title", form);
-  const subscriptionTier = Form.useWatch("subscriptionTier", form);
 
   const [isFetchingMetadata, setIsFetchingMetadata] = React.useState(false);
-  const [isPlaying, setIsPlaying] = React.useState(false);
   const [editorContent, setEditorContent] = React.useState("");
   const [editorKey, setEditorKey] = React.useState(0);
 
   // Debounced preview state — only update after 500ms pause in typing
   const [previewTitle, setPreviewTitle] = React.useState("");
   const [previewDescription, setPreviewDescription] = React.useState("");
-  const [previewTier, setPreviewTier] = React.useState<string | undefined>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setPreviewTitle(title || ""), 500);
@@ -76,13 +72,8 @@ const Page = () => {
     return () => clearTimeout(t);
   }, [editorContent]);
 
-  useEffect(() => {
-    setPreviewTier(subscriptionTier);
-  }, [subscriptionTier]);
-
   // API Hooks
   const [uploadContent, { isLoading: isSubmitting }] = useUploadContentMutation();
-  const { data: subscriptionPlans, isLoading: isLoadingPlans, error: plansError } = useGetAllSubscriptionPlansQuery(undefined);
   const { data: profileData, isLoading: isLoadingProfile, refetch: refetchProfile } = useGetProfileQuery(undefined);
   const [triggerGetYouTubeAuthUrl, { isFetching: isFetchingAuthUrl }] = useLazyGetYouTubeAuthUrlQuery();
   const [createYouTubeUploadSession] = useCreateYouTubeUploadSessionMutation();
@@ -318,7 +309,6 @@ const Page = () => {
       const contentRes = await uploadContent({
         title: values.title,
         description: values.description,
-        subscriptionTier: values.subscriptionTier,
         url: finalVideoUrl,
       }).unwrap();
 
@@ -350,7 +340,7 @@ const Page = () => {
     } catch (error) {
       setUploadStatus("error");
       setStatusMessage("Upload or publication failed.");
-      applyApiErrorToForm(error, form, ["url", "title", "subscriptionTier", "description"]);
+      applyApiErrorToForm(error, form, ["url", "title", "description"]);
       errorAlert({ error: error as TResError, messageApi });
     }
   };
@@ -676,33 +666,7 @@ const Page = () => {
                     <Input size="large" placeholder="Title here" disabled={isFetchingMetadata} />
                   </Form.Item>
 
-                  <Form.Item
-                    label="Select Subscription Tier"
-                    name="subscriptionTier"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Subscription tier is required!",
-                      },
-                    ]}
-                    help={plansError ? "Failed to load subscription plans. Please refresh the page." : undefined}
-                    validateStatus={plansError ? "error" : undefined}
-                  >
-                    <Select
-                      size="large"
-                      placeholder={isLoadingPlans ? "Loading plans..." : "Select..."}
-                      loading={isLoadingPlans}
-                      disabled={isLoadingPlans}
-                      filterOption={(input, option) =>
-                        String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={(subscriptionPlans?.data || [])?.map((plan: any) => ({
-                        label: `${plan.name} - $${plan.price}`,
-                        value: plan._id,
-                      }))}
-                      notFoundContent={isLoadingPlans ? "Loading..." : "No subscription plans available"}
-                    />
-                  </Form.Item>
+                  {/* Description field comes directly after title now */}
 
                   <Form.Item
                     label="Write a description about your video"
@@ -816,14 +780,6 @@ const Page = () => {
                         <h3 className="text-2xl font-semibold text-primary-text break-words">
                           {previewTitle || "Untitled Video"}
                         </h3>
-
-                        {previewTier && (
-                          <div className="flex">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium bg-brand-primary/20 text-brand-primary border border-brand-primary/30">
-                              {subscriptionPlans?.data?.find((p: any) => p._id === previewTier)?.name || "Premium Plan"}
-                            </span>
-                          </div>
-                        )}
 
                         <div
                           className="no-tailwind text-base font-normal text-secondary-text break-words"

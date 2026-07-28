@@ -23,7 +23,6 @@ export interface TContent {
   owner: string;
   channel: string;
   hasAccess?: boolean;
-  subscriptionTierId?: string;
   status?: string;
   likeCount?: number;
   dislikeCount?: number;
