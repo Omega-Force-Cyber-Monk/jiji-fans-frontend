@@ -104,6 +104,11 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 			return;
 		}
 
+		// Generate a fresh key synchronously for THIS button click — no React
+		// state timing dependency. Changing the amount and clicking again always
+		// produces a brand-new UUID, preventing idempotency key conflicts.
+		const tipKey = generateUUID();
+
 		try {
 			let fullCountryName = user?.country;
 			if (fullCountryName && fullCountryName.length === 2 && (countries as any)[fullCountryName.toUpperCase()]) {
@@ -146,18 +151,10 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 						return res;
 					} catch (error: any) {
 						if (error?.status === 202) {
+							// 202 = still processing; retry with the same key
 							attempts++;
 							await new Promise((resolve) => setTimeout(resolve, 2000));
 							continue;
-						}
-						if (error?.status === 409) {
-							messageApi.warning("You have modified the request parameters. A new transaction key is being created.");
-							regenerateKey();
-							throw error;
-						}
-						if (error?.status === 400) {
-							regenerateKey();
-							throw error;
 						}
 						throw error;
 					}
@@ -165,7 +162,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 				throw new Error("Transaction is still processing. Please check your transaction history.");
 			};
 
-			const res = await executeTipRequest(idempotencyKey);
+			const res = await executeTipRequest(tipKey);
 			const url = res?.data?.sessionUrl || res?.data?.url;
 			const providerReferenceId = res?.data?.providerReferenceId;
 

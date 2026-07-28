@@ -161,6 +161,12 @@ const Membership = ({ channelId }: MembershipProps) => {
 		plan: any,
 		paymentProvider: "STRIPE" | "PAWAPAY" | "PAYNOW"
 	) => {
+		// Generate a fresh key for THIS button click right now — synchronously,
+		// with no dependency on React state timing. 202-retries inside the same
+		// call will reuse this same local key (correct idempotency), while each
+		// new button click always starts with a brand-new UUID.
+		const checkoutKey = generateUUID();
+
 		try {
 			let fullCountryName = user?.country || "United States";
 			if (fullCountryName && fullCountryName.length === 2 && (countries as any)[fullCountryName.toUpperCase()]) {
@@ -187,19 +193,10 @@ const Membership = ({ channelId }: MembershipProps) => {
 						return response;
 					} catch (error: any) {
 						if (error?.status === 202) {
-							// Wait 2 seconds and retry
+							// Wait 2 seconds and retry with the same key (202 = still processing)
 							attempts++;
 							await new Promise((resolve) => setTimeout(resolve, 2000));
 							continue;
-						}
-						if (error?.status === 409) {
-							messageApi.warning("You have modified the request parameters. A new transaction key is being created.");
-							regenerateKey();
-							throw error;
-						}
-						if (error?.status === 400) {
-							regenerateKey();
-							throw error;
 						}
 						throw error;
 					}
@@ -207,7 +204,7 @@ const Membership = ({ channelId }: MembershipProps) => {
 				throw new Error("Transaction is still processing. Please check your transaction history.");
 			};
 
-			const res = await executeSessionRequest(idempotencyKey);
+			const res = await executeSessionRequest(checkoutKey);
 			const url = res?.data?.url || res?.data?.redirectUrl;
 			const providerReferenceId = res?.data?.providerReferenceId || res?.data?.pawapayId || res?.data?.paynowReference;
 
@@ -285,6 +282,9 @@ const Membership = ({ channelId }: MembershipProps) => {
 				content: "Failed to start checkout. Please try again.",
 			});
 		} catch (error: any) {
+			// Always issue a fresh key after any failure so the user can retry
+			// without hitting an idempotency conflict on the next click.
+			regenerateKey();
 			errorAlert({
 				error: error,
 				messageApi,
@@ -321,6 +321,9 @@ const Membership = ({ channelId }: MembershipProps) => {
 			});
 			return;
 		}
+		// Regenerate key for every new plan selection so a different payload
+		// never reuses a previous key (prevents 409 idempotency conflicts).
+		regenerateKey();
 		setSelectedPlan(plan);
 		setIsProviderModalOpen(true);
 	};
