@@ -47,6 +47,17 @@ const ChannelInfo = ({
   const [messageApi, contextHolder] = message.useMessage();
   const { socket, messageApi: globalMessageApi } = useAppContext();
 
+  const [stableChannelData, setStableChannelData] = useState<TMyChannel | undefined>(undefined);
+
+  useEffect(() => {
+    if (channelData) {
+      setStableChannelData(channelData);
+    }
+  }, [channelData]);
+
+  const activeChannelData = stableChannelData || channelData;
+  const isInfoLoading = isLoading && !activeChannelData;
+
   const [openReportModal, setOpenReportModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [createConversation] = useCreateConversationMutation();
@@ -54,15 +65,15 @@ const ChannelInfo = ({
   const [origin, setOrigin] = useState("");
 
   const userRole = user?.role?.toLowerCase();
-  const channelId = channelData?._id || "";
+  const channelId = activeChannelData?._id || "";
   const isAdmin = userRole === "admin";
-  const isOwner = user?._id === channelData?.owner;
-  const vanitySlug = resolveChannelSlug(channelData);
-  const shareUrl = getChannelShareUrl(channelData, origin);
+  const isOwner = user?._id === activeChannelData?.owner;
+  const vanitySlug = resolveChannelSlug(activeChannelData);
+  const shareUrl = getChannelShareUrl(activeChannelData, origin);
 
   const { data: subscriptionData } = useGetCurrentChannelSubscriptionQuery(
     channelId,
-    { skip: !channelData?._id || userRole !== "user" },
+    { skip: !channelId || userRole !== "user" },
   );
 
   const [updateChannelStatus, { isLoading: isUpdatingStatus }] =
@@ -86,7 +97,7 @@ const ChannelInfo = ({
   };
 
   const handleStatusChange = async (status: TChannelStatus) => {
-    if (!channelData?._id) return;
+    if (!channelId) return;
     const key = "channel-status";
     messageApi.open({
       key,
@@ -94,7 +105,7 @@ const ChannelInfo = ({
       content: `Updating channel status to ${status.toLowerCase()}...`,
     });
     try {
-      await updateChannelStatus({ channelId: channelData._id, status }).unwrap();
+      await updateChannelStatus({ channelId, status }).unwrap();
       messageApi.open({
         key,
         type: "success",
@@ -118,7 +129,7 @@ const ChannelInfo = ({
   };
 
   const handleChatWithUs = async () => {
-    if (!channelData?.owner) {
+    if (!activeChannelData?.owner) {
       globalMessageApi.error("Creator not found.");
       return;
     }
@@ -126,7 +137,7 @@ const ChannelInfo = ({
     try {
       const result = await createConversation({
         conversationType: "PRIVATE",
-        participants: [channelData.owner],
+        participants: [activeChannelData.owner],
         title: "",
         avatar: "",
       }).unwrap();
@@ -141,7 +152,7 @@ const ChannelInfo = ({
       }
       if (socket && !socket.connected) socket.connect();
       router.push(
-        `/messages/${newConversationId}?receiver=${channelData.owner}`,
+        `/messages/${newConversationId}?receiver=${activeChannelData.owner}`,
       );
     } catch (error: unknown) {
       errorAlert({ error: error as TResError, messageApi });
@@ -155,16 +166,16 @@ const ChannelInfo = ({
       {contextHolder}
 
       <ChannelBanner
-        channelData={channelData}
-        isLoading={isLoading}
+        channelData={activeChannelData}
+        isLoading={isInfoLoading}
         isOwner={isOwner}
         onCopyLink={handleCopyLink}
         onEditClick={() => setOpenEditModal(true)}
       />
 
       <ChannelProfileInfo
-        channelData={channelData}
-        isLoading={isLoading}
+        channelData={activeChannelData}
+        isLoading={isInfoLoading}
         isOwner={isOwner}
         isAdmin={isAdmin}
         isSubscribed={isSubscribed}
@@ -189,7 +200,7 @@ const ChannelInfo = ({
       <ChannelEditModal
         isOpen={openEditModal}
         onClose={() => setOpenEditModal(false)}
-        channelData={channelData}
+        channelData={activeChannelData}
       />
     </>
   );

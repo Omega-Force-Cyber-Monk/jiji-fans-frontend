@@ -25,10 +25,7 @@ const Page = () => {
 
   const isCreator = user?.role?.toLowerCase() === "creator";
 
-  const { data: channelData, isLoading, error } = useGetMyChannelQuery({
-    cursor,
-    limit,
-  }, {
+  const { data: channelData, isLoading, error } = useGetMyChannelQuery(undefined, {
     skip: !isCreator
   });
 
