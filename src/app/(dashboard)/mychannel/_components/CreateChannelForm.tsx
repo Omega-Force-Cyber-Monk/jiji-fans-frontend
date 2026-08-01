@@ -187,7 +187,7 @@ const CreateChannelForm = () => {
       <div className="w-full mt-6 space-y-6">
 
         {/* Visual Preview Card (Banner & Avatar) */}
-        <div className="group relative w-full rounded-lg overflow-hidden bg-primary-bg border border-border-primary shadow-sm transition-all duration-300">
+        <div className="group relative w-full rounded-lg overflow-hidden bg-primary-bg border border-border-primary transition-all duration-300">
 
           {/* Banner Area */}
           <div className="relative w-full bg-secondary-bg overflow-hidden" style={{ height: "240px" }}>
@@ -219,7 +219,7 @@ const CreateChannelForm = () => {
               >
                 <Button
                   icon={<FiUploadCloud />}
-                  className="h-12 px-6 rounded-md bg-primary-bg text-primary-text text-sm font-medium hover:bg-secondary-bg border border-border-primary shadow-sm flex items-center gap-6"
+                  className="h-12 px-6 rounded-md bg-primary-bg text-primary-text text-sm font-medium hover:bg-secondary-bg border border-border-primary flex items-center gap-6"
                 >
                   {bannerUrl ? "Change Cover" : "Upload Cover Image"}
                 </Button>
@@ -246,7 +246,7 @@ const CreateChannelForm = () => {
                   <div className="relative group/avatar cursor-pointer">
 
                     {/* Image Container */}
-                    <div className="relative w-16 h-16 sm:w-16 sm:h-16 rounded-md overflow-hidden border-[3px] border-primary-bg bg-secondary-bg shadow-sm">
+                    <div className="relative w-16 h-16 sm:w-16 sm:h-16 rounded-md overflow-hidden border-[3px] border-primary-bg bg-secondary-bg">
                       <img
                         src={avatarUrl || getImageUrl(profile?.avatar) || "/static/demo/channel_2.png"}
                         alt="Avatar"
@@ -312,7 +312,7 @@ const CreateChannelForm = () => {
             },
           }}
         >
-          <div className="bg-primary-bg rounded-lg border border-border-primary shadow-sm overflow-hidden">
+          <div className="bg-primary-bg rounded-lg border border-border-primary overflow-hidden">
             <div className="px-6 py-6 border-b border-border-primary bg-secondary-bg flex items-center gap-6">
               <span className="w-8 h-8 rounded-md bg-primary-bg border border-border-primary flex items-center justify-center text-sm">✨</span>
               <div>
@@ -442,7 +442,7 @@ const CreateChannelForm = () => {
                     type="primary"
                     size="large"
                     htmlType="submit"
-                    className="h-12 px-6 bg-brand-primary hover:opacity-90 text-secondary-bg text-sm font-medium rounded-md border-none shadow-sm transition-all"
+                    className="h-12 px-6 bg-brand-primary hover:opacity-90 text-secondary-bg text-sm font-medium rounded-md border-none transition-all"
                   >
                     {!isSubmitting && (
                       <span className="flex items-center gap-6">

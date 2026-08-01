@@ -275,7 +275,7 @@ const TipsModal = ({ isOpen, setIsOpen, contentId }: TipsModalProps) => {
 						}
 					`}</style>
 					{/* Glowing top gradient header */}
-					<div className="p-6 pb-4 border-b border-border-primary/60 bg-gradient-to-r from-brand-primary/10 via-transparent to-brand-primary/5 flex items-start gap-4">
+					<div className=" pb-4 border-b border-border-primary/60 bg-gradient-to-r from-brand-primary/10 via-transparent to-brand-primary/5 flex items-start gap-4">
 						<div className="p-3 bg-brand-primary/20 rounded-xl text-brand-primary border border-brand-primary/30 shrink-0">
 							<GiftIcon className="w-7 h-7" />
 						</div>

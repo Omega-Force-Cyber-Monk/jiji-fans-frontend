@@ -178,10 +178,62 @@ export const successAlert = ({
   title?: string;
   text?: string;
 }) => {
+  const getIconSvg = (type: string) => {
+    switch (type) {
+      case "success":
+        return `
+          <div class="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mb-3">
+            <svg class="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        `;
+      case "error":
+        return `
+          <div class="h-16 w-16 rounded-full bg-error/10 flex items-center justify-center mb-3">
+            <svg class="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+        `;
+      case "warning":
+        return `
+          <div class="h-16 w-16 rounded-full bg-warning/10 flex items-center justify-center mb-3">
+            <svg class="w-8 h-8 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+        `;
+      case "info":
+      default:
+        return `
+          <div class="h-16 w-16 rounded-full bg-brand-primary/10 flex items-center justify-center mb-3">
+            <svg class="w-8 h-8 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        `;
+    }
+  };
+
   Swal.fire({
-    icon: icon,
-    title: title || "Success!",
-    text: text || "Your action was successful.",
+    html: `
+      <div class="flex flex-col items-center gap-2 pt-2 pb-2">
+          ${getIconSvg(icon)}
+          <h3 class="text-xl font-bold text-primary-text m-0">${title || "Success!"}</h3>
+          <p class="text-secondary-text text-sm m-0 mt-1">${text || "Your action was successful."}</p>
+      </div>
+    `,
+    showConfirmButton: true,
     confirmButtonText: "Ok",
+    buttonsStyling: false,
+    background: "var(--primary-bg)",
+    color: "var(--primary-text)",
+    customClass: {
+      popup: "rounded-xl border border-border-primary shadow-xl p-6",
+      htmlContainer: "m-0 p-0",
+      actions: "w-full flex justify-center mt-6",
+      confirmButton: "w-full sm:w-auto px-8 py-2.5 bg-brand-primary text-black font-semibold rounded-md hover:opacity-90 transition-opacity shadow-sm cursor-pointer",
+    },
   });
 };

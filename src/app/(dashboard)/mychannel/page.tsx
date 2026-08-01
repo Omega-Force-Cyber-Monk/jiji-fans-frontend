@@ -159,7 +159,7 @@ const Page = () => {
         )}
 
         {/* Hero Section - Elevated Floating Card */}
-        <div className="w-full bg-secondary-bg/40 backdrop-blur-md overflow-hidden border border-border-primary rounded-2xl shadow-xl hover:shadow-2xl hover:border-brand-primary/35 transition-all duration-500 pb-6">
+        <div className="w-full bg-secondary-bg/40 backdrop-blur-md overflow-hidden border border-border-primary rounded-2xl hover:border-brand-primary/35 transition-all duration-500 pb-6">
           <ChannelInfo channelData={channelData?.data} isLoading={isLoading} />
         </div>
 
@@ -184,7 +184,7 @@ const Page = () => {
           </div>
 
           {/* Content Explorer Card */}
-          <div className="bg-secondary-bg/30 backdrop-blur-md border border-border-primary rounded-2xl shadow-xl overflow-hidden hover:border-brand-primary/20 transition-all duration-500">
+          <div className="bg-secondary-bg/30 backdrop-blur-md border border-border-primary rounded-2xl overflow-hidden hover:border-brand-primary/20 transition-all duration-500">
             <div className="p-3 sm:p-4 border-b border-border-primary bg-primary-bg/15">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4">
                 <Tabs

@@ -12,8 +12,8 @@ const NotificationPopover = ({ viewAllHref = "/notifications" }: { viewAllHref?:
   const notifications = data?.data?.notifications || [];
 
   const content = (
-    <div className="w-80 sm:w-96 flex flex-col h-[500px] bg-primary-bg rounded-lg overflow-hidden shadow-2xl  transition-colors duration-300">
-      <div className="px-3 py-3 border-b border-border-primary flex items-center justify-between bg-primary-bg">
+    <div className="w-80 sm:w-96 flex flex-col h-125 rounded-lg overflow-hidden  transition-colors duration-300">
+      <div className="px-3 py-3 border-b border-border-primary flex items-center justify-between">
         <h6 className="text-lg font-semibold text-primary-text">Notifications</h6>
         {notifications.length > 0 && (
           <span className="w-2 h-2 rounded-full bg-brand-primary inline-block" />
@@ -85,11 +85,11 @@ const NotificationPopover = ({ viewAllHref = "/notifications" }: { viewAllHref?:
       content={content}
       overlayClassName="notification-popover"
     >
-      <div className="relative size-11 flex items-center justify-center rounded-full bg-primary-bg hover:bg-brand-primary/10 transition-all active:scale-95 group shadow-sm border border-border-primary cursor-pointer">
+      <div className="relative size-11 flex items-center justify-center rounded-full bg-primary-bg hover:bg-brand-primary transition-all active:scale-95 group shadow-sm border border-border-primary cursor-pointer">
         <BellIcon className="size-6 text-brand-primary group-hover:text-primary-bg transition-colors" />
-        {notifications.length > 0 && (
-          <span className="absolute top-2 right-2 size-2 rounded-full bg-brand-primary ring-2 ring-primary-bg" />
-        )}
+        {/* {notifications.length > 0 && (
+          <span className="absolute top-2 right-2 size-2 rounded-full bg-brand-primary ring-2 ring-primary-bg group-hover:hidden" />
+        )} */}
       </div>
     </Popover>
   );

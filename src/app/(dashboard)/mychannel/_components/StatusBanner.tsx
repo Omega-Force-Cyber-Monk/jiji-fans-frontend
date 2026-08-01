@@ -16,7 +16,7 @@ const StatusBanner = ({ status }: StatusBannerProps) => {
       bg: "bg-amber-500/5 backdrop-blur-md",
       border: "border-amber-500/20 border-l-4 border-l-amber-500",
       text: "text-amber-500",
-      shadow: "shadow-lg shadow-amber-500/5",
+      shadow: "",
     },
     REJECTED: {
       icon: <XCircleIcon className="w-6 h-6" />,
@@ -25,7 +25,7 @@ const StatusBanner = ({ status }: StatusBannerProps) => {
       bg: "bg-red-500/5 backdrop-blur-md",
       border: "border-red-500/20 border-l-4 border-l-red-500",
       text: "text-red-500",
-      shadow: "shadow-lg shadow-red-500/5",
+      shadow: "",
     },
     SUSPENDED: {
       icon: <ShieldExclamationIcon className="w-6 h-6" />,
@@ -34,7 +34,7 @@ const StatusBanner = ({ status }: StatusBannerProps) => {
       bg: "bg-neutral-500/5 backdrop-blur-md",
       border: "border-neutral-500/20 border-l-4 border-l-neutral-500",
       text: "text-neutral-400",
-      shadow: "shadow-lg shadow-neutral-500/5",
+      shadow: "",
     },
   };
 

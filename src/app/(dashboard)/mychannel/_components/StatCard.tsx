@@ -41,9 +41,9 @@ const StatCard = ({ label, value, icon }: StatCardProps) => {
   const theme = getTheme(label);
 
   return (
-    <div className={`bg-secondary-bg/40 backdrop-blur-md border border-border-primary rounded-xl p-6 flex items-center gap-5 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group cursor-default bg-gradient-to-br  ${theme.border}`}>
+    <div className={`bg-secondary-bg/40 backdrop-blur-md border border-border-primary rounded-xl p-6 flex items-center gap-5 hover:-translate-y-1 transition-all duration-300 group cursor-default bg-gradient-to-br  ${theme.border}`}>
       {icon && (
-        <div className={`p-3.5 rounded-xl transition-all duration-200 shrink-0 ${theme.iconBg} shadow-sm group-hover:scale-110`}>
+        <div className={`p-3.5 rounded-xl transition-all duration-200 shrink-0 ${theme.iconBg} group-hover:scale-110`}>
           {icon}
         </div>
       )}

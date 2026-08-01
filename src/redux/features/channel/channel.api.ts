@@ -191,7 +191,11 @@ const channelApi = baseApi.injectEndpoints({
           body,
         };
       },
-      invalidatesTags: ["channel", "auth", "user"],
+      invalidatesTags: [
+        { type: "channel" as const, id: "LIST" },
+        "auth",
+        "user"
+      ],
     }),
     editChannelDetails: builder.mutation({
       query: ({ channelId, body }) => {
@@ -201,7 +205,10 @@ const channelApi = baseApi.injectEndpoints({
           body,
         };
       },
-      invalidatesTags: ["channel"],
+      invalidatesTags: (result, error, { channelId }) => [
+        { type: "channel" as const, id: channelId },
+        { type: "channel" as const, id: "LIST" }
+      ],
     }),
     editChannelImage: builder.mutation({
       query: ({ channelId, body }) => {
@@ -211,7 +218,10 @@ const channelApi = baseApi.injectEndpoints({
           body,
         };
       },
-      invalidatesTags: ["channel"],
+      invalidatesTags: (result, error, { channelId }) => [
+        { type: "channel" as const, id: channelId },
+        { type: "channel" as const, id: "LIST" }
+      ],
     }),
     updateChannelStatus: builder.mutation({
       query: ({
@@ -227,7 +237,11 @@ const channelApi = baseApi.injectEndpoints({
           body: { status },
         };
       },
-      invalidatesTags: ["channel"],
+      invalidatesTags: (result, error, { channelId }) => [
+        { type: "channel" as const, id: channelId },
+        { type: "channel" as const, id: "LIST" },
+        "user"
+      ],
     }),
     getAllChannels: builder.query({
       query: (args: TArgs) => {
@@ -243,7 +257,18 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data) {
+          const channels = Array.isArray(result.data)
+            ? result.data
+            : (result.data as any).results || [];
+          return [
+            ...channels.map((channel: any) => ({ type: "channel" as const, id: channel._id })),
+            { type: "channel" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "channel" as const, id: "LIST" }];
+      },
     }),
     getChannelById: builder.query<
       MyChannelResponse,
@@ -270,7 +295,7 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result, error, arg) => [{ type: "channel" as const, id: arg.channelId }],
     }),
     getChannelBySlug: builder.query<
       MyChannelResponse,
@@ -290,7 +315,9 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => result?.data?._id
+        ? [{ type: "channel" as const, id: result.data._id }]
+        : [{ type: "channel" as const, id: "LIST" }],
     }),
     getMyChannel: builder.query<
       MyChannelResponse,
@@ -313,7 +340,9 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => result?.data?._id
+        ? [{ type: "channel" as const, id: result.data._id }]
+        : [{ type: "channel" as const, id: "LIST" }],
     }),
     getChannelAbout: builder.query({
       query: (channelId: string) => {
@@ -322,7 +351,7 @@ const channelApi = baseApi.injectEndpoints({
           method: "GET",
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result, error, channelId) => [{ type: "channel" as const, id: channelId }],
     }),
     getPopularChannels: builder.query<
       PopularChannelsResponse,
@@ -339,7 +368,18 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data) {
+          const channels = Array.isArray(result.data)
+            ? result.data
+            : (result.data as any).results || [];
+          return [
+            ...channels.map((channel: any) => ({ type: "channel" as const, id: channel._id })),
+            { type: "channel" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "channel" as const, id: "LIST" }];
+      },
     }),
     getChannelsByCategory: builder.query<
       ChannelsByCategoryResponse,
@@ -385,7 +425,16 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data?.categories) {
+          const channels = result.data.categories.flatMap((cat: any) => cat.channels || []);
+          return [
+            ...channels.map((channel: any) => ({ type: "channel" as const, id: channel._id })),
+            { type: "channel" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "channel" as const, id: "LIST" }];
+      },
     }),
     getMySubscribers: builder.query<
       ChannelSubscribersResponse,
@@ -405,7 +454,15 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data?.subscribers) {
+          return [
+            ...result.data.subscribers.map((sub: any) => ({ type: "subscription" as const, id: sub._id })),
+            { type: "subscription" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "subscription" as const, id: "LIST" }];
+      },
     }),
     // admin api
     adminChannelDetails: builder.query({
@@ -417,7 +474,18 @@ const channelApi = baseApi.injectEndpoints({
           params,
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data) {
+          const channels = Array.isArray(result.data)
+            ? result.data
+            : (result.data as any).results || [];
+          return [
+            ...channels.map((channel: any) => ({ type: "channel" as const, id: channel._id })),
+            { type: "channel" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "channel" as const, id: "LIST" }];
+      },
     }),
     getContentsByOwner: builder.query<{ data: TContent[] }, string>({
       query: (ownerId) => {
@@ -426,7 +494,15 @@ const channelApi = baseApi.injectEndpoints({
           method: "GET",
         };
       },
-      providesTags: ["channel"],
+      providesTags: (result) => {
+        if (result && result.data) {
+          return [
+            ...result.data.map((content: any) => ({ type: "content" as const, id: content._id })),
+            { type: "content" as const, id: "LIST" }
+          ];
+        }
+        return [{ type: "content" as const, id: "LIST" }];
+      },
     }),
   }),
 });
