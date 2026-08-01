@@ -145,7 +145,7 @@ export const requiredAlert = ({
   icon?: "error" | "warning" | "info" | undefined;
   title?: string;
   text?: string;
-  pathName?:string;
+  pathName?: string;
 }) => {
   Swal.fire({
     icon: icon,
@@ -173,10 +173,12 @@ export const successAlert = ({
   title,
   text,
   icon = "success",
+  confirmButtonText,
 }: {
   icon?: "success" | "error" | "warning" | "info" | "question";
   title?: string;
   text?: string;
+  confirmButtonText?: string;
 }) => {
   const getIconSvg = (type: string) => {
     switch (type) {
@@ -220,12 +222,12 @@ export const successAlert = ({
     html: `
       <div class="flex flex-col items-center gap-2 pt-2 pb-2">
           ${getIconSvg(icon)}
-          <h3 class="text-xl font-bold text-primary-text m-0">${title || "Success!"}</h3>
-          <p class="text-secondary-text text-sm m-0 mt-1">${text || "Your action was successful."}</p>
+          <h3 class="text-xl font-semibold text-primary-text m-0">${title || "Success!"}</h3>
+          <p class="text-secondary-text text-base m-0 mt-1">${text || "Your action was successful."}</p>
       </div>
     `,
     showConfirmButton: true,
-    confirmButtonText: "Ok",
+    confirmButtonText: confirmButtonText || "Ok",
     buttonsStyling: false,
     background: "var(--primary-bg)",
     color: "var(--primary-text)",

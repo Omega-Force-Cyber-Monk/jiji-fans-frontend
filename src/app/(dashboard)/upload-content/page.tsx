@@ -325,8 +325,12 @@ const Page = () => {
       }
 
       setUploadStatus("success");
-      setStatusMessage("Content published successfully!");
-      successAlert({ text: "Content published successfully!" });
+      setStatusMessage("Video uploaded successfully!");
+      successAlert({
+        title: "Video Uploaded Successfully",
+        text: "Your video has been uploaded successfully and is currently waiting for administrator approval.",
+        confirmButtonText: "Got it!",
+      });
 
       form.resetFields();
       setVideoFile(null);
