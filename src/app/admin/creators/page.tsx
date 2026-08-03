@@ -30,7 +30,6 @@ const Page = () => {
     },
     {
       title: <span className="pl-11">{"Name"}</span>,
-      // dataIndex: "username",
       render: (user) => (
         <div className="flex gap-2 items-center">
           <Image
@@ -75,6 +74,35 @@ const Page = () => {
           {isVerified ? "Verified" : "Unverified"}
         </p>
       ),
+      align: "center",
+    },
+    {
+      title: "Channel Status",
+      className: "whitespace-nowrap",
+      render: (record) => {
+        const status = (record.channel?.status || "").toUpperCase();
+        if (!record.channel?._id) {
+          return (
+            <span className="inline-flex rounded-md px-2.5 py-1 text-xs font-semibold bg-gray-500/10 text-secondary-text whitespace-nowrap">
+              NO CHANNEL
+            </span>
+          );
+        }
+        return (
+          <span
+            className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${status === "PENDING"
+              ? "bg-warning/10 text-warning"
+              : status === "APPROVED" || status === "ACTIVE"
+                ? "bg-success/10 text-success"
+                : status === "REJECTED" || status === "SUSPENDED" || status === "BLOCKED"
+                  ? "bg-error/10 text-error"
+                  : "bg-muted-text/10 text-secondary-text"
+              }`}
+          >
+            {status}
+          </span>
+        );
+      },
       align: "center",
     },
     {

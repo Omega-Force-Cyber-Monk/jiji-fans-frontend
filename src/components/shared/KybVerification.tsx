@@ -32,10 +32,8 @@ const KybVerification: React.FC<KybVerificationProps> = ({
         email: userEmail,
       })
       .on("idCheck.onStepCompleted", (payload) => {
-        console.log("[KYB SDK] Step completed:", payload);
       })
       .on("idCheck.onApplicantStatusChanged", (payload) => {
-        console.log("[KYB SDK] Applicant status changed:", payload);
         if (payload.reviewStatus === "completed" && payload.reviewResult?.reviewAnswer === "GREEN") {
           if (onSuccess) onSuccess();
         }

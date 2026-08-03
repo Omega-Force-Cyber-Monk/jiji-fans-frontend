@@ -54,7 +54,6 @@ const Page = () => {
       : status === "REJECTED"
         ? "bg-error/10 text-error border-error/20"
         : "bg-warning/10 text-warning border-warning/20";
-  console.log(content, "Content")
   return (
     <LoaderWraperComp
       isError={isError}

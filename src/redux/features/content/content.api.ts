@@ -60,7 +60,6 @@ const contentApi = baseApi.injectEndpoints({
     }),
     dashboardContentDetails: builder.query<any, string>({
       query: (id: string) => {
-        console.log("id from api", id);
         return {
           url: `dashboard/content/${id}/details`,
           method: "GET",

@@ -32,10 +32,8 @@ const KycVerification: React.FC<KycVerificationProps> = ({
         email: userEmail,
       })
       .on("idCheck.onStepCompleted", (payload) => {
-        console.log("[KYC SDK] Step completed:", payload);
       })
       .on("idCheck.onApplicantStatusChanged", (payload) => {
-        console.log("[KYC SDK] Applicant status changed:", payload);
         if (payload.reviewStatus === "completed" && payload.reviewResult?.reviewAnswer === "GREEN") {
           if (onSuccess) onSuccess();
         }

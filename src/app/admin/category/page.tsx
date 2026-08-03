@@ -56,7 +56,6 @@ const Page = () => {
           return;
         }
         const uploadedResource = await uploadResource(iconFile, { purpose: RESOURCE_PURPOSE.CATEGORY_ICON });
-        console.log(uploadedResource, "uploadedResource");
 
         // Wait 3 seconds for S3/backend sync before creating
         await new Promise((resolve) => setTimeout(resolve, 3000));

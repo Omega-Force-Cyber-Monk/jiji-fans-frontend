@@ -26,7 +26,6 @@ const ResetPass = () => {
 	const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 	const [successMessage, setSuccessMessage] = useState("");
 
-	console.log("Token in reset pass", token);
 	const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
 		try {
 			const response = await mutation({

@@ -144,7 +144,6 @@ const ConversationList = ({
       if (type === "next") {
         setData((c) => [...c, ...dataArray]);
       } else {
-        console.log("CONVERSATIONS RESPONSE DATA:", dataArray);
         setData(dataArray);
       }
     } catch (error) {

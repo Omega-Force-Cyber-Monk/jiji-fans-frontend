@@ -57,13 +57,8 @@ const Page = () => {
             const newChannels = categoryData.channels.filter(
               (ch) => !existingIds.has(ch._id),
             );
-            console.log(
-              `Merging ${newChannels.length} new channels. Total will be: ${prev.length + newChannels.length}`,
-            );
             return [...prev, ...newChannels];
           });
-        } else {
-          console.log(`Skipping duplicate cursor: ${currentCursor}`);
         }
       }
 
@@ -147,10 +142,6 @@ const Page = () => {
   if (isLoading && allChannels.length === 0) {
     return categorySkeleton;
   }
-
-  console.log("Category data", data);
-
-  console.log("Displaying channels", allChannels.length, allChannels);
 
   return (
     <div className="w-full">

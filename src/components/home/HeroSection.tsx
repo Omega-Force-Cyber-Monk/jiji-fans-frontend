@@ -62,7 +62,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({ className = "" }) => {
     }, 3000);
   };
 
-  console.log(isAuthenticated);
   useEffect(() => {
     if (!containerRef.current) return;
 

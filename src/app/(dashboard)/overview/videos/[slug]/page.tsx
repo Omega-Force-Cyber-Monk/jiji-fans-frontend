@@ -103,7 +103,6 @@ const VideoComponent = () => {
   const router = useRouter();
   const [form] = Form.useForm();
   const slug = params?.slug as string;
-  console.log(slug)
   const { messageApi } = useAppContext();
   const [openModal, setOpenModal] = useState(false);
   const [openTipsModal, setOpenTipsModal] = useState(false);

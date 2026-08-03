@@ -18,7 +18,6 @@ import CPagination from "@/components/ui/CPagination";
 
 const Page = () => {
   const { slug } = useParams();
-  console.log(slug)
   const [query, setQuery] = useState<TQuery<{ status?: string }>>({
     page: 1,
     limit: 10,
@@ -31,7 +30,6 @@ const Page = () => {
   });
   const channelData = data?.data;
   const contents = channelData?.contents;
-  console.log(channelData, "Channel Data", contents, "Contents");
   const handleStatusChange = (value: string) => {
     setQuery((prev) => ({
       ...prev,

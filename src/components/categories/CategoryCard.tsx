@@ -23,7 +23,6 @@ const CategoryCard = ({
   index = 0,
 }: CategoryCardProps) => {
 
-  console.log(category, "category")
   return (
     <li
       className="flex items-center justify-between px-5 py-4 border-b border-border-primary last:border-b-0 hover:bg-primary-bg transition-colors duration-150 group"
