@@ -1,6 +1,7 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { Modal } from "antd";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+
 type TGlobalModalProps = {
   isModalOpen: boolean;
   setIsModalOpen: (open: boolean) => void;
@@ -18,6 +19,27 @@ const GlobalModal = ({
   children,
   maxWidth,
 }: TGlobalModalProps) => {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Initial check
+    setIsDark(document.documentElement.classList.contains("dark"));
+
+    // Set up a MutationObserver to listen for class changes on documentElement
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleCancel = () => {
     if (onClose) onClose();
     setIsModalOpen(false);
@@ -32,8 +54,16 @@ const GlobalModal = ({
       footer={null}
       closeIcon={false}
       width={"100%"}
+      className={isDark ? "dark" : ""}
+      rootClassName={isDark ? "dark" : ""}
+      styles={{
+        content: {
+          // padding: 0,
+          // background: "transparent",
+        },
+      }}
       style={{
-        maxWidth: maxWidth || "544px", // Apply dynamic maxWidth, default to 844px
+        maxWidth: maxWidth || "544px", // Apply dynamic maxWidth, default to 544px
       }}
     >
       {closeIcon !== false && (

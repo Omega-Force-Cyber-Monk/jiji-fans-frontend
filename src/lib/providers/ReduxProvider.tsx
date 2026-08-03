@@ -11,7 +11,7 @@ import { ConfigProvider } from "antd";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Provider } from "react-redux";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import { kycAlert } from "../alerts/kycAlert";
+import KycModal from "@/components/shared/KycModal";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -50,6 +50,7 @@ const AuthProvider = ({ children }: ProvidersProps) => {
     const pathname = usePathname();
     const dispatch = useAppDispatch();
     const { token } = useAppSelector((state) => state.auth);
+    const [isKycModalOpen, setIsKycModalOpen] = useState(false);
 
     // Mirror the module flag into React state so the component can re-render
     // when init completes. Initial value uses the flag — if already initialized
@@ -82,14 +83,46 @@ const AuthProvider = ({ children }: ProvidersProps) => {
         { skip: !token }
     );
 
-    // Handle initial auth check
+    // Handle initial auth check and client-side redirection for private pages
     useEffect(() => {
         if (!token) {
             // No token = not authenticated, mark as initialized immediately
             dispatch(setLoading(false));
             markInitialized();
+
+            // Client-side guard: redirect to sign-in if on a private page
+            const isPublicRoute = (path: string): boolean => {
+                if (!path) return true;
+                if (path === "/" || path === "/home") return true;
+
+                const publicPrefixes = [
+                    "/sign-in",
+                    "/sign-up",
+                    "/forget-pass",
+                    "/reset-pass",
+                    "/verify-email",
+                    "/faq",
+                    "/terms",
+                    "/privacy",
+                    "/about-us",
+                    "/payment/success",
+                    "/payment/cancel",
+                    "/overview/payment/success",
+                    "/overview/payment/cancel",
+                    "/account-suspended",
+                    "/channel-suspended",
+                    "/channel-under-review",
+                    "/channel-rejected"
+                ];
+
+                return publicPrefixes.some((prefix) => path.startsWith(prefix));
+            };
+
+            if (!isPublicRoute(pathname)) {
+                router.replace(`/sign-in?redirect=${encodeURIComponent(pathname || "")}`);
+            }
         }
-    }, [token, dispatch]);
+    }, [token, pathname, router, dispatch]);
 
     // Handle profile data
     useEffect(() => {
@@ -123,11 +156,9 @@ const AuthProvider = ({ children }: ProvidersProps) => {
 
         sessionStorage.setItem(key, "1");
         setTimeout(() => {
-            kycAlert({
-                func: () => router.push("/verification"),
-            });
+            setIsKycModalOpen(true);
         }, 600);
-    }, [data, pathname, router]);
+    }, [data, pathname]);
 
     // Handle profile loading completion (even if skipped)
     useEffect(() => {
@@ -180,6 +211,11 @@ const AuthProvider = ({ children }: ProvidersProps) => {
         <>
             <LoadingScreen isVisible={showLoading} message="Welcome back!" />
             {isInitialized && children}
+            <KycModal
+                isOpen={isKycModalOpen}
+                setIsOpen={setIsKycModalOpen}
+                onConfirm={() => router.push("/verification")}
+            />
         </>
     );
 };

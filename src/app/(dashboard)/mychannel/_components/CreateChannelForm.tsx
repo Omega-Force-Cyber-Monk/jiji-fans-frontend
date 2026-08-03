@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useGetProfileQuery } from "@/redux/features/users/users.api";
 import { setAccessToken } from "@/lib/auth/tokenUtils";
-import { kycAlert } from "@/lib/alerts/kycAlert";
+import KycModal from "@/components/shared/KycModal";
 import { applyApiErrorToForm } from "@/lib/alerts";
 import { getImageUrl } from "@/lib/helpers/getImageUrl";
 
@@ -46,6 +46,7 @@ const CreateChannelForm = () => {
   const [form] = Form.useForm();
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
 
   // File Upload States
   const [avatarFile, setAvatarFile] = useState<any>(null);
@@ -158,7 +159,7 @@ const CreateChannelForm = () => {
 
       setAccessToken(response?.data?.accessToken);
       messageApi.open({ key, type: "success", content: "🎉 Your channel is live!", duration: 3 });
-      kycAlert({ func: () => router.push("/verification"), denyFunc: () => router.push("/dashboard") });
+      setIsKycModalOpen(true);
     } catch (error) {
       const { errorMessage } = applyApiErrorToForm(error, form, ["name", "category", "tagline", "description", "about"]);
       messageApi.open({ key, type: "error", content: errorMessage || "Failed to create channel", duration: 3 });
@@ -457,6 +458,12 @@ const CreateChannelForm = () => {
           </div>
         </ConfigProvider>
       </div>
+      <KycModal
+        isOpen={isKycModalOpen}
+        setIsOpen={setIsKycModalOpen}
+        onConfirm={() => router.push("/verification")}
+        onCancel={() => router.push("/dashboard")}
+      />
     </div>
   );
 };
