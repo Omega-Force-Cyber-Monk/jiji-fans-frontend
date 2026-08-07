@@ -18,14 +18,18 @@ function decodeJwt(token: string): any {
 
 async function getUserFromToken(token: string): Promise<{ role: TRole; status: string } | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
     const res = await fetch(`${apiUrl}/users/profile`, {
       cache: "no-cache",
       method: "GET",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    });
+    }).finally(() => clearTimeout(timeoutId));
 
     if (!res.ok) {
       console.error("[Middleware] Profile fetch failed:", res.status, res.statusText);

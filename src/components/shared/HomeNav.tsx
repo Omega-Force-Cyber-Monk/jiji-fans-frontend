@@ -42,21 +42,17 @@ const HomeNav = ({ className }: { className?: string }) => {
   const [updateProfile] = useUpdateProfileMutation();
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   // Load theme from localStorage or document
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    const isDark = document.documentElement.classList.contains("dark");
-    if (savedTheme) {
-      setTheme(savedTheme);
-      if (savedTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+    if (savedTheme === "dark") {
+      setTheme("dark");
+      document.documentElement.classList.add("dark");
     } else {
-      setTheme(isDark ? "dark" : "light");
+      setTheme("light");
+      document.documentElement.classList.remove("dark");
     }
   }, []);
 
