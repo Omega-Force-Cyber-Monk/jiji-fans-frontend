@@ -127,8 +127,9 @@ const SignIn = ({ redirect }: { redirect?: string }) => {
         })
       );
 
-      // Redirection is now handled automatically by GuestGuard and useRequireGuest
-      // based on the Redux state update above.
+      // Perform immediate explicit navigation alongside GuestGuard
+      const targetPath = redirect || (user?.role === "Admin" ? "/admin/home" : "/overview");
+      router.replace(targetPath);
     } catch (error) {
       const { errorSources } = getApiErrorDetails(error);
       const newErrors = { email: "", password: "" };
