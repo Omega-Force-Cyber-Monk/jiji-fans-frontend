@@ -12,14 +12,15 @@ interface AuthGuardProps {
 export default function AuthGuard({ children, redirectTo = "/sign-in" }: AuthGuardProps) {
   const { isAuthenticated, isLoading } = useRequireAuth(redirectTo);
 
-  return (
-    <>
+  if (isLoading || !isAuthenticated) {
+    return (
       <LoadingScreen
-        isVisible={isLoading}
-        message="Verifying authentication..."
+        isVisible={true}
+        message={isLoading ? "Verifying authentication..." : "Redirecting to sign in..."}
         variant="minimal"
       />
-      {!isLoading && isAuthenticated && children}
-    </>
-  );
+    );
+  }
+
+  return <>{children}</>;
 }
