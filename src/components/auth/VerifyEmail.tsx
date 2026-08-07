@@ -158,11 +158,13 @@ const VerifyEmail = ({ email, opType }: { email: string; opType: string }) => {
 				<div className="text-center space-y-6 pb-8">
 					<div className="flex items-center justify-center gap-4 relative">
 						<div className="absolute left-0">
-							<ClientButton>
-								<div className="p-2 rounded-md hover:bg-secondary-bg transition-colors duration-200">
-									<ArrowLeftIcon className="w-6 h-6 text-primary-text" />
-								</div>
-							</ClientButton>
+							<button
+								type="button"
+								onClick={() => router.back()}
+								className="p-2 rounded-md hover:bg-secondary-bg transition-colors duration-200 cursor-pointer"
+							>
+								<ArrowLeftIcon className="w-6 h-6 text-primary-text" />
+							</button>
 						</div>
 						<h3 className="text-2xl font-semibold text-primary-text m-0">
 							Verify Email
@@ -216,17 +218,16 @@ const VerifyEmail = ({ email, opType }: { email: string; opType: string }) => {
 				</Form>
 
 				<div className="text-center mt-8">
-					<p className="text-base font-normal text-muted-text flex items-center justify-center gap-2">
+					<p className="text-base font-normal text-muted-text flex items-center justify-center gap-1.5">
 						Didn’t receive the code?
-						<Button
+						<button
+							type="button"
 							onClick={handleResend}
-							loading={resendLoading}
-							type="text"
-							size="small"
-							className="text-brand-primary hover:text-brand-secondary font-medium px-2 m-0 h-auto"
+							disabled={resendLoading}
+							className="text-brand-primary hover:underline font-semibold px-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 						>
-							Resend
-						</Button>
+							{resendLoading ? "Resending..." : "Resend"}
+						</button>
 					</p>
 				</div>
 			</div>
